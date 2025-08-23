@@ -1,3 +1,10 @@
+# 1.0.0 (2025-08-23)
+
+
+### Features
+
+* initial draft ([228fc71](https://github.com/highcard-dev/druid-ui/commit/228fc718bcb64cece19ef198f22cadc6bc481be4))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
