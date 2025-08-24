@@ -27,5 +27,4 @@ Splash = {
         })
     end,
 }
-
 mount(Splash)

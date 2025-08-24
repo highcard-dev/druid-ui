@@ -115,6 +115,29 @@ npm run build:lib
 npm run build:standalone
 ```
 
+## Development
+
+For local development and testing:
+
+1. **Navigate to the dev-bootstrap example**:
+
+   ```bash
+   cd examples/dev-bootstrap
+   ```
+
+2. **Install dependencies**:
+
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
+
+This will start a local development environment where you can test your Lua scripts and see changes in real-time. The dev-bootstrap example provides a minimal setup that's perfect for experimenting with DruidUI features.
+
 ## Features
 
 - **Dual distribution**: Library version for bundlers, standalone for direct browser use
