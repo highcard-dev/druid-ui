@@ -3,7 +3,7 @@ import type { Component, FENode, Props, Routes } from "./types";
 import morphdom from "morphdom";
 import { dfunc } from "./util.js";
 
-export type rerenderFn = () => void;
+export type RerenderFn = () => void;
 
 const allowedProps = ["onclick", "onkeyup"] as Array<keyof HTMLElement>;
 
@@ -29,6 +29,8 @@ export class DruidUI extends HTMLElement {
   private currentPath: string;
   private externalRoute = false;
 
+  private profile = false;
+
   get routes() {
     return this.getRoutes();
   }
@@ -40,7 +42,7 @@ export class DruidUI extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ["entrypoint", "path", "default-style"];
+    return ["entrypoint", "path", "default-style", "profile"];
   }
 
   attributeChangedCallback(
@@ -59,11 +61,15 @@ export class DruidUI extends HTMLElement {
           this.rerender();
         }
         break;
+      case "profile":
+        this.profile = newValue === "true";
+        break;
     }
   }
 
   constructor() {
     super();
+
     this.currentPath = "/";
     this.shadow = this.attachShadow({ mode: "open" });
 
@@ -87,6 +93,7 @@ export class DruidUI extends HTMLElement {
         composed: true,
       })
     );
+
     try {
       await this.lua?.doString(`
     methods = {}
@@ -221,9 +228,14 @@ export class DruidUI extends HTMLElement {
 
     // End benchmarking
     const end = performance.now();
-    console.log(`Rerender took ${end - start} milliseconds`);
+    if (this.profile) {
+      console.log(`Rerender took ${end - start} milliseconds`);
+    }
   }
   async loadEntrypointFromUrl(luafile: string) {
+    if (this.profile) {
+      console.log("Loading entrypoint from URL:", luafile);
+    }
     const factory = new LuaFactory();
 
     let luaEntryoint = luafile;
@@ -236,7 +248,9 @@ export class DruidUI extends HTMLElement {
 
         const res = await fetch(baseUrl + "/" + file);
         const content = await res.text();
-        console.log("Mounting file", file);
+        if (this.profile) {
+          console.log("Mounting file", file);
+        }
         await factory.mountFile("./" + file, content);
       });
       if (files[0] === undefined) {
@@ -247,7 +261,9 @@ export class DruidUI extends HTMLElement {
     } else if (luafile.endsWith(".lua")) {
       const res = await fetch(luafile);
       const content = await res.text();
-      console.log("Mounting file", luafile);
+      if (this.profile) {
+        console.log("Mounting file", luafile);
+      }
       await factory.mountFile(luafile, content);
     } else {
       throw new Error(

@@ -38,6 +38,7 @@
     "@semantic-release/release-notes-generator": "^14.0.1",
     "@tsconfig/node20": "^20.1.6",
     "@tsconfig/strictest": "^2.0.5",
+    "@types/react": "^19.1.11",
     "semantic-release": "^24.0.0",
     "typescript": "~5.8.3",
     "vite": "^7.1.2"
@@ -45,5 +46,9 @@
   "dependencies": {
     "morphdom": "^2.7.7",
     "wasmoon": "^1.16.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
   }
 }
