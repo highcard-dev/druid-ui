@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/highcard-dev/druid-ui/compare/v1.0.0...v1.1.0) (2025-08-26)
+
+
+### Features
+
+* react extension ([a1a4598](https://github.com/highcard-dev/druid-ui/commit/a1a4598dfab5cc75d3da8dd8f8480a06fd3e69d6))
+
 # 1.0.0 (2025-08-23)
 
 
