@@ -44,7 +44,6 @@ if (!d && root) {
 
   d.addEventListener("init", (e) => {
     const event = e as CustomEvent<{ lua: LuaEngine }>;
-    console.log("DruidUI initialized", event);
 
     const lua = event.detail.lua;
 
@@ -96,8 +95,11 @@ if (!d && root) {
 
 //vite hot reloading
 if (import.meta.hot) {
-  import.meta.hot.on("lua-update", () => {
-    console.log("Lua files updated, rerendering...");
-    d?.loadEntrypointFromUrl(d?.getAttribute("entrypoint") || "");
+  import.meta.hot.on("lua-update", (data) => {
+    //just file name not path
+    const fileName = data?.file.split("/").pop();
+
+    console.log("Lua files updated, rerendering...", fileName);
+    d?.reload(fileName);
   });
 }
