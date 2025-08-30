@@ -5,7 +5,7 @@ import { dfunc } from "./util.js";
 
 export type RerenderFn = () => void;
 
-const allowedProps = ["onclick", "onkeyup"] as Array<keyof HTMLElement>;
+const allowedProps = ["onclick", "onkeyup", "type"] as Array<keyof HTMLElement>;
 
 function updateEvents(fromEl: any, toEl: any) {
   var i, eventPropName;
@@ -42,7 +42,7 @@ export class DruidUI extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ["entrypoint", "path", "default-style", "profile"];
+    return ["entrypoint", "path", "default-style", "profile", "css", "style"];
   }
 
   attributeChangedCallback(
@@ -63,6 +63,55 @@ export class DruidUI extends HTMLElement {
         break;
       case "profile":
         this.profile = newValue === "true";
+        break;
+      case "style":
+        const htmlString = newValue;
+        /*
+        const htmlString = `
+[data-theme=light],
+:root:not([data-theme=dark]),
+:host:not([data-theme=dark]) {
+  --pico-text-selection-color: rgba(244, 93, 44, 0.25);
+  --pico-primary: #bd3c13;
+  --pico-primary-background: #d24317;
+  --pico-primary-underline: rgba(189, 60, 19, 0.5);
+  --pico-primary-hover: #942d0d;
+  --pico-primary-hover-background: #bd3c13;
+  --pico-primary-focus: rgba(244, 93, 44, 0.5);
+  --pico-primary-inverse: #fff;
+}`;*/
+        const styleEl = document.createElement("style");
+        styleEl.textContent = htmlString.trim();
+
+        // Insert style after all link elements
+        const lastLink = Array.from(
+          this.shadow.querySelectorAll('link[rel="stylesheet"]')
+        ).pop();
+        if (lastLink) {
+          this.shadow.insertBefore(styleEl, lastLink.nextSibling);
+        } else {
+          this.shadow.insertBefore(
+            styleEl,
+            this.shadowRoot?.firstChild || null
+          );
+        }
+        break;
+      case "css":
+        const css = newValue.split(",");
+        //clear previous css links
+        const existingLinks = this.shadow.querySelectorAll(
+          'link[rel="stylesheet"]'
+        );
+        existingLinks.forEach((link) => link.remove());
+
+        console.log("Loading CSS files", css);
+        for (const comp of css) {
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = comp;
+          this.shadow.insertBefore(link, this.shadowRoot?.firstChild || null);
+        }
+        this.rerender();
         break;
     }
   }
@@ -95,6 +144,36 @@ export class DruidUI extends HTMLElement {
     );
 
     try {
+      /*
+          const tableIndex = e.global.getTop() + 1;
+    e.global.lua.lua_createtable(e.global.address, 0, 1);
+
+    e.global.pushValue('request');
+    e.global.pushValue((t, t2) => {
+      console.log('requesting', t, t2);
+    });
+    e.global.lua.lua_settable(e.global.address, tableIndex);
+
+    // Create the metatable
+    const metaIndex = e.global.getTop() + 1;
+    e.global.lua.lua_createtable(e.global.address, 0, 0);
+
+    // Set __call metamethod
+    e.global.pushValue('__call');
+    e.global.pushValue(function (self, arg1, arg2, arg3) {
+      console.log('rendering' + arg1, arg2, arg3);
+    });
+    e.global.lua.lua_settable(e.global.address, metaIndex);
+
+    e.global.lua.lua_setmetatable(e.global.address, tableIndex);
+
+    // Set the table as a global named 'test'
+    e.global.lua.lua_setglobal(e.global.address, 'test');
+
+    e.doStringSync('test.request("test", "test2", "test3")');
+
+    e.doStringSync('test("testa", "test2a", "test3a")');
+*/
       await this.lua?.doString(`
     methods = {}
     dmethods = {}
@@ -346,7 +425,16 @@ export class DruidUI extends HTMLElement {
       }
     }
 
-    for (const key of ["href", "value"]) {
+    for (const key of [
+      "href",
+      "value",
+      "type",
+      "placeholder",
+      "role",
+      "checked",
+      "id",
+      "for",
+    ]) {
       let prop = props[key];
       if (prop) {
         if (key === "href") {
