@@ -2,6 +2,8 @@ import { type LuaEngine, LuaFactory } from "wasmoon";
 import type { Component, FENode, Props, Routes } from "./types";
 import morphdom from "morphdom";
 import { dfunc } from "./util.js";
+import { fileLoaders, httpFileLoader } from "./file-loader";
+import { createRoutingStrategy } from "./routing-strategy";
 
 export type RerenderFn = () => void;
 
@@ -17,6 +19,8 @@ function updateEvents(fromEl: any, toEl: any) {
   }
 }
 
+const factory = new LuaFactory();
+
 export class DruidUI extends HTMLElement {
   private loadedRoutes?: Routes;
   private initElementList: Component[] = [];
@@ -26,10 +30,13 @@ export class DruidUI extends HTMLElement {
   private mountEl: HTMLElement;
   private lua?: LuaEngine;
 
-  private currentPath: string;
-  private externalRoute = false;
+  private routingStrategy = createRoutingStrategy("history");
+
+  private luaEntryoint: string | undefined;
 
   private profile = false;
+
+  private fileLoader = httpFileLoader;
 
   get routes() {
     return this.getRoutes();
@@ -42,7 +49,16 @@ export class DruidUI extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ["entrypoint", "path", "default-style", "profile", "css", "style"];
+    return [
+      "entrypoint",
+      "path",
+      "default-style",
+      "profile",
+      "css",
+      "style",
+      "fileloader",
+      "routing-strategy",
+    ];
   }
 
   attributeChangedCallback(
@@ -52,11 +68,11 @@ export class DruidUI extends HTMLElement {
   ) {
     switch (name) {
       case "entrypoint":
+        this.luaEntryoint = newValue;
         this.loadEntrypointFromUrl(newValue);
         break;
       case "path":
-        this.externalRoute = newValue !== null;
-        this.currentPath = newValue;
+        this.routingStrategy.navigateTo(newValue);
         if (oldValue) {
           this.rerender();
         }
@@ -66,20 +82,6 @@ export class DruidUI extends HTMLElement {
         break;
       case "style":
         const htmlString = newValue;
-        /*
-        const htmlString = `
-[data-theme=light],
-:root:not([data-theme=dark]),
-:host:not([data-theme=dark]) {
-  --pico-text-selection-color: rgba(244, 93, 44, 0.25);
-  --pico-primary: #bd3c13;
-  --pico-primary-background: #d24317;
-  --pico-primary-underline: rgba(189, 60, 19, 0.5);
-  --pico-primary-hover: #942d0d;
-  --pico-primary-hover-background: #bd3c13;
-  --pico-primary-focus: rgba(244, 93, 44, 0.5);
-  --pico-primary-inverse: #fff;
-}`;*/
         const styleEl = document.createElement("style");
         styleEl.textContent = htmlString.trim();
 
@@ -104,14 +106,25 @@ export class DruidUI extends HTMLElement {
         );
         existingLinks.forEach((link) => link.remove());
 
-        console.log("Loading CSS files", css);
         for (const comp of css) {
           const link = document.createElement("link");
           link.rel = "stylesheet";
           link.href = comp;
           this.shadow.insertBefore(link, this.shadowRoot?.firstChild || null);
         }
-        this.rerender();
+        break;
+      case "fileloader":
+        fileLoaders[newValue as keyof typeof fileLoaders]
+          ? (this.fileLoader =
+              fileLoaders[newValue as keyof typeof fileLoaders])
+          : console.warn(
+              `File loader ${newValue} not found, using default http loader`
+            );
+        break;
+      case "routing-strategy":
+        this.routingStrategy = createRoutingStrategy(
+          newValue as "history" | "custom"
+        );
         break;
     }
   }
@@ -119,7 +132,6 @@ export class DruidUI extends HTMLElement {
   constructor() {
     super();
 
-    this.currentPath = "/";
     this.shadow = this.attachShadow({ mode: "open" });
 
     this.mountEl = document.createElement("div");
@@ -228,17 +240,12 @@ export class DruidUI extends HTMLElement {
     this.rerender();
   }
 
-  setCurrentPath(path: string) {
-    this.currentPath = path;
-    this.rerender();
-  }
-
   rerender() {
     if (!this.loadedRoutes) {
       throw new Error("Component not mounted");
     }
 
-    const currentUrl = this.currentPath;
+    const currentUrl = this.routingStrategy.getCurrentPath();
 
     let component: Component;
     if (currentUrl === "/") {
@@ -315,18 +322,16 @@ export class DruidUI extends HTMLElement {
     if (this.profile) {
       console.log("Loading entrypoint from URL:", luafile);
     }
-    const factory = new LuaFactory();
 
     let luaEntryoint = luafile;
 
     if (luafile.endsWith(".json")) {
-      const res = await fetch(luafile);
-      const files = (await res.json()) as string[];
+      const res = await this.fileLoader(luafile);
+      const files = JSON.parse(res) as string[];
       const promises = files.map(async (file) => {
         const baseUrl = luafile.split("/").slice(0, -1).join("/");
 
-        const res = await fetch(baseUrl + "/" + file);
-        const content = await res.text();
+        const content = await this.fileLoader(baseUrl + "/" + file);
         if (this.profile) {
           console.log("Mounting file", file);
         }
@@ -338,8 +343,7 @@ export class DruidUI extends HTMLElement {
       luaEntryoint = files[0];
       await Promise.all(promises);
     } else if (luafile.endsWith(".lua")) {
-      const res = await fetch(luafile);
-      const content = await res.text();
+      const content = await this.fileLoader(luafile);
       if (this.profile) {
         console.log("Mounting file", luafile);
       }
@@ -359,6 +363,24 @@ export class DruidUI extends HTMLElement {
     });
 
     this.executeLuaRender(luaEntryoint);
+  }
+
+  public async reload(file: string) {
+    const content = await this.fileLoader(file);
+
+    await factory.mountFile(file, content);
+
+    this.lua = await factory.createEngine({
+      injectObjects: true,
+      enableProxy: true,
+      functionTimeout: 1000,
+      openStandardLibs: true,
+      traceAllocations: true,
+    });
+    if (!this.luaEntryoint) {
+      throw new Error("No entrypoint set");
+    }
+    await this.executeLuaRender(this.luaEntryoint);
   }
 
   private createHtmlElement(
@@ -384,24 +406,11 @@ export class DruidUI extends HTMLElement {
       case "Link":
         element = "a";
 
-        if (this.externalRoute) {
-          props["onclick"] = () => {
-            this.dispatchEvent(
-              new CustomEvent("navigate", {
-                detail: { route: props["to"] },
-                bubbles: true,
-                composed: true,
-              })
-            );
-          };
-          break;
-        }
-
         props["onclick"] = () => {
           if (!props["to"]) {
-            window.history.pushState({}, "", "/");
+            this.routingStrategy.navigateTo("/");
           } else {
-            window.history.pushState({}, "", props["to"] as string);
+            this.routingStrategy.navigateTo(props["to"] as string);
           }
         };
         props["href"] = props["to"];

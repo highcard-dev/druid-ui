@@ -8,6 +8,7 @@ export default function I18nHotReload(): PluginOption {
         server.ws.send({
           type: "custom",
           event: "lua-update",
+          data: { file },
         });
       }
     },

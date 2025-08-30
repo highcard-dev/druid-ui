@@ -80,7 +80,6 @@ ServerProperties = {
                end
            end
 
-           print ("Loaded ini", s, json_encode(values))
         end)
     end,
     view = function ()
@@ -113,8 +112,6 @@ ServerProperties = {
                     role = "switch"
                     checked = value == "true"
                 end
-
-                print(t)
                 table.insert(gridElements, d(".grid", {
                     d("label", {
                         ["for"] = id
@@ -148,4 +145,5 @@ ServerProperties = {
         return d("main.container", gridElements)
     end,
 }
+
 mount(ServerProperties)
