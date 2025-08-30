@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/highcard-dev/druid-ui/compare/v1.1.0...v1.2.0) (2025-08-30)
+
+
+### Features
+
+* ability to inject css into shadow dom ([#1](https://github.com/highcard-dev/druid-ui/issues/1)) ([0a05f08](https://github.com/highcard-dev/druid-ui/commit/0a05f08aebfda612891ea0a01987418dc2d3bd46))
+
 # [1.1.0](https://github.com/highcard-dev/druid-ui/compare/v1.0.0...v1.1.0) (2025-08-26)
 
 

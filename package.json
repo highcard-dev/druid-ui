@@ -1,7 +1,7 @@
 {
   "name": "druid-ui",
   "private": false,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "main": "./dist/druid-ui.lib.umd.js",
   "module": "./dist/druid-ui.lib.esm.js",
