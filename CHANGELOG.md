@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/highcard-dev/druid-ui/compare/v1.2.0...v1.3.0) (2025-08-30)
+
+
+### Features
+
+* more modularity for routing and file loading ([#2](https://github.com/highcard-dev/druid-ui/issues/2)) ([70f1e0a](https://github.com/highcard-dev/druid-ui/commit/70f1e0ae4ba4825229e60b130af5043ff1f7a31f))
+
 # [1.2.0](https://github.com/highcard-dev/druid-ui/compare/v1.1.0...v1.2.0) (2025-08-30)
 
 
