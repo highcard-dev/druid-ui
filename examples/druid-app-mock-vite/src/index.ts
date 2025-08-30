@@ -15,7 +15,6 @@ const root = document.getElementById("app");
 let d = root?.querySelector("druid-ui") as DruidUI | null;
 
 if (!d && root) {
-  console.log("Creating new DruidUI instance");
   d = document.createElement("druid-ui") as DruidUI;
 
   const wrappedfetch =
@@ -70,6 +69,27 @@ if (!d && root) {
   });
   d.setAttribute("entrypoint", "simple.lua");
   d.setAttribute("path", "/");
+
+  d.setAttribute(
+    "css",
+    "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+  );
+
+  d.setAttribute(
+    "style",
+    `[data-theme=light],
+:root:not([data-theme=dark]),
+:host:not([data-theme=dark]) {
+  --pico-text-selection-color: rgba(244, 93, 44, 0.25);
+  --pico-primary: #bd3c13;
+  --pico-primary-background: #d24317;
+  --pico-primary-underline: rgba(189, 60, 19, 0.5);
+  --pico-primary-hover: #942d0d;
+  --pico-primary-hover-background: #bd3c13;
+  --pico-primary-focus: rgba(244, 93, 44, 0.5);
+  --pico-primary-inverse: #fff;
+}`
+  );
 
   root.appendChild(d);
 }
