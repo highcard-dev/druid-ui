@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/highcard-dev/druid-ui/compare/v1.3.0...v1.3.1) (2025-08-31)
+
+
+### Bug Fixes
+
+* exports from other files ([09bf6fe](https://github.com/highcard-dev/druid-ui/commit/09bf6fe4348836922ff513fc83fd72dab2086107))
+
 # [1.3.0](https://github.com/highcard-dev/druid-ui/compare/v1.2.0...v1.3.0) (2025-08-30)
 
 
