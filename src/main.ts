@@ -188,10 +188,10 @@ export class DruidUI extends HTMLElement {
 */
       await this.lua?.doString(`
     methods = {}
-    dmethods = {}
-    --iterate dmethods and set them as global functions
-    for k, v in pairs(dmethods) do
-        methods[k] = v
+    if dmethods then
+        for k, v in pairs(dmethods) do
+            methods[k] = v
+        end
     end
 
     d = setmetatable({}, {

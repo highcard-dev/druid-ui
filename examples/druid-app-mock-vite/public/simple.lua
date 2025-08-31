@@ -67,6 +67,9 @@ local elementTypes = {
 
 ServerProperties = {
     oninit = function ()
+        d.request("server.properties.ini"):next(function (s)
+            print(s)
+        end)
         loadFileFromDeployment("server.properties.ini"):next(function (s)
            content = s
 
