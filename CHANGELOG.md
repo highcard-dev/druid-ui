@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/highcard-dev/druid-ui/compare/v1.3.1...v1.3.2) (2025-08-31)
+
+
+### Bug Fixes
+
+* dmethods ([2d6c4c4](https://github.com/highcard-dev/druid-ui/commit/2d6c4c481243df1b9f92cdacfee7540e5910eb83))
+
 ## [1.3.1](https://github.com/highcard-dev/druid-ui/compare/v1.3.0...v1.3.1) (2025-08-31)
 
 
