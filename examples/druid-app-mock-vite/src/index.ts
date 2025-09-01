@@ -1,14 +1,5 @@
 import { LuaEngine } from "wasmoon";
 import { DruidUI, type RerenderFn } from "../../../src/main";
-import initUnoCSS from "@unocss/runtime";
-import presetWind3 from "@unocss/preset-wind3";
-
-// initialize UnoCSS runtime with presets you want
-initUnoCSS({
-  defaults: {
-    presets: [presetWind3()],
-  },
-});
 
 // Check if druid-ui already exists, if so, do nothing
 const root = document.getElementById("app");

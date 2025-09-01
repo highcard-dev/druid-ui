@@ -72,7 +72,6 @@ export class DruidUI extends HTMLElement {
         this.loadEntrypointFromUrl(newValue);
         break;
       case "path":
-        this.routingStrategy.navigateTo(newValue);
         if (oldValue) {
           this.rerender();
         }

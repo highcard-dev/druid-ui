@@ -14,10 +14,7 @@
     "typescript": "~5.7.2",
     "vite": "^6.1.0"
   },
-  "dependencies": {
-    "@unocss/preset-wind": "^66.4.2",
-    "@unocss/runtime": "^66.4.2"
-  },
+  "dependencies": {},
   "exports": {
     ".": {
       "import": "./src/index.js",
