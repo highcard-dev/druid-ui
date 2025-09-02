@@ -1,3 +1,10 @@
+## [1.3.4](https://github.com/highcard-dev/druid-ui/compare/v1.3.3...v1.3.4) (2025-09-02)
+
+
+### Bug Fixes
+
+* prevent default action to make links work better ([29ed35a](https://github.com/highcard-dev/druid-ui/commit/29ed35a7be7e855a51e7cbabc15043ca2dda94be))
+
 ## [1.3.3](https://github.com/highcard-dev/druid-ui/compare/v1.3.2...v1.3.3) (2025-09-01)
 
 
