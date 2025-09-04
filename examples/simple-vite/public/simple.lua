@@ -1,12 +1,12 @@
-local sp = "loading..."
+local sp = "Some content"
 
 Splash = {
     oninit = function ()
-        print("ININININIT")
+        print("This is the init function")
 
     end,
     view = function ()
-        return d("div.p-2", {
+        return d("div", {
             d("textarea", {
                 onkeyup = function (e)
                     --local newContent = e.target.value
@@ -16,14 +16,11 @@ Splash = {
                 end,
             }, sp),
             d("br"),
-            d("button.bg-blue-700.p-2", {
+            d("button", {
                 onclick = function ()
                     print("Save button clicked")
                 end,
             }, "Save"),
-            d("button.bg-primary.p-2", {
-            }, "Save primary"),
-            d("Link", {to= ""}, "Go to root"),
         })
     end,
 }

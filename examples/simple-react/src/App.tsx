@@ -6,7 +6,7 @@ function App() {
     <>
       <h1>Vite + React + Druid UI</h1>
       <div className="card">
-        <DruidUI entrypoint="simple.lua" path="/" />
+        <DruidUI entrypoint="simple.lua" />
       </div>
     </>
   );
