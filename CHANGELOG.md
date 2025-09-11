@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/highcard-dev/druid-ui/compare/v1.4.0...v1.4.1) (2025-09-11)
+
+
+### Bug Fixes
+
+* remove README slop ([a2d8f75](https://github.com/highcard-dev/druid-ui/commit/a2d8f757ba27d15196076d8d931d1f844130c2d4))
+
 # [1.4.0](https://github.com/highcard-dev/druid-ui/compare/v1.3.4...v1.4.0) (2025-09-04)
 
 
