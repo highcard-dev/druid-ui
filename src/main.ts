@@ -7,7 +7,7 @@ import { createRoutingStrategy } from "./routing-strategy";
 
 export type RerenderFn = () => void;
 
-const allowedProps = ["onclick", "onkeyup", "type"] as Array<keyof HTMLElement>;
+const allowedProps = ["onclick", "onkeyup", "onchange", "type"] as Array<keyof HTMLElement>;
 
 function updateEvents(fromEl: any, toEl: any) {
   var i, eventPropName;
