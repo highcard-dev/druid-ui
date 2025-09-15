@@ -21,13 +21,25 @@ Navigation = {
     end,
 }
 
+Test = {
+    oninit = function ()
+        print("This is the init functioten")
+
+    end,
+    view = function (props)
+        print("Props:", props)
+        return d("div", "test")
+    end,
+}
+
 -- Splash/Home page component
 Splash = {
     oninit = function ()
         print("Splash page initialized")
     end,
-    view = function ()
+    view = function (props)
         return d("div", {
+            d(Test, {exampleProp = "Hello from Splash"}),
             Navigation.view(),
             d("h1", {}, "Welcome to Druid UI Routing Example"),
             d("p", {}, "This is the home page. Use the navigation above to explore different routes."),

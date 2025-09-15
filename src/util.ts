@@ -1,7 +1,7 @@
 import type { FENode, Props } from "./types.js";
 
 export const dfunc = (
-  selector: string | { view: () => string },
+  selector: string | { view: (props: Props) => string },
   propsOrContent?: FENode | Props | FENode[],
   content?: FENode | FENode[] | string | string[]
 ) => {
@@ -17,7 +17,7 @@ export const dfunc = (
   }
 
   if (typeof selector === "object") {
-    return selector.view();
+    return selector.view(props);
   }
 
   const node: FENode = {
