@@ -9,7 +9,7 @@ export type FENode = {
 };
 
 export type Component = {
-  view: () => Element;
+  view: (props?: any) => Element;
   oninit?: () => void;
 };
 

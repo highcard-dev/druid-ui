@@ -218,12 +218,12 @@ export class DruidUI extends HTMLElement {
     });
   }
 
-  useComponent(component: Component) {
+  useComponent(component: Component, props: any = {}): Element | Text {
     if (!this.initElementList.includes(component)) {
       this.initElementList.push(component);
       component.oninit?.();
     }
-    return component.view();
+    return component.view(props);
   }
 
   mountFn(component: Component) {
@@ -409,7 +409,7 @@ export class DruidUI extends HTMLElement {
     content: string | string[]
   ) {
     if (typeof selector === "object") {
-      return this.useComponent(selector);
+      return this.useComponent(selector, props);
     }
 
     let element, classes, id;
