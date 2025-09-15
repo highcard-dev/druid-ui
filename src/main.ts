@@ -454,6 +454,8 @@ export class DruidUI extends HTMLElement {
       "id",
       "for",
       "selected",
+      "open",
+      "name",
     ]) {
       let prop = props[key];
       if (prop) {
