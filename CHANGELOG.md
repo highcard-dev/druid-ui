@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/highcard-dev/druid-ui/compare/v1.4.2...v1.5.0) (2025-09-15)
+
+
+### Features
+
+* props ([f5941b0](https://github.com/highcard-dev/druid-ui/commit/f5941b0e3b12797ed2e41e2c4138f42a34df3ad4))
+
 ## [1.4.2](https://github.com/highcard-dev/druid-ui/compare/v1.4.1...v1.4.2) (2025-09-15)
 
 
