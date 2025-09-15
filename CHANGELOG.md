@@ -1,3 +1,11 @@
+## [1.5.2](https://github.com/highcard-dev/druid-ui/compare/v1.5.1...v1.5.2) (2025-09-15)
+
+
+### Bug Fixes
+
+* more whitelisted attributes ([c98c9e9](https://github.com/highcard-dev/druid-ui/commit/c98c9e9b45c90b27a01616e44796740555a07c8c))
+* ontoggle ([4da21f5](https://github.com/highcard-dev/druid-ui/commit/4da21f5506e72c0c939b6787b560aaa6f788498f))
+
 ## [1.5.1](https://github.com/highcard-dev/druid-ui/compare/v1.5.0...v1.5.1) (2025-09-15)
 
 
