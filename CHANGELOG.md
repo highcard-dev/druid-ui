@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/highcard-dev/druid-ui/compare/v1.4.1...v1.4.2) (2025-09-15)
+
+
+### Bug Fixes
+
+* missing selected attribute to make select work ([d606f06](https://github.com/highcard-dev/druid-ui/commit/d606f06ae294c4382c38eacadb26c8431d9dab98))
+
 ## [1.4.1](https://github.com/highcard-dev/druid-ui/compare/v1.4.0...v1.4.1) (2025-09-11)
 
 
