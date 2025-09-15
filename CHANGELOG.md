@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/highcard-dev/druid-ui/compare/v1.5.0...v1.5.1) (2025-09-15)
+
+
+### Bug Fixes
+
+* proper props passing ([8e7d74c](https://github.com/highcard-dev/druid-ui/commit/8e7d74c3177eb6bbeac96878379a2c1c0bffb2b7))
+
 # [1.5.0](https://github.com/highcard-dev/druid-ui/compare/v1.4.2...v1.5.0) (2025-09-15)
 
 
