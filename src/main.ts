@@ -444,17 +444,6 @@ export class DruidUI extends HTMLElement {
       el.classList.add(...classes);
     }
 
-    for (const key of allowedProps) {
-      const prop = props[key];
-      if (prop && typeof prop === "function") {
-        (el as any)[key] = (e: any) => {
-          e.preventDefault();
-          prop(e.target.value);
-          this.rerender();
-        };
-      }
-    }
-
     for (const key of [
       "href",
       "value",
@@ -472,6 +461,24 @@ export class DruidUI extends HTMLElement {
           prop = prop;
         }
         el.setAttribute(key, prop as string);
+      }
+    }
+    for (const key of allowedProps) {
+      const prop = props[key];
+      if (prop && typeof prop === "function") {
+        (el as any)[key] = (e: any) => {
+          e.preventDefault();
+          if (
+            key === "onchange" &&
+            selector === "input" &&
+            el.getAttribute("type") === "checkbox"
+          ) {
+            prop(e.target.checked);
+          } else {
+            prop(e.target.value);
+          }
+          this.rerender();
+        };
       }
     }
 
