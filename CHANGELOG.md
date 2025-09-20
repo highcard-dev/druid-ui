@@ -1,3 +1,9 @@
+## [1.5.3](https://github.com/highcard-dev/druid-ui/compare/v1.5.2...v1.5.3) (2025-09-20)
+
+### Chores
+
+* better event callback ([c2c51e5](https://github.com/highcard-dev/druid-ui/commit/c2c51e5bc4f15dca4b477300821e9dc45f365955))
+
 ## [1.5.2](https://github.com/highcard-dev/druid-ui/compare/v1.5.1...v1.5.2) (2025-09-15)
 
 
