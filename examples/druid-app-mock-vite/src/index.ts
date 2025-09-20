@@ -67,17 +67,15 @@ if (!d && root) {
 
   d.setAttribute(
     "style",
-    `[data-theme=light],
-:root:not([data-theme=dark]),
-:host:not([data-theme=dark]) {
-  --pico-text-selection-color: rgba(244, 93, 44, 0.25);
-  --pico-primary: #bd3c13;
-  --pico-primary-background: #d24317;
-  --pico-primary-underline: rgba(189, 60, 19, 0.5);
-  --pico-primary-hover: #942d0d;
-  --pico-primary-hover-background: #bd3c13;
-  --pico-primary-focus: rgba(244, 93, 44, 0.5);
-  --pico-primary-inverse: #fff;
+    `:host {
+  --pico-text-selection-color: rgba(244, 93, 44, 0.25) !important;
+  --pico-primary: #bd3c13 !important;
+  --pico-primary-background: #d24317 !important;
+  --pico-primary-underline: rgba(189, 60, 19, 0.5) !important;
+  --pico-primary-hover: #942d0d !important;
+  --pico-primary-hover-background: #bd3c13 !important;
+  --pico-primary-focus: rgba(244, 93, 44, 0.5) !important;
+  --pico-primary-inverse: #fff !important;
 }`
   );
 

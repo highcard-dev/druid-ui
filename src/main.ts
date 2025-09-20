@@ -474,15 +474,13 @@ export class DruidUI extends HTMLElement {
       if (prop && typeof prop === "function") {
         (el as any)[key] = (e: any) => {
           e.preventDefault();
-          if (
-            key === "onchange" &&
-            selector === "input" &&
-            el.getAttribute("type") === "checkbox"
-          ) {
-            prop(e.target.checked);
-          } else {
-            prop(e.target.value);
-          }
+          prop({
+            value: e.target.value,
+            checked: e.target.checked,
+            preventDefault: e.preventDefault.bind(e),
+            stopPropagation: e.stopPropagation.bind(e),
+            preventBubble: e.preventBubble.bind(e),
+          });
           this.rerender();
         };
       }

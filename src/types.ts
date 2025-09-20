@@ -1,4 +1,12 @@
-export type eventCallback = (e: string) => void;
+interface Event {
+  value: string;
+  checked: boolean;
+  preventDefault: () => void;
+  stopPropagation: () => void;
+  preventBubble: () => void;
+}
+
+export type eventCallback = (e: Event) => void;
 
 export type Props = Record<string, string | eventCallback | undefined>;
 
