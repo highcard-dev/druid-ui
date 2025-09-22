@@ -479,7 +479,6 @@ export class DruidUI extends HTMLElement {
             checked: e.target.checked,
             preventDefault: e.preventDefault.bind(e),
             stopPropagation: e.stopPropagation.bind(e),
-            preventBubble: e.preventBubble.bind(e),
           });
           this.rerender();
         };

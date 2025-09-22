@@ -3,7 +3,6 @@ interface Event {
   checked: boolean;
   preventDefault: () => void;
   stopPropagation: () => void;
-  preventBubble: () => void;
 }
 
 export type eventCallback = (e: Event) => void;
