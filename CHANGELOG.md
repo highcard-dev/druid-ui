@@ -1,3 +1,9 @@
+## [1.5.4](https://github.com/highcard-dev/druid-ui/compare/v1.5.3...v1.5.4) (2025-09-22)
+
+### Chores
+
+* remove bubble ([9b9f95a](https://github.com/highcard-dev/druid-ui/commit/9b9f95ae5279a71dd824685708861a07d9157881))
+
 ## [1.5.3](https://github.com/highcard-dev/druid-ui/compare/v1.5.2...v1.5.3) (2025-09-20)
 
 ### Chores
