@@ -314,32 +314,15 @@ export class DruidUI extends HTMLElement {
               continue;
             }
           }
-
           // Preserve form element states
           if (fromEl.tagName === "INPUT") {
             const fromInput = fromEl as HTMLInputElement;
             const toInput = toEl as HTMLInputElement;
-
+            //not sure if this is hacky, but otherwise css selectors won't work
             if (fromInput.type === "checkbox" || fromInput.type === "radio") {
               toInput.checked = fromInput.checked;
-            } else if (
-              fromInput.type === "text" ||
-              fromInput.type === "email" ||
-              fromInput.type === "password" ||
-              fromInput.type === "number"
-            ) {
-              toInput.value = fromInput.value;
             }
-          } else if (fromEl.tagName === "TEXTAREA") {
-            const fromTextarea = fromEl as HTMLTextAreaElement;
-            const toTextarea = toEl as HTMLTextAreaElement;
-            toTextarea.value = fromTextarea.value;
-          } else if (fromEl.tagName === "SELECT") {
-            const fromSelect = fromEl as HTMLSelectElement;
-            const toSelect = toEl as HTMLSelectElement;
-            toSelect.selectedIndex = fromSelect.selectedIndex;
           }
-
           updateEvents(fromEl, toEl);
           return true;
         },
