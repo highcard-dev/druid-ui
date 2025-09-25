@@ -1,3 +1,9 @@
+## [1.5.7](https://github.com/highcard-dev/druid-ui/compare/v1.5.6...v1.5.7) (2025-09-25)
+
+### Bug Fixes
+
+* checkbox css selector ([c34fe4f](https://github.com/highcard-dev/druid-ui/commit/c34fe4f382adc1186b209efd04814413afea7cf1))
+
 ## [1.5.6](https://github.com/highcard-dev/druid-ui/compare/v1.5.5...v1.5.6) (2025-09-25)
 
 ### Bug Fixes
