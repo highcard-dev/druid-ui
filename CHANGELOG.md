@@ -1,3 +1,9 @@
+## [1.5.5](https://github.com/highcard-dev/druid-ui/compare/v1.5.4...v1.5.5) (2025-09-25)
+
+### Chores
+
+* remove prevendefault, to avoid unforseen sideeffects ([3058496](https://github.com/highcard-dev/druid-ui/commit/3058496fe6785d16eff258c1c82603cf22f3e2f2))
+
 ## [1.5.4](https://github.com/highcard-dev/druid-ui/compare/v1.5.3...v1.5.4) (2025-09-22)
 
 ### Chores
