@@ -473,7 +473,6 @@ export class DruidUI extends HTMLElement {
       const prop = props[key];
       if (prop && typeof prop === "function") {
         (el as any)[key] = (e: any) => {
-          e.preventDefault();
           prop({
             value: e.target.value,
             checked: e.target.checked,
