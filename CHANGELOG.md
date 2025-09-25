@@ -1,3 +1,9 @@
+## [1.5.6](https://github.com/highcard-dev/druid-ui/compare/v1.5.5...v1.5.6) (2025-09-25)
+
+### Bug Fixes
+
+* input values on rerender ([d296f3c](https://github.com/highcard-dev/druid-ui/commit/d296f3ca8954d8dc5f94a664d563b95b11cc3e9c))
+
 ## [1.5.5](https://github.com/highcard-dev/druid-ui/compare/v1.5.4...v1.5.5) (2025-09-25)
 
 ### Chores
