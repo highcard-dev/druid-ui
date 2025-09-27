@@ -23,7 +23,7 @@ export const dfunc = (
     selector = "div" + selector;
   }
 
-  for (const [key, value] of Object.entries(props)) {
+  for (const [key, value] of Object.entries(props || {})) {
     if (typeof value === "function") {
       const idx = key.indexOf("on");
       vOn[key.slice(idx + 2).toLowerCase()] = (e) =>
