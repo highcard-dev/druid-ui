@@ -126,7 +126,10 @@ ServerProperties = {
                         id = id,
                         value = value,
                         onchange = function(e)
-                            values[key] = e.target.value
+                            print(e.value)
+                            print(e.checked)
+                            values[key] = e.checked and "true" or "false"
+                            print(values[key])
                         end
                     }),
                 }))

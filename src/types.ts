@@ -1,3 +1,5 @@
+import type { VNode } from "snabbdom";
+
 interface Event {
   value: string;
   checked: boolean;
@@ -5,18 +7,8 @@ interface Event {
   stopPropagation: () => void;
 }
 
-export type eventCallback = (e: Event) => void;
-
-export type Props = Record<string, string | eventCallback | undefined>;
-
-export type FENode = {
-  selector: string;
-  props: Props;
-  children: (FENode | string)[];
-};
-
 export type Component = {
-  view: (props?: any) => Element;
+  view: (props?: any) => VNode;
   oninit?: () => void;
 };
 
