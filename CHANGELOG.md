@@ -1,3 +1,9 @@
+## [1.6.0](https://github.com/highcard-dev/druid-ui/compare/v1.5.7...v1.6.0) (2025-10-01)
+
+### Features
+
+* snabbdom overhaul ([#3](https://github.com/highcard-dev/druid-ui/issues/3)) ([59d0db7](https://github.com/highcard-dev/druid-ui/commit/59d0db773e083e5b9028279244769da3b0fafb55))
+
 ## [1.5.7](https://github.com/highcard-dev/druid-ui/compare/v1.5.6...v1.5.7) (2025-09-25)
 
 ### Bug Fixes
