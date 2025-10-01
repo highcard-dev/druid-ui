@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { HttpFileLoader } from "../src/file-loader";
+import { headers } from "happy-dom/lib/PropertySymbol.js";
+
+const plainHeaderMock = (contentType = "text/plain") => ({
+  get: (header: string) => (header === "Content-Type" ? contentType : null),
+});
 
 describe("HttpFileLoader", () => {
   let mockFetch: ReturnType<typeof vi.fn>;
@@ -24,6 +29,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue(expectedContent),
+        headers: plainHeaderMock(),
       });
 
       const result = await fileLoader.load("test.txt");
@@ -31,7 +37,7 @@ describe("HttpFileLoader", () => {
       expect(mockFetch).toHaveBeenCalledWith("test.txt", {
         headers: {},
       });
-      expect(result).toBe(expectedContent);
+      expect(result.content).toBe(expectedContent);
     });
 
     it("should handle fetch errors", async () => {
@@ -66,6 +72,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue("content"),
+        headers: plainHeaderMock(),
       });
 
       await fileLoader.load("secure.txt");
@@ -84,6 +91,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue("content"),
+        headers: plainHeaderMock(),
       });
 
       await loaderWithoutToken.load("test.txt");
@@ -107,6 +115,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue("content"),
+        headers: plainHeaderMock(),
       });
 
       await fileLoader.load("protected.txt");
@@ -129,6 +138,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue("content"),
+        headers: plainHeaderMock(),
       });
 
       await loaderWithoutCreds.load("test.txt");
@@ -151,6 +161,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue("content"),
+        headers: plainHeaderMock(),
       });
 
       await fileLoader.load("api-endpoint");
@@ -172,6 +183,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue("content"),
+        headers: plainHeaderMock(),
       });
 
       await customLoader.load("api-endpoint");
@@ -192,6 +204,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue("content"),
+        headers: plainHeaderMock(),
       });
 
       await loaderWithoutKey.load("test.txt");
@@ -214,6 +227,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue("content"),
+        headers: plainHeaderMock(),
       });
 
       await fileLoader.load("test.txt", {
@@ -233,6 +247,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue("content"),
+        headers: plainHeaderMock(),
       });
 
       await fileLoader.load("test.txt", {
@@ -254,6 +269,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue("content"),
+        headers: plainHeaderMock(),
       });
 
       await fileLoader.load("test.txt", {
@@ -276,6 +292,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue("content"),
+        headers: plainHeaderMock(),
       });
 
       await basicLoader.load("test.txt");
@@ -294,6 +311,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue("content"),
+        headers: plainHeaderMock(),
       });
 
       await authOnlyLoader.load("test.txt");
@@ -313,6 +331,7 @@ describe("HttpFileLoader", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         text: vi.fn().mockResolvedValue("content"),
+        headers: plainHeaderMock(),
       });
 
       await headersOnlyLoader.load("test.txt");

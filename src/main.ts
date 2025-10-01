@@ -243,18 +243,18 @@ export class DruidUI extends HTMLElement {
 
       let luaEntryoint = luafile;
 
-      if (luafile.endsWith(".json")) {
-        const res = await this.fileLoader.load(luafile);
-        const files = JSON.parse(res) as string[];
+      const res = await this.fileLoader.load(luafile);
+      if (res.type === "index") {
+        const files = JSON.parse(res.content) as string[];
         const promises = files.map(async (file) => {
           const baseUrl = luafile.split("/").slice(0, -1).join("/");
 
           try {
-            const content = await this.fileLoader.load(baseUrl + "/" + file);
+            const r = await this.fileLoader.load(baseUrl + "/" + file);
             if (this.profile) {
               console.log("Mounting file", file);
             }
-            await factory.mountFile("./" + file, content);
+            await factory.mountFile("./" + file, r.content);
           } catch (error) {
             console.warn(`Failed to load file ${file}:`, error);
             // Continue with other files even if one fails
@@ -265,15 +265,14 @@ export class DruidUI extends HTMLElement {
         }
         luaEntryoint = files[0];
         await Promise.allSettled(promises);
-      } else if (luafile.endsWith(".lua")) {
-        const content = await this.fileLoader.load(luafile);
+      } else if (res.type === "lua") {
         if (this.profile) {
           console.log("Mounting file", luafile);
         }
-        await factory.mountFile(luafile, content);
+        await factory.mountFile(luafile, res.content);
       } else {
         throw new Error(
-          "Entrypoint must be a .json or .lua file. Got " + luafile
+          "Entrypoint must be a json or lua file. Got " + res.type
         );
       }
 
@@ -294,9 +293,9 @@ export class DruidUI extends HTMLElement {
 
   public async reload(file: string) {
     try {
-      const content = await this.fileLoader.load(file);
+      const res = await this.fileLoader.load(file);
 
-      await factory.mountFile(file, content);
+      await factory.mountFile(file, res.content);
 
       this.lua = await factory.createEngine({
         injectObjects: true,
