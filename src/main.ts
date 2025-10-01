@@ -1,39 +1,23 @@
 import { type LuaEngine, LuaFactory } from "wasmoon";
-import type { Component, FENode, Props, Routes } from "./types";
-import morphdom from "morphdom";
+import type { Component, Routes } from "./types";
 import { dfunc } from "./util.js";
 import { HttpFileLoader } from "./file-loader";
 import { createRoutingStrategy } from "./routing-strategy";
+import { type VNode } from "snabbdom";
+import { patch } from "./setup-snabbdom";
 
 export type RerenderFn = () => void;
-
-const allowedProps = [
-  "onclick",
-  "onkeyup",
-  "onchange",
-  "ontoggle",
-  "type",
-] as Array<keyof HTMLElement>;
-
-function updateEvents(fromEl: any, toEl: any) {
-  var i, eventPropName;
-  for (i = 0; i < allowedProps.length; i++) {
-    eventPropName = allowedProps[i] as string;
-    if (fromEl[eventPropName] !== toEl[eventPropName]) {
-      fromEl[eventPropName] = toEl[eventPropName];
-    }
-  }
-}
 
 const factory = new LuaFactory();
 
 export class DruidUI extends HTMLElement {
   private loadedRoutes?: Routes;
   private initElementList: Component[] = [];
-  private elements: any;
 
   private shadow: ShadowRoot;
   private mountEl: HTMLElement;
+  private currentFrame?: VNode;
+
   private lua?: LuaEngine;
 
   private routingStrategy = createRoutingStrategy("history");
@@ -157,36 +141,6 @@ export class DruidUI extends HTMLElement {
     );
 
     try {
-      /*
-          const tableIndex = e.global.getTop() + 1;
-    e.global.lua.lua_createtable(e.global.address, 0, 1);
-
-    e.global.pushValue('request');
-    e.global.pushValue((t, t2) => {
-      console.log('requesting', t, t2);
-    });
-    e.global.lua.lua_settable(e.global.address, tableIndex);
-
-    // Create the metatable
-    const metaIndex = e.global.getTop() + 1;
-    e.global.lua.lua_createtable(e.global.address, 0, 0);
-
-    // Set __call metamethod
-    e.global.pushValue('__call');
-    e.global.pushValue(function (self, arg1, arg2, arg3) {
-      console.log('rendering' + arg1, arg2, arg3);
-    });
-    e.global.lua.lua_settable(e.global.address, metaIndex);
-
-    e.global.lua.lua_setmetatable(e.global.address, tableIndex);
-
-    // Set the table as a global named 'test'
-    e.global.lua.lua_setglobal(e.global.address, 'test');
-
-    e.doStringSync('test.request("test", "test2", "test3")');
-
-    e.doStringSync('test("testa", "test2a", "test3a")');
-*/
       await this.lua?.doString(`
     methods = {}
     if dmethods then
@@ -222,7 +176,7 @@ export class DruidUI extends HTMLElement {
     });
   }
 
-  useComponent(component: Component, props: any = {}): Element | Text {
+  useComponent(component: Component, props: any = {}): VNode {
     if (!this.initElementList.includes(component)) {
       this.initElementList.push(component);
       component.oninit?.();
@@ -267,67 +221,13 @@ export class DruidUI extends HTMLElement {
 
     // Start benchmarking
     const start = performance.now();
-
-    // Helper to recursively build elements from FENodes or text strings.
-    const createElementFromNode = (node: FENode | string): Element | Text => {
-      // If the node is a simple text string, return a text node.
-      if (typeof node === "string") {
-        return document.createTextNode(node);
-      }
-
-      // Otherwise, use renderFunc to create the element.
-      const el = this.createHtmlElement(node.selector, node.props, "");
-
-      // If there are children, render them and append them to the current element.
-      if (node.children && node.children.length > 0) {
-        node.children.forEach((child) => {
-          const childEl = createElementFromNode(child);
-          el.appendChild(childEl);
-        });
-      }
-      return el;
-    };
-
-    // Get the FENode tree from the mounted component’s view.
-    // (Assumes that the component returns a valid FENode tree or a string.)
-
-    const tree = this.useComponent(component) as unknown as FENode | string;
-    if (!tree) {
-      throw new Error("Tree is undefined");
-    }
-    const domTree = createElementFromNode(tree);
-
-    if (!this.elements) {
-      this.mountEl.innerHTML = "";
-      this.elements = domTree;
-      this.mountEl.appendChild(domTree);
+    const vnode = this.useComponent(component);
+    if (this.currentFrame) {
+      patch(this.currentFrame, vnode);
     } else {
-      morphdom(this.elements, domTree, {
-        onBeforeElUpdated: function (fromEl, toEl) {
-          for (const key of ["style"] as Array<keyof HTMLElement>) {
-            if (key === "style") {
-              const s = fromEl.getAttribute("style");
-              if (!s) {
-                continue;
-              }
-              toEl.setAttribute("style", s);
-              continue;
-            }
-          }
-          // Preserve form element states
-          if (fromEl.tagName === "INPUT") {
-            const fromInput = fromEl as HTMLInputElement;
-            const toInput = toEl as HTMLInputElement;
-            //not sure if this is hacky, but otherwise css selectors won't work
-            if (fromInput.type === "checkbox" || fromInput.type === "radio") {
-              toInput.checked = fromInput.checked;
-            }
-          }
-          updateEvents(fromEl, toEl);
-          return true;
-        },
-      });
+      patch(this.mountEl, vnode);
     }
+    this.currentFrame = vnode;
 
     // End benchmarking
     const end = performance.now();
@@ -343,18 +243,18 @@ export class DruidUI extends HTMLElement {
 
       let luaEntryoint = luafile;
 
-      if (luafile.endsWith(".json")) {
-        const res = await this.fileLoader.load(luafile);
-        const files = JSON.parse(res) as string[];
+      const res = await this.fileLoader.load(luafile);
+      if (res.type === "index") {
+        const files = JSON.parse(res.content) as string[];
         const promises = files.map(async (file) => {
           const baseUrl = luafile.split("/").slice(0, -1).join("/");
 
           try {
-            const content = await this.fileLoader.load(baseUrl + "/" + file);
+            const r = await this.fileLoader.load(baseUrl + "/" + file);
             if (this.profile) {
               console.log("Mounting file", file);
             }
-            await factory.mountFile("./" + file, content);
+            await factory.mountFile("./" + file, r.content);
           } catch (error) {
             console.warn(`Failed to load file ${file}:`, error);
             // Continue with other files even if one fails
@@ -365,15 +265,14 @@ export class DruidUI extends HTMLElement {
         }
         luaEntryoint = files[0];
         await Promise.allSettled(promises);
-      } else if (luafile.endsWith(".lua")) {
-        const content = await this.fileLoader.load(luafile);
+      } else if (res.type === "lua") {
         if (this.profile) {
           console.log("Mounting file", luafile);
         }
-        await factory.mountFile(luafile, content);
+        await factory.mountFile(luafile, res.content);
       } else {
         throw new Error(
-          "Entrypoint must be a .json or .lua file. Got " + luafile
+          "Entrypoint must be a json or lua file. Got " + res.type
         );
       }
 
@@ -394,9 +293,9 @@ export class DruidUI extends HTMLElement {
 
   public async reload(file: string) {
     try {
-      const content = await this.fileLoader.load(file);
+      const res = await this.fileLoader.load(file);
 
-      await factory.mountFile(file, content);
+      await factory.mountFile(file, res.content);
 
       this.lua = await factory.createEngine({
         injectObjects: true,
@@ -415,90 +314,6 @@ export class DruidUI extends HTMLElement {
     }
   }
 
-  private createHtmlElement(
-    selector: string | Component,
-    props: Props,
-    content: string | string[]
-  ) {
-    if (typeof selector === "object") {
-      return this.useComponent(selector, props);
-    }
-
-    let element, classes, id;
-
-    if (selector.startsWith(".")) {
-      [, ...classes] = selector.split(".");
-      element = "div";
-    } else {
-      [element, ...classes] = selector.split(".");
-    }
-    [, id] = selector.split("#");
-
-    switch (element) {
-      case "Link":
-        element = "a";
-
-        props["onclick"] = () => {
-          if (!props["to"]) {
-            this.routingStrategy.navigateTo("/");
-          } else {
-            this.routingStrategy.navigateTo(props["to"] as string);
-          }
-        };
-        props["href"] = props["to"];
-    }
-    const el = document.createElement(element as string);
-    if (id) {
-      el.id = id;
-    }
-
-    if (classes.length) {
-      el.classList.add(...classes);
-    }
-
-    for (const key of [
-      "href",
-      "value",
-      "type",
-      "placeholder",
-      "role",
-      "checked",
-      "id",
-      "for",
-      "selected",
-      "open",
-      "name",
-    ]) {
-      let prop = props[key];
-      if (prop) {
-        if (key === "href") {
-          prop = prop;
-        }
-        el.setAttribute(key, prop as string);
-      }
-    }
-    for (const key of allowedProps) {
-      const prop = props[key];
-      if (prop && typeof prop === "function") {
-        (el as any)[key] = (e: any) => {
-          prop({
-            value: e.target.value,
-            checked: e.target.checked,
-            preventDefault: e.preventDefault.bind(e),
-            stopPropagation: e.stopPropagation.bind(e),
-          });
-          this.rerender();
-        };
-      }
-    }
-
-    if (Array.isArray(content)) {
-      el.innerHTML = content.join("");
-    } else if (content) {
-      el.innerHTML = content;
-    }
-    return el;
-  }
   getRoutes() {
     return this.loadedRoutes;
   }

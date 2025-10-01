@@ -12,6 +12,11 @@ interface FileLoaderOptions {
   headers?: Record<string, string>;
 }
 
+interface FileLoaderResult {
+  content: string;
+  type: "lua" | "index";
+}
+
 export type FileLoader = (
   path: string,
   options?: FileLoaderOptions
@@ -29,7 +34,10 @@ export class HttpFileLoader {
     this.defaultHeaders = defaultHeaders;
   }
 
-  async load(path: string, options?: FileLoaderOptions): Promise<string> {
+  async load(
+    path: string,
+    options?: FileLoaderOptions
+  ): Promise<FileLoaderResult> {
     const headers: Record<string, string> = {
       ...this.defaultHeaders,
       ...options?.headers,
@@ -67,6 +75,10 @@ export class HttpFileLoader {
     if (!res.ok) {
       throw new Error(`Failed to load file: ${path}, status: ${res.status}`);
     }
-    return res.text();
+    return {
+      content: await res.text(),
+      type:
+        res.headers.get("Content-Type") == "application/json" ? "index" : "lua",
+    };
   }
 }
