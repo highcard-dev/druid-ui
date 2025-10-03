@@ -1,3 +1,9 @@
+## [1.6.4](https://github.com/highcard-dev/druid-ui/compare/v1.6.3...v1.6.4) (2025-10-03)
+
+### Chores
+
+* proper initialization when file loader is set ([633b6ad](https://github.com/highcard-dev/druid-ui/commit/633b6ad57c4ed51303a65f9e726d96e465ec42ba))
+
 ## [1.6.3](https://github.com/highcard-dev/druid-ui/compare/v1.6.2...v1.6.3) (2025-10-03)
 
 ### Chores
