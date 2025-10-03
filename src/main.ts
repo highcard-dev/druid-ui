@@ -263,7 +263,7 @@ export class DruidUI extends HTMLElement {
         if (files[0] === undefined) {
           throw new Error("No files found in the JSON");
         }
-        luaEntryoint = files[0];
+        luaEntryoint = files.find((file) => file === "main.lua") || files[0];
         await Promise.allSettled(promises);
       } else if (res.type === "lua") {
         if (this.profile) {
