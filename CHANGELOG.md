@@ -1,3 +1,9 @@
+## [1.6.1](https://github.com/highcard-dev/druid-ui/compare/v1.6.0...v1.6.1) (2025-10-03)
+
+### Chores
+
+* prefer main.lua as entrypoint ([ef0f62d](https://github.com/highcard-dev/druid-ui/commit/ef0f62d37bed95898b2ecf3525a7536927275b84))
+
 ## [1.6.0](https://github.com/highcard-dev/druid-ui/compare/v1.5.7...v1.6.0) (2025-10-01)
 
 ### Features
