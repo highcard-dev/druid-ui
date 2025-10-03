@@ -116,7 +116,8 @@ export class HttpFileLoader {
   }
 
   async load(path: string, options?: FileLoaderOptions) {
-    const response = await this.loadHttp(path, options);
+    const filePath = `${this.baseUrl}/${path}`;
+    const response = await this.loadHttp(filePath, options);
     return response.text;
   }
 
@@ -135,9 +136,7 @@ export class HttpFileLoader {
     const files: Record<string, string> = {};
     await Promise.all(
       filesIndex.map(async (file) => {
-        const filePath = `${this.baseUrl}/${file}`;
-
-        files[file] = await this.load(filePath);
+        files[file] = await this.load(file);
       })
     );
     return files;
