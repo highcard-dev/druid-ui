@@ -24,7 +24,7 @@ export class DruidUI extends HTMLElement {
 
   private profile = false;
 
-  private fileLoader?: HttpFileLoader;
+  private fl?: HttpFileLoader;
 
   get routes() {
     return this.getRoutes();
@@ -37,7 +37,8 @@ export class DruidUI extends HTMLElement {
   }
 
   set fileloader(loader: HttpFileLoader) {
-    this.fileLoader = loader;
+    this.fl = loader;
+    this.loadEntrypointFromUrl();
   }
 
   static get observedAttributes() {
@@ -60,8 +61,7 @@ export class DruidUI extends HTMLElement {
   ) {
     switch (name) {
       case "entrypoint":
-        this.fileLoader = new HttpFileLoader(newValue);
-        this.loadEntrypointFromUrl();
+        this.fileloader = new HttpFileLoader(newValue);
         break;
       case "path":
         if (oldValue) {
@@ -235,14 +235,14 @@ export class DruidUI extends HTMLElement {
   }
   async loadEntrypointFromUrl() {
     try {
-      if (!this.fileLoader) {
+      if (!this.fl) {
         throw new Error("No file loader set");
       }
       if (this.profile) {
         console.log("Loading entrypoint");
       }
 
-      const files = await this.fileLoader.loadEntrypoint();
+      const files = await this.fl.loadEntrypoint();
 
       await Promise.all(
         Object.entries(files).map(([file, content]) =>
@@ -273,10 +273,10 @@ export class DruidUI extends HTMLElement {
 
   public async reload(file: string) {
     try {
-      if (!this.fileLoader) {
+      if (!this.fl) {
         throw new Error("No file loader set");
       }
-      const res = await this.fileLoader.load(file);
+      const res = await this.fl.load(file);
 
       await factory.mountFile(file, res);
 

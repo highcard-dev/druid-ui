@@ -20,6 +20,11 @@ interface HttpResponse {
   contentType: string | null;
 }
 
+export interface FileLoader {
+  load(path: string, options?: FileLoaderOptions): Promise<string>;
+  loadEntrypoint(): Promise<Record<string, string>>;
+}
+
 export class HttpFileLoader {
   private authOptions?: AuthOptions | undefined;
   private defaultHeaders?: Record<string, string> | undefined;
