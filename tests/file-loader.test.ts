@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { HttpFileLoader } from "../src/file-loader";
-import { headers } from "happy-dom/lib/PropertySymbol.js";
 
 const plainHeaderMock = (contentType = "text/plain") => ({
   get: (header: string) => (header === "Content-Type" ? contentType : null),
@@ -36,6 +35,7 @@ describe("HttpFileLoader", () => {
 
       expect(mockFetch).toHaveBeenCalledWith("test.txt", {
         headers: {},
+        cache: "default",
       });
       expect(result.content).toBe(expectedContent);
     });
@@ -82,6 +82,7 @@ describe("HttpFileLoader", () => {
           "X-Custom": "header",
           Authorization: "Bearer test-token",
         },
+        cache: "default",
       });
     });
 
@@ -98,6 +99,7 @@ describe("HttpFileLoader", () => {
 
       expect(mockFetch).toHaveBeenCalledWith("test.txt", {
         headers: {},
+        cache: "default",
       });
     });
   });
@@ -125,6 +127,7 @@ describe("HttpFileLoader", () => {
         headers: {
           Authorization: "Basic dXNlcjpwYXNz",
         },
+        cache: "default",
       });
     });
 
@@ -145,6 +148,7 @@ describe("HttpFileLoader", () => {
 
       expect(mockFetch).toHaveBeenCalledWith("test.txt", {
         headers: {},
+        cache: "default",
       });
     });
   });
@@ -170,6 +174,7 @@ describe("HttpFileLoader", () => {
         headers: {
           "X-API-Key": "secret-key",
         },
+        cache: "default",
       });
     });
 
@@ -192,6 +197,7 @@ describe("HttpFileLoader", () => {
         headers: {
           "X-Custom-API-Key": "secret-key",
         },
+        cache: "default",
       });
     });
 
@@ -211,6 +217,7 @@ describe("HttpFileLoader", () => {
 
       expect(mockFetch).toHaveBeenCalledWith("test.txt", {
         headers: {},
+        cache: "default",
       });
     });
   });
@@ -240,6 +247,7 @@ describe("HttpFileLoader", () => {
           "X-Override": "value",
           Authorization: "Bearer default-token",
         },
+        cache: "default",
       });
     });
 
@@ -262,6 +270,7 @@ describe("HttpFileLoader", () => {
           "X-Default": "header",
           "X-API-Key": "override-key",
         },
+        cache: "default",
       });
     });
 
@@ -281,6 +290,7 @@ describe("HttpFileLoader", () => {
           "X-Default": "overridden",
           Authorization: "Bearer default-token",
         },
+        cache: "default",
       });
     });
   });
@@ -299,6 +309,7 @@ describe("HttpFileLoader", () => {
 
       expect(mockFetch).toHaveBeenCalledWith("test.txt", {
         headers: {},
+        cache: "default",
       });
     });
 
@@ -320,6 +331,7 @@ describe("HttpFileLoader", () => {
         headers: {
           Authorization: "Bearer token123",
         },
+        cache: "default",
       });
     });
 
@@ -340,6 +352,7 @@ describe("HttpFileLoader", () => {
         headers: {
           "Content-Type": "application/json",
         },
+        cache: "default",
       });
     });
   });

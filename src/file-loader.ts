@@ -10,6 +10,7 @@ interface AuthOptions {
 interface FileLoaderOptions {
   auth?: AuthOptions;
   headers?: Record<string, string>;
+  cache?: boolean;
 }
 
 interface FileLoaderResult {
@@ -71,7 +72,10 @@ export class HttpFileLoader {
       }
     }
 
-    const res = await fetch(path, { headers });
+    const res = await fetch(path, {
+      headers,
+      cache: options?.cache === false ? "no-store" : "default",
+    });
     if (!res.ok) {
       throw new Error(`Failed to load file: ${path}, status: ${res.status}`);
     }

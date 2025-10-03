@@ -62,7 +62,6 @@ export class DruidUI extends HTMLElement {
   ) {
     switch (name) {
       case "entrypoint":
-        this.luaEntryoint = newValue;
         this.loadEntrypointFromUrl(newValue);
         break;
       case "path":
@@ -123,7 +122,10 @@ export class DruidUI extends HTMLElement {
     this.shadow.appendChild(this.mountEl);
   }
 
-  async executeLuaRender(luaEntryoint: string) {
+  async executeLuaRender() {
+    if (this.luaEntryoint === undefined) {
+      throw new Error("No entrypoint set");
+    }
     this.lua?.global.set("mount", this.mountFn.bind(this));
     this.lua?.global.set("route", this.routeFn.bind(this));
     this.lua?.global.set("rerender", this.rerender.bind(this));
@@ -155,7 +157,7 @@ export class DruidUI extends HTMLElement {
         end,
         __index = methods
     })`);
-      await this.lua?.doFile(luaEntryoint);
+      await this.lua?.doFile(this.luaEntryoint);
 
       this.dispatchEvent(
         new CustomEvent("mount", {
@@ -241,8 +243,6 @@ export class DruidUI extends HTMLElement {
         console.log("Loading entrypoint from URL:", luafile);
       }
 
-      let luaEntryoint = luafile;
-
       const res = await this.fileLoader.load(luafile);
       if (res.type === "index") {
         const files = JSON.parse(res.content) as string[];
@@ -263,13 +263,15 @@ export class DruidUI extends HTMLElement {
         if (files[0] === undefined) {
           throw new Error("No files found in the JSON");
         }
-        luaEntryoint = files.find((file) => file === "main.lua") || files[0];
+        this.luaEntryoint =
+          files.find((file) => file === "main.lua") || files[0];
         await Promise.allSettled(promises);
       } else if (res.type === "lua") {
         if (this.profile) {
           console.log("Mounting file", luafile);
         }
-        await factory.mountFile(luafile, res.content);
+        await factory.mountFile("main.lua", res.content);
+        this.luaEntryoint = "main.lua";
       } else {
         throw new Error(
           "Entrypoint must be a json or lua file. Got " + res.type
@@ -284,7 +286,7 @@ export class DruidUI extends HTMLElement {
         traceAllocations: true,
       });
 
-      this.executeLuaRender(luaEntryoint);
+      this.executeLuaRender();
     } catch (error) {
       console.error("Failed to load entrypoint:", error);
       this.mountEl.innerHTML = `<div class="error">Failed to load: ${error}</div>`;
@@ -307,7 +309,7 @@ export class DruidUI extends HTMLElement {
       if (!this.luaEntryoint) {
         throw new Error("No entrypoint set");
       }
-      await this.executeLuaRender(this.luaEntryoint);
+      await this.executeLuaRender();
     } catch (error) {
       console.error("Failed to reload file:", error);
       this.mountEl.innerHTML = `<div class="error">Failed to reload: ${error}</div>`;
