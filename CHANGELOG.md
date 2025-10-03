@@ -1,3 +1,9 @@
+## [1.6.3](https://github.com/highcard-dev/druid-ui/compare/v1.6.2...v1.6.3) (2025-10-03)
+
+### Chores
+
+* refactor fileLoader logic ([a2d3f41](https://github.com/highcard-dev/druid-ui/commit/a2d3f4185de1d5ebe5ec1ca5c43cd1ed726f2326))
+
 ## [1.6.2](https://github.com/highcard-dev/druid-ui/compare/v1.6.1...v1.6.2) (2025-10-03)
 
 ### Bug Fixes
