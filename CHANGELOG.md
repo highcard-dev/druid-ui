@@ -1,3 +1,9 @@
+## [1.6.2](https://github.com/highcard-dev/druid-ui/compare/v1.6.1...v1.6.2) (2025-10-03)
+
+### Bug Fixes
+
+* hot releading ([00ba95f](https://github.com/highcard-dev/druid-ui/commit/00ba95f77f917b3f7dcd0385ac574468bad61408))
+
 ## [1.6.1](https://github.com/highcard-dev/druid-ui/compare/v1.6.0...v1.6.1) (2025-10-03)
 
 ### Chores
