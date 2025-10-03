@@ -116,7 +116,7 @@ export class HttpFileLoader {
   }
 
   async load(path: string, options?: FileLoaderOptions) {
-    const filePath = `${this.baseUrl}/${path}`;
+    const filePath = this.baseUrl ? `${this.baseUrl}/${path}` : this.entrypoint;
     const response = await this.loadHttp(filePath, options);
     return response.text;
   }

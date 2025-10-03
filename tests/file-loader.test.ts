@@ -20,7 +20,7 @@ describe("HttpFileLoader", () => {
 
   describe("Basic file loading", () => {
     beforeEach(() => {
-      fileLoader = new HttpFileLoader("/");
+      fileLoader = new HttpFileLoader("test.txt");
     });
 
     it("should load a file successfully", async () => {
@@ -47,7 +47,7 @@ describe("HttpFileLoader", () => {
       });
 
       await expect(fileLoader.load("missing.txt")).rejects.toThrow(
-        "Failed to load file: missing.txt, status: 404"
+        "Failed to load file: test.txt, status: 404"
       );
     });
 
@@ -63,7 +63,7 @@ describe("HttpFileLoader", () => {
   describe("Authentication - Bearer Token", () => {
     beforeEach(() => {
       fileLoader = new HttpFileLoader(
-        "/",
+        "test.txt",
         { type: "bearer", token: "test-token" },
         { "X-Custom": "header" }
       );
@@ -78,7 +78,7 @@ describe("HttpFileLoader", () => {
 
       await fileLoader.load("secure.txt");
 
-      expect(mockFetch).toHaveBeenCalledWith("secure.txt", {
+      expect(mockFetch).toHaveBeenCalledWith("test.txt", {
         headers: {
           "X-Custom": "header",
           Authorization: "Bearer test-token",
@@ -88,7 +88,9 @@ describe("HttpFileLoader", () => {
     });
 
     it("should handle missing bearer token", async () => {
-      const loaderWithoutToken = new HttpFileLoader("/", { type: "bearer" });
+      const loaderWithoutToken = new HttpFileLoader("test.txt", {
+        type: "bearer",
+      });
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -107,7 +109,7 @@ describe("HttpFileLoader", () => {
 
   describe("Authentication - Basic Auth", () => {
     beforeEach(() => {
-      fileLoader = new HttpFileLoader("/", {
+      fileLoader = new HttpFileLoader("test.txt", {
         type: "basic",
         username: "user",
         password: "pass",
@@ -124,7 +126,7 @@ describe("HttpFileLoader", () => {
       await fileLoader.load("protected.txt");
 
       // btoa("user:pass") = "dXNlcjpwYXNz"
-      expect(mockFetch).toHaveBeenCalledWith("protected.txt", {
+      expect(mockFetch).toHaveBeenCalledWith("test.txt", {
         headers: {
           Authorization: "Basic dXNlcjpwYXNz",
         },
@@ -133,7 +135,7 @@ describe("HttpFileLoader", () => {
     });
 
     it("should handle missing credentials", async () => {
-      const loaderWithoutCreds = new HttpFileLoader("/", {
+      const loaderWithoutCreds = new HttpFileLoader("test.txt", {
         type: "basic",
         username: "user",
         // missing password
@@ -156,7 +158,7 @@ describe("HttpFileLoader", () => {
 
   describe("Authentication - API Key", () => {
     beforeEach(() => {
-      fileLoader = new HttpFileLoader("/", {
+      fileLoader = new HttpFileLoader("test.txt", {
         type: "api-key",
         apiKey: "secret-key",
       });
@@ -171,7 +173,7 @@ describe("HttpFileLoader", () => {
 
       await fileLoader.load("api-endpoint");
 
-      expect(mockFetch).toHaveBeenCalledWith("api-endpoint", {
+      expect(mockFetch).toHaveBeenCalledWith("test.txt", {
         headers: {
           "X-API-Key": "secret-key",
         },
@@ -180,7 +182,7 @@ describe("HttpFileLoader", () => {
     });
 
     it("should use custom API key header", async () => {
-      const customLoader = new HttpFileLoader("/", {
+      const customLoader = new HttpFileLoader("test.txt", {
         type: "api-key",
         apiKey: "secret-key",
         apiKeyHeader: "X-Custom-API-Key",
@@ -194,7 +196,7 @@ describe("HttpFileLoader", () => {
 
       await customLoader.load("api-endpoint");
 
-      expect(mockFetch).toHaveBeenCalledWith("api-endpoint", {
+      expect(mockFetch).toHaveBeenCalledWith("test.txt", {
         headers: {
           "X-Custom-API-Key": "secret-key",
         },
@@ -203,7 +205,7 @@ describe("HttpFileLoader", () => {
     });
 
     it("should handle missing API key", async () => {
-      const loaderWithoutKey = new HttpFileLoader("/", {
+      const loaderWithoutKey = new HttpFileLoader("test.txt", {
         type: "api-key",
         // missing apiKey
       });
@@ -226,7 +228,7 @@ describe("HttpFileLoader", () => {
   describe("Options override", () => {
     beforeEach(() => {
       fileLoader = new HttpFileLoader(
-        "/",
+        "test.txt",
         { type: "bearer", token: "default-token" },
         { "X-Default": "header" }
       );
@@ -299,7 +301,7 @@ describe("HttpFileLoader", () => {
 
   describe("Constructor without parameters", () => {
     it("should work without auth or default headers", async () => {
-      const basicLoader = new HttpFileLoader("/");
+      const basicLoader = new HttpFileLoader("test.txt");
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -316,7 +318,7 @@ describe("HttpFileLoader", () => {
     });
 
     it("should work with only auth options", async () => {
-      const authOnlyLoader = new HttpFileLoader("/", {
+      const authOnlyLoader = new HttpFileLoader("test.txt", {
         type: "bearer",
         token: "token123",
       });
@@ -338,7 +340,7 @@ describe("HttpFileLoader", () => {
     });
 
     it("should work with only default headers", async () => {
-      const headersOnlyLoader = new HttpFileLoader("/", undefined, {
+      const headersOnlyLoader = new HttpFileLoader("test.txt", undefined, {
         "Content-Type": "application/json",
       });
 
@@ -361,7 +363,7 @@ describe("HttpFileLoader", () => {
 
   describe("Error scenarios", () => {
     beforeEach(() => {
-      fileLoader = new HttpFileLoader("/");
+      fileLoader = new HttpFileLoader("test.txt");
     });
 
     it("should handle different HTTP error statuses", async () => {
