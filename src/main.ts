@@ -22,11 +22,9 @@ export class DruidUI extends HTMLElement {
 
   private routingStrategy = createRoutingStrategy("history");
 
-  private luaEntryoint: string | undefined;
-
   private profile = false;
 
-  private fileLoader = new HttpFileLoader();
+  private fileLoader?: HttpFileLoader;
 
   get routes() {
     return this.getRoutes();
@@ -62,7 +60,8 @@ export class DruidUI extends HTMLElement {
   ) {
     switch (name) {
       case "entrypoint":
-        this.loadEntrypointFromUrl(newValue);
+        this.fileLoader = new HttpFileLoader(newValue);
+        this.loadEntrypointFromUrl();
         break;
       case "path":
         if (oldValue) {
@@ -123,9 +122,6 @@ export class DruidUI extends HTMLElement {
   }
 
   async executeLuaRender() {
-    if (this.luaEntryoint === undefined) {
-      throw new Error("No entrypoint set");
-    }
     this.lua?.global.set("mount", this.mountFn.bind(this));
     this.lua?.global.set("route", this.routeFn.bind(this));
     this.lua?.global.set("rerender", this.rerender.bind(this));
@@ -157,7 +153,7 @@ export class DruidUI extends HTMLElement {
         end,
         __index = methods
     })`);
-      await this.lua?.doFile(this.luaEntryoint);
+      await this.lua?.doFile("main.lua");
 
       this.dispatchEvent(
         new CustomEvent("mount", {
@@ -237,45 +233,27 @@ export class DruidUI extends HTMLElement {
       console.log(`Rerender took ${end - start} milliseconds`);
     }
   }
-  async loadEntrypointFromUrl(luafile: string) {
+  async loadEntrypointFromUrl() {
     try {
+      if (!this.fileLoader) {
+        throw new Error("No file loader set");
+      }
       if (this.profile) {
-        console.log("Loading entrypoint from URL:", luafile);
+        console.log("Loading entrypoint");
       }
 
-      const res = await this.fileLoader.load(luafile);
-      if (res.type === "index") {
-        const files = JSON.parse(res.content) as string[];
-        const promises = files.map(async (file) => {
-          const baseUrl = luafile.split("/").slice(0, -1).join("/");
+      const files = await this.fileLoader.loadEntrypoint();
 
-          try {
-            const r = await this.fileLoader.load(baseUrl + "/" + file);
-            if (this.profile) {
-              console.log("Mounting file", file);
-            }
-            await factory.mountFile("./" + file, r.content);
-          } catch (error) {
-            console.warn(`Failed to load file ${file}:`, error);
-            // Continue with other files even if one fails
-          }
-        });
-        if (files[0] === undefined) {
-          throw new Error("No files found in the JSON");
-        }
-        this.luaEntryoint =
-          files.find((file) => file === "main.lua") || files[0];
-        await Promise.allSettled(promises);
-      } else if (res.type === "lua") {
-        if (this.profile) {
-          console.log("Mounting file", luafile);
-        }
-        await factory.mountFile("main.lua", res.content);
-        this.luaEntryoint = "main.lua";
-      } else {
-        throw new Error(
-          "Entrypoint must be a json or lua file. Got " + res.type
-        );
+      await Promise.all(
+        Object.entries(files).map(([file, content]) =>
+          factory.mountFile(file, content)
+        )
+      );
+
+      const keys = Object.keys(files);
+
+      if (keys.length === 0) {
+        throw new Error("No files found in the JSON");
       }
 
       this.lua = await factory.createEngine({
@@ -295,9 +273,12 @@ export class DruidUI extends HTMLElement {
 
   public async reload(file: string) {
     try {
+      if (!this.fileLoader) {
+        throw new Error("No file loader set");
+      }
       const res = await this.fileLoader.load(file);
 
-      await factory.mountFile(file, res.content);
+      await factory.mountFile(file, res);
 
       this.lua = await factory.createEngine({
         injectObjects: true,
@@ -306,9 +287,6 @@ export class DruidUI extends HTMLElement {
         openStandardLibs: true,
         traceAllocations: true,
       });
-      if (!this.luaEntryoint) {
-        throw new Error("No entrypoint set");
-      }
       await this.executeLuaRender();
     } catch (error) {
       console.error("Failed to reload file:", error);

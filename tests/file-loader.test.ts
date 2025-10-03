@@ -20,7 +20,7 @@ describe("HttpFileLoader", () => {
 
   describe("Basic file loading", () => {
     beforeEach(() => {
-      fileLoader = new HttpFileLoader();
+      fileLoader = new HttpFileLoader("/");
     });
 
     it("should load a file successfully", async () => {
@@ -37,7 +37,7 @@ describe("HttpFileLoader", () => {
         headers: {},
         cache: "default",
       });
-      expect(result.content).toBe(expectedContent);
+      expect(result).toBe(expectedContent);
     });
 
     it("should handle fetch errors", async () => {
@@ -63,6 +63,7 @@ describe("HttpFileLoader", () => {
   describe("Authentication - Bearer Token", () => {
     beforeEach(() => {
       fileLoader = new HttpFileLoader(
+        "/",
         { type: "bearer", token: "test-token" },
         { "X-Custom": "header" }
       );
@@ -87,7 +88,7 @@ describe("HttpFileLoader", () => {
     });
 
     it("should handle missing bearer token", async () => {
-      const loaderWithoutToken = new HttpFileLoader({ type: "bearer" });
+      const loaderWithoutToken = new HttpFileLoader("/", { type: "bearer" });
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -106,7 +107,7 @@ describe("HttpFileLoader", () => {
 
   describe("Authentication - Basic Auth", () => {
     beforeEach(() => {
-      fileLoader = new HttpFileLoader({
+      fileLoader = new HttpFileLoader("/", {
         type: "basic",
         username: "user",
         password: "pass",
@@ -132,7 +133,7 @@ describe("HttpFileLoader", () => {
     });
 
     it("should handle missing credentials", async () => {
-      const loaderWithoutCreds = new HttpFileLoader({
+      const loaderWithoutCreds = new HttpFileLoader("/", {
         type: "basic",
         username: "user",
         // missing password
@@ -155,7 +156,7 @@ describe("HttpFileLoader", () => {
 
   describe("Authentication - API Key", () => {
     beforeEach(() => {
-      fileLoader = new HttpFileLoader({
+      fileLoader = new HttpFileLoader("/", {
         type: "api-key",
         apiKey: "secret-key",
       });
@@ -179,7 +180,7 @@ describe("HttpFileLoader", () => {
     });
 
     it("should use custom API key header", async () => {
-      const customLoader = new HttpFileLoader({
+      const customLoader = new HttpFileLoader("/", {
         type: "api-key",
         apiKey: "secret-key",
         apiKeyHeader: "X-Custom-API-Key",
@@ -202,7 +203,7 @@ describe("HttpFileLoader", () => {
     });
 
     it("should handle missing API key", async () => {
-      const loaderWithoutKey = new HttpFileLoader({
+      const loaderWithoutKey = new HttpFileLoader("/", {
         type: "api-key",
         // missing apiKey
       });
@@ -225,6 +226,7 @@ describe("HttpFileLoader", () => {
   describe("Options override", () => {
     beforeEach(() => {
       fileLoader = new HttpFileLoader(
+        "/",
         { type: "bearer", token: "default-token" },
         { "X-Default": "header" }
       );
@@ -297,7 +299,7 @@ describe("HttpFileLoader", () => {
 
   describe("Constructor without parameters", () => {
     it("should work without auth or default headers", async () => {
-      const basicLoader = new HttpFileLoader();
+      const basicLoader = new HttpFileLoader("/");
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -314,7 +316,7 @@ describe("HttpFileLoader", () => {
     });
 
     it("should work with only auth options", async () => {
-      const authOnlyLoader = new HttpFileLoader({
+      const authOnlyLoader = new HttpFileLoader("/", {
         type: "bearer",
         token: "token123",
       });
@@ -336,7 +338,7 @@ describe("HttpFileLoader", () => {
     });
 
     it("should work with only default headers", async () => {
-      const headersOnlyLoader = new HttpFileLoader(undefined, {
+      const headersOnlyLoader = new HttpFileLoader("/", undefined, {
         "Content-Type": "application/json",
       });
 
@@ -359,7 +361,7 @@ describe("HttpFileLoader", () => {
 
   describe("Error scenarios", () => {
     beforeEach(() => {
-      fileLoader = new HttpFileLoader();
+      fileLoader = new HttpFileLoader("/");
     });
 
     it("should handle different HTTP error statuses", async () => {
