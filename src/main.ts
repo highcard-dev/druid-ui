@@ -15,6 +15,7 @@ export class DruidUI extends HTMLElement {
   private initElementList: Component[] = [];
 
   private shadow: ShadowRoot;
+  private wrapperEl: HTMLElement;
   private mountEl: HTMLElement;
   private currentFrame?: VNode;
 
@@ -117,8 +118,13 @@ export class DruidUI extends HTMLElement {
 
     this.shadow = this.attachShadow({ mode: "open" });
 
+    this.wrapperEl = document.createElement("div");
+    this.wrapperEl.classList.add("druid-wrapper");
     this.mountEl = document.createElement("div");
-    this.shadow.appendChild(this.mountEl);
+    this.mountEl.classList.add("druid-mount");
+
+    this.wrapperEl.appendChild(this.mountEl);
+    this.shadow.appendChild(this.wrapperEl);
   }
 
   async executeLuaRender() {
@@ -298,12 +304,16 @@ export class DruidUI extends HTMLElement {
     return this.loadedRoutes;
   }
 
+  public getWrapper(): HTMLElement {
+    return this.wrapperEl;
+  }
+
   public setCSSVariable(variable: string, value: string): void {
     // Ensure the variable name starts with "--"
     if (!variable.startsWith("--")) {
       variable = "--" + variable;
     }
-    this.mountEl.style.setProperty(variable, value);
+    this.wrapperEl.style.setProperty(variable, value);
   }
 }
 
