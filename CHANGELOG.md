@@ -1,3 +1,9 @@
+## [1.7.0](https://github.com/highcard-dev/druid-ui/compare/v1.6.5...v1.7.0) (2025-10-09)
+
+### Features
+
+* refactor wrapper ([e0787c7](https://github.com/highcard-dev/druid-ui/commit/e0787c7ce3eec01f84076ee52fc5a4a6322600cd))
+
 ## [1.6.5](https://github.com/highcard-dev/druid-ui/compare/v1.6.4...v1.6.5) (2025-10-03)
 
 ### Bug Fixes
