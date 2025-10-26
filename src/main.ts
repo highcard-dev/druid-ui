@@ -155,6 +155,11 @@ export class DruidUI extends HTMLElement {
 
     this.mountEl.innerHTML = "";
     const dom = this.createDomFromIdRec(rootId);
+
+    if (dom instanceof String) {
+      console.warn("Root DOM is a string, cannot render:", dom);
+      return;
+    }
     if (this.currentVNode) {
       patch(this.currentVNode, dom);
     } else {
