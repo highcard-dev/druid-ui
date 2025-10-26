@@ -4,6 +4,10 @@
     "@tsconfig/node20/tsconfig.json"
   ],
   "compilerOptions": {
+    "types": [
+      "./generated/types/guest/import/interfaces/docs-adder-ui.d.ts",
+      "./generated/types/guest/import/myworld.d.ts"
+    ],
     "target": "ES2022",
     "useDefineForClassFields": true,
     "module": "ESNext",

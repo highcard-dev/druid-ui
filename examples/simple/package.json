@@ -1,0 +1,18 @@
+{
+  "name": "simple",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "preview": "vite preview",
+    "build:esbuild": "esbuild src/component/adder.tsx --bundle --outfile=public/bundle.js --external:docs:adder/ui --external:docs:adder/initcomponent --format=esm",
+    "build:componentize": "jco componentize --wit ../../wit/druid-ui.wit --world-name myworld --out public/adder.wasm --disable=all public/bundle.js",
+    "build:transpile": "jco transpile public/adder.wasm -o transpiled --instantiation async",
+    "build": "npm run build:esbuild && npm run build:componentize && npm run build:transpile"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^7.1.7"
+  }
+}

@@ -1,0 +1,40 @@
+package docs:adder;
+
+
+interface ui {
+
+
+    record prop { key: string, value: string, }
+
+
+    record props {
+        prop: list<prop>,
+        on: list<tuple<string, string>>,
+    }
+
+    type children = option<list<string>>;
+
+    d: func(element: string, props: props, children: children) -> string;
+    log: func(msg: string);
+
+}
+
+interface initcomponent {
+
+    resource event {
+        constructor(value: string, checked: bool);
+        prevent-default: func();
+        stop-propagation: func();
+        value: func() -> string;
+        checked: func() -> bool;
+    }
+
+    init: func() -> string;
+    emit: func(nodeid: string, event: string, e: event);
+}
+
+
+world myworld {
+    import ui;
+    export initcomponent;
+}

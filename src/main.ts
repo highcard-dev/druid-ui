@@ -1,41 +1,37 @@
-import { type LuaEngine, LuaFactory } from "wasmoon";
-import type { Component, Routes } from "./types";
-import { dfunc } from "./util.js";
 import { HttpFileLoader } from "./file-loader";
-import { createRoutingStrategy } from "./routing-strategy";
-import { type VNode } from "snabbdom";
+import hid from "hyperid";
 import { patch } from "./setup-snabbdom";
+import { h, type VNode, type VNodeChildren, type VNodeData } from "snabbdom";
+
+export interface Prop {
+  key: string;
+  value: string;
+}
+export interface Props {
+  prop: Array<Prop>;
+  on: Array<[string, string]>;
+}
+export type Children = Array<string> | undefined;
 
 export type RerenderFn = () => void;
 
-const factory = new LuaFactory();
-
 export class DruidUI extends HTMLElement {
-  private loadedRoutes?: Routes;
-  private initElementList: Component[] = [];
-
   private shadow: ShadowRoot;
   private wrapperEl: HTMLElement;
   private mountEl: HTMLElement;
-  private currentFrame?: VNode;
-
-  private lua?: LuaEngine;
-
-  private routingStrategy = createRoutingStrategy("history");
-
-  private profile = false;
-
+  private profile: boolean = false;
+  private currentVNode: VNode | null = null;
   private fl?: HttpFileLoader;
-
-  get routes() {
-    return this.getRoutes();
-  }
-
-  set colors(colors: Record<string, string>) {
-    for (const [key, value] of Object.entries(colors)) {
-      this.setCSSVariable("--color-" + key, value);
+  private nodes = new Map<
+    string,
+    {
+      element: string;
+      props?: Props;
+      children?: Array<string>;
     }
-  }
+  >();
+
+  private rootComponent: any;
 
   set fileloader(loader: HttpFileLoader) {
     this.fl = loader;
@@ -105,17 +101,11 @@ export class DruidUI extends HTMLElement {
           this.shadow.insertBefore(link, this.shadowRoot?.firstChild || null);
         }
         break;
-      case "routing-strategy":
-        this.routingStrategy = createRoutingStrategy(
-          newValue as "history" | "custom"
-        );
-        break;
     }
   }
 
   constructor() {
     super();
-
     this.shadow = this.attachShadow({ mode: "open" });
 
     this.wrapperEl = document.createElement("div");
@@ -127,193 +117,102 @@ export class DruidUI extends HTMLElement {
     this.shadow.appendChild(this.wrapperEl);
   }
 
-  async executeLuaRender() {
-    this.lua?.global.set("mount", this.mountFn.bind(this));
-    this.lua?.global.set("route", this.routeFn.bind(this));
-    this.lua?.global.set("rerender", this.rerender.bind(this));
-    this.lua?.global.set("df", dfunc);
-    this.lua?.global.set("debug", console.log);
-    this.lua?.global.set("json_encode", JSON.stringify);
-    this.lua?.global.set("json_decode", JSON.parse);
+  async loadEntrypointFromUrl() {
+    const entrypoint = this.getAttribute("entrypoint");
 
-    this.dispatchEvent(
-      new CustomEvent("init", {
-        detail: { lua: this.lua },
-        bubbles: true,
-        composed: true,
-      })
-    );
+    const t = await import(entrypoint!);
 
-    try {
-      await this.lua?.doString(`
-    methods = {}
-    if dmethods then
-        for k, v in pairs(dmethods) do
-            methods[k] = v
-        end
-    end
+    console.log(t);
 
-    d = setmetatable({}, {
-        __call = function(_, ...)
-            return df(...)
-        end,
-        __index = methods
-    })`);
-      await this.lua?.doFile("main.lua");
+    const i = await t.instantiate(undefined, {
+      "docs:adder/ui": {
+        d: (element: string, props: Props, children: string[]) => {
+          const id = hid();
 
-      this.dispatchEvent(
-        new CustomEvent("mount", {
-          detail: { lua: this.lua },
-          bubbles: true,
-          composed: true,
-        })
-      );
-    } catch (e) {
-      this.mountEl.innerHTML = `<pre class="underline">${e}</pre>`;
-    }
-  }
-
-  setupEventListeners() {
-    // Listen for popstate events
-    window.addEventListener("popstate", () => {
-      this.rerender();
+          this.nodes.set(id.uuid, { element, props, children });
+          return id.uuid;
+        },
+        log: (msg: string) => {
+          console.log("UI LOG:", msg);
+        },
+      },
     });
-  }
-
-  useComponent(component: Component, props: any = {}): VNode {
-    if (!this.initElementList.includes(component)) {
-      this.initElementList.push(component);
-      component.oninit?.();
-    }
-    return component.view(props);
-  }
-
-  mountFn(component: Component) {
-    this.setupEventListeners();
-    this.loadedRoutes = {
-      index: component,
-      notfound: component,
-    };
-    this.rerender();
-  }
-
-  routeFn(component: Component, routes: Record<string, Component>) {
-    this.setupEventListeners();
-    this.loadedRoutes = {
-      index: component,
-      notfound: component,
-      ...routes,
-    };
+    console.log("Instantiated:", i);
+    this.rootComponent = i;
     this.rerender();
   }
 
   rerender() {
-    if (!this.loadedRoutes) {
-      throw new Error("Component not mounted");
+    if (!this.rootComponent) {
+      console.warn("Root component not initialized yet.");
+      return;
     }
-
-    const currentUrl = this.routingStrategy.getCurrentPath();
-    console.log("Current URL:", currentUrl);
-    let component: Component;
-    if (currentUrl === "/") {
-      component = this.loadedRoutes.index;
-    } else if (this.loadedRoutes[currentUrl]) {
-      component = this.loadedRoutes[currentUrl] as Component;
-    } else {
-      component = this.loadedRoutes.notfound;
-    }
-
-    // Start benchmarking
-    const start = performance.now();
-    const vnode = this.useComponent(component);
-    if (this.currentFrame) {
-      patch(this.currentFrame, vnode);
-    } else {
-      patch(this.mountEl, vnode);
-    }
-    this.currentFrame = vnode;
-
-    // End benchmarking
-    const end = performance.now();
     if (this.profile) {
-      console.log(`Rerender took ${end - start} milliseconds`);
+      console.log("Rerendering with profiling enabled");
     }
-  }
-  async loadEntrypointFromUrl() {
-    try {
-      if (!this.fl) {
-        throw new Error("No file loader set");
-      }
-      if (this.profile) {
-        console.log("Loading entrypoint");
-      }
 
-      const files = await this.fl.loadEntrypoint();
+    const rootId = this.rootComponent.initcomponent.init();
 
-      await Promise.all(
-        Object.entries(files).map(([file, content]) =>
-          factory.mountFile(file, content)
-        )
-      );
-
-      const keys = Object.keys(files);
-
-      if (keys.length === 0) {
-        throw new Error("No files found in the JSON");
-      }
-
-      this.lua = await factory.createEngine({
-        injectObjects: true,
-        enableProxy: true,
-        functionTimeout: 1000,
-        openStandardLibs: true,
-        traceAllocations: true,
-      });
-
-      this.executeLuaRender();
-    } catch (error) {
-      console.error("Failed to load entrypoint:", error);
-      this.mountEl.innerHTML = `<div class="error">Failed to load: ${error}</div>`;
+    this.mountEl.innerHTML = "";
+    const dom = this.createDomFromIdRec(rootId);
+    if (this.currentVNode) {
+      patch(this.currentVNode, dom);
+    } else {
+      patch(this.mountEl, dom);
+      this.currentVNode = dom;
     }
   }
 
-  public async reload(file: string) {
-    try {
-      if (!this.fl) {
-        throw new Error("No file loader set");
+  private createDomFromIdRec(id: string): VNode | String {
+    const node = this.nodes.get(id);
+    if (!node) {
+      console.warn(`Node with id ${id} not found.`);
+      return id;
+    }
+
+    const data: VNodeData = {};
+
+    // Set properties
+    if (node.props) {
+      data.props = {};
+      for (const prop of node.props.prop) {
+        data.props[prop.key] = prop.value;
       }
-      const res = await this.fl.load(file);
-
-      await factory.mountFile(file, res);
-
-      this.lua = await factory.createEngine({
-        injectObjects: true,
-        enableProxy: true,
-        functionTimeout: 1000,
-        openStandardLibs: true,
-        traceAllocations: true,
-      });
-      await this.executeLuaRender();
-    } catch (error) {
-      console.error("Failed to reload file:", error);
-      this.mountEl.innerHTML = `<div class="error">Failed to reload: ${error}</div>`;
+      console.log("Props.on:", node.props.on);
+      data.on = {};
+      for (const eventHandler of node.props.on) {
+        const [eventType, fnid] = eventHandler;
+        if (eventHandler) {
+          data.on[eventType] = (e) => {
+            const r = this.rootComponent;
+            console.log(
+              `Event ${fnid}:${eventType} triggered on ${node.element}`
+            );
+            this.rootComponent.initcomponent.emit(
+              fnid,
+              eventType,
+              new r.initcomponent.Event(
+                e?.currentTarget?.value,
+                e?.currentTarget?.checked
+              )
+            );
+            this.rerender();
+          };
+        }
+      }
     }
-  }
 
-  getRoutes() {
-    return this.loadedRoutes;
-  }
-
-  public getWrapper(): HTMLElement {
-    return this.wrapperEl;
-  }
-
-  public setCSSVariable(variable: string, value: string): void {
-    // Ensure the variable name starts with "--"
-    if (!variable.startsWith("--")) {
-      variable = "--" + variable;
+    const ch: VNodeChildren = [];
+    // Append children
+    console.log("Children:", node.children);
+    if (node.children) {
+      for (const childId of node.children) {
+        const childEl = this.createDomFromIdRec(childId);
+        ch.push(childEl);
+      }
     }
-    this.wrapperEl.style.setProperty(variable, value);
+
+    return h(node.element, data, ch);
   }
 }
 

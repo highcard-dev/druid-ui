@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
       },
       rollupOptions: {
         // External dependencies only for library build
-        external: isStandalone ? [] : ["wasmoon", "morphdom"],
+        external: isStandalone ? [] : ["wasmoon"],
         output: {
           globals: isStandalone
             ? undefined
