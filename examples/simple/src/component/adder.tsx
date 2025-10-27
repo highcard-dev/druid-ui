@@ -1,5 +1,6 @@
 /// <reference types="../../../../generated/types/guest/import/myworld.d.ts" />
 /** @jsx d */
+import { Event } from "docs:adder/initcomponent";
 import { d, emit } from "./ui";
 import { log } from "docs:adder/ui";
 
@@ -48,15 +49,11 @@ export const initcomponent = {
           <div>fuckme</div>
           <input
             type="text"
-            onChange={(e) => log(`Input changed: ${e.value()}`)}
+            onChange={(e: Event) => log(`Input changed: ${e.value()}`)}
           />
           <button
-            onClick={(e) => {
+            onClick={(e: Event) => {
               i++;
-              log("Button clicked!");
-              log(`Event value: ${e.value()}`);
-              log(`Event checked: ${e.checked()}`);
-              log(`Button clicked ${i} times`);
             }}
           >
             test
@@ -64,6 +61,7 @@ export const initcomponent = {
           uut!!{i}
           <ComponentV2 title="This is it!" description="newschool" />
           <ComponentV3 title="This is it!" description="newschool" />
+          {i > 5 && <div>more than 5 clicks!</div>}
         </main>
         Hello!
       </div>

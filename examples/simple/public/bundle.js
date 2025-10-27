@@ -1,6 +1,5 @@
 // src/component/ui.ts
 import { d as dfunc } from "docs:adder/ui";
-import { log } from "docs:adder/ui";
 var eventMap = {};
 function fnv1aHash(str) {
   let hash = 2166136261;
@@ -11,9 +10,7 @@ function fnv1aHash(str) {
   return (hash >>> 0).toString(36);
 }
 function d(tag, props, ...children) {
-  log(tag.toString());
   if (typeof tag !== "string") {
-    log("Rendering component via its view method");
     if (typeof tag === "function") {
       return tag(props);
     }
@@ -40,25 +37,23 @@ function d(tag, props, ...children) {
   );
 }
 function emit(nodeid, event, e) {
-  log(`1: Emitting event ${event} for node ${nodeid}`);
   const callbacks = eventMap[nodeid];
-  log(`2: Emitting event ${event} for node ${nodeid}`);
   callbacks?.[event]?.(e);
 }
 
 // src/component/adder.tsx
-import { log as log2 } from "docs:adder/ui";
+import { log } from "docs:adder/ui";
 var Ev = class {
   constructor(_value = "", _checked = false) {
     this._value = _value;
     this._checked = _checked;
-    log2(`Event created with value: ${this._value}, checked: ${this._checked}`);
+    log(`Event created with value: ${this._value}, checked: ${this._checked}`);
   }
   preventDefault() {
-    log2("preventDefault called");
+    log("preventDefault called");
   }
   stopPropagation() {
-    log2("stopPropagation called");
+    log("stopPropagation called");
   }
   value() {
     return this._value;
@@ -78,24 +73,20 @@ var initcomponent = {
       "input",
       {
         type: "text",
-        onChange: (e) => log2(`Input changed: ${e.value()}`)
+        onChange: (e) => log(`Input changed: ${e.value()}`)
       }
     ), /* @__PURE__ */ d(
       "button",
       {
         onClick: (e) => {
           i++;
-          log2("Button clicked!");
-          log2(`Event value: ${e.value()}`);
-          log2(`Event checked: ${e.checked()}`);
-          log2(`Button clicked ${i} times`);
         }
       },
       "test"
-    ), "uut!!", i, /* @__PURE__ */ d(ComponentV2, { title: "This is it!1", description: "newschool1" }), /* @__PURE__ */ d(ComponentV3, { title: "This is it!2", description: "newschool2" })), "Hello!");
+    ), "uut!!", i, /* @__PURE__ */ d(ComponentV2, { title: "This is it!", description: "newschool" }), /* @__PURE__ */ d(ComponentV3, { title: "This is it!", description: "newschool" }), i > 5 && /* @__PURE__ */ d("div", null, "more than 5 clicks!")), "Hello!");
   },
   emit: (nodeid, event, e) => {
-    log2(`Emitting event ${event} for node ${nodeid}`);
+    log(`Emitting event ${event} for node ${nodeid}`);
     return emit(nodeid, event, e);
   },
   Event: Ev

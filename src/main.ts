@@ -2,6 +2,7 @@ import { HttpFileLoader } from "./file-loader";
 import hid from "hyperid";
 import { patch } from "./setup-snabbdom";
 import { h, type VNode, type VNodeChildren, type VNodeData } from "snabbdom";
+import { transpile } from "@bytecodealliance/jco";
 
 export interface Prop {
   key: string;
@@ -35,20 +36,17 @@ export class DruidUI extends HTMLElement {
 
   set fileloader(loader: HttpFileLoader) {
     this.fl = loader;
-    this.loadEntrypointFromUrl();
+
+    const entrypoint = this.getAttribute("entrypoint");
+    if (!entrypoint) {
+      console.warn("No entrypoint attribute set.");
+      return;
+    }
+    this.loadTranspile(entrypoint);
   }
 
   static get observedAttributes() {
-    return [
-      "entrypoint",
-      "path",
-      "default-style",
-      "profile",
-      "css",
-      "style",
-      "fileloader",
-      "routing-strategy",
-    ];
+    return ["entrypoint", "path", "profile", "css", "style", "fileloader"];
   }
 
   attributeChangedCallback(
@@ -112,19 +110,57 @@ export class DruidUI extends HTMLElement {
     this.wrapperEl.classList.add("druid-wrapper");
     this.mountEl = document.createElement("div");
     this.mountEl.classList.add("druid-mount");
+    this.mountEl.innerText = "Transpiling...";
 
     this.wrapperEl.appendChild(this.mountEl);
     this.shadow.appendChild(this.wrapperEl);
   }
 
-  async loadEntrypointFromUrl() {
-    const entrypoint = this.getAttribute("entrypoint");
+  loadTranspile = async (file: string) => {
+    const response = await fetch(file);
 
-    const t = await import(entrypoint!);
+    const t = (await transpile(await response.arrayBuffer(), {
+      name: "test",
+      instantiation: { tag: "async" },
+    })) as {
+      files: Array<[string, Uint8Array]>;
+    };
 
-    console.log(t);
+    for (const file of t.files) {
+      const [f, content] = file as [string, Uint8Array];
 
-    const i = await t.instantiate(undefined, {
+      if (f.endsWith(".js")) {
+        console.log("found js file:");
+        console.log(content);
+        const blob = new Blob([content], {
+          type: "application/javascript",
+        });
+
+        const moduleUrl = URL.createObjectURL(blob);
+
+        console.log("Importing module from URL:", moduleUrl);
+
+        this.loadEntrypointFromUrl(moduleUrl, (filename: string) => {
+          const [, content] = t.files.find((f) => f[0] === filename) || [];
+          if (!content) {
+            throw new Error(`File ${filename} not found in transpiled files.`);
+          }
+          return WebAssembly.compile(content);
+        });
+
+        URL.revokeObjectURL(moduleUrl);
+        break;
+      }
+    }
+  };
+
+  async loadEntrypointFromUrl(
+    entrypoint: string,
+    loadCompile?: (file: string) => Promise<WebAssembly.Module>
+  ) {
+    const t = await import(/* @vite-ignore */ entrypoint!);
+
+    const i = await t.instantiate(loadCompile, {
       "docs:adder/ui": {
         d: (element: string, props: Props, children: string[]) => {
           const id = hid();
@@ -137,7 +173,6 @@ export class DruidUI extends HTMLElement {
         },
       },
     });
-    console.log("Instantiated:", i);
     this.rootComponent = i;
     this.rerender();
   }
@@ -147,11 +182,21 @@ export class DruidUI extends HTMLElement {
       console.warn("Root component not initialized yet.");
       return;
     }
+    let renderStart;
     if (this.profile) {
       console.log("Rerendering with profiling enabled");
+      // Start profiling
+      renderStart = performance.now();
     }
 
     const rootId = this.rootComponent.initcomponent.init();
+
+    if (this.profile) {
+      const initEnd = performance.now();
+      console.log(
+        `Init completed in ${(initEnd - renderStart!).toFixed(2)} ms`
+      );
+    }
 
     this.mountEl.innerHTML = "";
     const dom = this.createDomFromIdRec(rootId);
@@ -166,12 +211,18 @@ export class DruidUI extends HTMLElement {
       patch(this.mountEl, dom);
       this.currentVNode = dom;
     }
+    if (this.profile) {
+      const renderEnd = performance.now();
+      console.log(
+        `Render completed in ${(renderEnd - renderStart!).toFixed(2)} ms`
+      );
+    }
   }
 
   private createDomFromIdRec(id: string): VNode | String {
     const node = this.nodes.get(id);
+    //it is a bit strange to do it like that, in theory we want to better distinguish between text nodes and element nodes
     if (!node) {
-      console.warn(`Node with id ${id} not found.`);
       return id;
     }
 
@@ -183,16 +234,12 @@ export class DruidUI extends HTMLElement {
       for (const prop of node.props.prop) {
         data.props[prop.key] = prop.value;
       }
-      console.log("Props.on:", node.props.on);
       data.on = {};
       for (const eventHandler of node.props.on) {
         const [eventType, fnid] = eventHandler;
         if (eventHandler) {
           data.on[eventType] = (e) => {
             const r = this.rootComponent;
-            console.log(
-              `Event ${fnid}:${eventType} triggered on ${node.element}`
-            );
             this.rootComponent.initcomponent.emit(
               fnid,
               eventType,
@@ -208,8 +255,6 @@ export class DruidUI extends HTMLElement {
     }
 
     const ch: VNodeChildren = [];
-    // Append children
-    console.log("Children:", node.children);
     if (node.children) {
       for (const childId of node.children) {
         const childEl = this.createDomFromIdRec(childId);

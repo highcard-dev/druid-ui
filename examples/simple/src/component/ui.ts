@@ -19,9 +19,7 @@ export function d(
   props?: Record<string, any>,
   ...children: string[]
 ) {
-  log(tag.toString());
   if (typeof tag !== "string") {
-    log("Rendering component via its view method");
     if (typeof tag === "function") {
       return tag(props);
     }
@@ -55,8 +53,6 @@ export function d(
 }
 
 export function emit(nodeid: string, event: string, e: Event) {
-  log(`1: Emitting event ${event} for node ${nodeid}`);
   const callbacks = eventMap[nodeid];
-  log(`2: Emitting event ${event} for node ${nodeid}`);
   callbacks?.[event]?.(e);
 }
