@@ -96,7 +96,7 @@ ServerProperties = {
                 placeholder = "Filter fields...",
                 value = searchTerm,
                 onkeyup = function(e)
-                    searchTerm = e
+                    searchTerm = e.value
                 end
             })
         }))
