@@ -1,4 +1,4 @@
-import { DruidUI } from "../../../src/main";
+import { DruidUI } from "../../../src/ui";
 
 const druidUiElement = new DruidUI();
 

@@ -1,31 +1,13 @@
 /// <reference types="../../../../generated/types/guest/import/myworld.d.ts" />
 /** @jsx d */
-import { Event } from "docs:adder/initcomponent";
+import { Event, Context } from "druid:ui/initcomponent";
 import { d, emit } from "./ui";
-import { log } from "docs:adder/ui";
+import { log } from "druid:ui/ui";
 
-class Ev {
-  constructor(private _value: string = "", private _checked: boolean = false) {
-    log(`Event created with value: ${this._value}, checked: ${this._checked}`);
-  }
-
-  preventDefault() {
-    log("preventDefault called");
-  }
-  stopPropagation() {
-    log("stopPropagation called");
-  }
-  value() {
-    return this._value;
-  }
-  checked() {
-    return this._checked;
-  }
-}
 let i = 0;
 
 const ComponentV2 = {
-  view: ({ title, description }) => (
+  view: ({ title, description }: any) => (
     <div>
       <h1>{title}</h1>
       <h2>{description}</h2>
@@ -39,8 +21,17 @@ const ComponentV3 = ({ title, description }) => (
   </div>
 );
 
-export const initcomponent = {
-  init: () => {
+export const component = {
+  init: (ctx: Context) => {
+    log(`Init called with path: ${ctx.path}`);
+    if (ctx.path == "/test") {
+      return (
+        <div>
+          <a href="/">go back</a>
+          Test path reached!
+        </div>
+      );
+    }
     return (
       <div class="hello">
         <h2>lol</h2>
@@ -63,6 +54,7 @@ export const initcomponent = {
           <ComponentV3 title="This is it!" description="newschool" />
           {i > 5 && <div>more than 5 clicks!</div>}
         </main>
+        <a href="/test">go to test</a>
         Hello!
       </div>
     );
@@ -71,5 +63,4 @@ export const initcomponent = {
     log(`Emitting event ${event} for node ${nodeid}`);
     return emit(nodeid, event, e);
   },
-  Event: Ev,
 };

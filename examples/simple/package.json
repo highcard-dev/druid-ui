@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
-    "build:esbuild": "esbuild src/component/adder.tsx --bundle --outfile=public/bundle.js --external:docs:adder/ui --external:docs:adder/initcomponent --format=esm",
-    "build:componentize": "jco componentize --wit ../../wit/druid-ui.wit --world-name myworld --out public/adder.wasm --disable=all public/bundle.js",
+    "build:esbuild": "esbuild src/component/adder.tsx --bundle --outfile=public/bundle.js --external:druid:ui/ui --external:druid:ui/initcomponent --format=esm",
+    "build:componentize": "jco componentize --wit ../../wit/ --world-name myworld --out public/adder.wasm --disable=all public/bundle.js",
     "build:transpile": "jco transpile public/adder.wasm -o transpiled --instantiation async",
     "build": "npm run build:esbuild && npm run build:componentize"
   },

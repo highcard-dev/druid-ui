@@ -1,6 +1,6 @@
-import { Event } from "docs:adder/initcomponent";
-import { d as dfunc, Prop, Props } from "docs:adder/ui";
-import { log } from "docs:adder/ui";
+import { Event } from "druid:ui/initcomponent";
+import { d as dfunc, Prop, Props } from "druid:ui/ui";
+import { log } from "druid:ui/ui";
 
 const eventMap: Record<string, Record<string, Function>> = {};
 

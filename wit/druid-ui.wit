@@ -1,11 +1,9 @@
-package docs:adder;
+package druid:ui;
 
 
 interface ui {
 
-
     record prop { key: string, value: string, }
-
 
     record props {
         prop: list<prop>,
@@ -19,7 +17,7 @@ interface ui {
 
 }
 
-interface initcomponent {
+interface utils {
 
     resource event {
         constructor(value: string, checked: bool);
@@ -29,12 +27,8 @@ interface initcomponent {
         checked: func() -> bool;
     }
 
-    init: func() -> string;
-    emit: func(nodeid: string, event: string, e: event);
-}
+    record context {
+        path: string
+    }
 
-
-world myworld {
-    import ui;
-    export initcomponent;
 }

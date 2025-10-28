@@ -1,6 +1,6 @@
-import "./main";
+import "./ui";
 import React, { useEffect, useRef } from "react";
-import type { DruidUI as DruidUiType } from "./main";
+import type { DruidUI as DruidUiType } from "./ui";
 
 interface DruidUIProps {
   entrypoint?: string;

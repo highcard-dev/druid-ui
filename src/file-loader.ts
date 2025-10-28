@@ -14,15 +14,13 @@ interface FileLoaderOptions {
 }
 
 interface HttpResponse {
-  text: string;
-  json: any;
+  text: ArrayBuffer;
   headers: Record<string, string>;
   contentType: string | null;
 }
 
 export interface FileLoader {
-  load(path: string, options?: FileLoaderOptions): Promise<string>;
-  loadEntrypoint(): Promise<Record<string, string>>;
+  load(path: string, options?: FileLoaderOptions): Promise<HttpResponse>;
 }
 
 export class HttpFileLoader {
@@ -89,13 +87,7 @@ export class HttpFileLoader {
     }
 
     // Extract all fetch-specific data
-    const text = await res.text();
-    let json: any = null;
-    try {
-      json = JSON.parse(text);
-    } catch {
-      // Not valid JSON, keep as null
-    }
+    const text = await res.arrayBuffer();
 
     const responseHeaders: Record<string, string> = {};
     // Handle both real Headers object and mocked headers
@@ -109,7 +101,6 @@ export class HttpFileLoader {
 
     return {
       text,
-      json,
       headers: responseHeaders,
       contentType,
     };
@@ -118,27 +109,6 @@ export class HttpFileLoader {
   async load(path: string, options?: FileLoaderOptions) {
     const filePath = this.baseUrl ? `${this.baseUrl}/${path}` : this.entrypoint;
     const response = await this.loadHttp(filePath, options);
-    return response.text;
-  }
-
-  async loadEntrypoint() {
-    const response = await this.loadHttp(this.entrypoint);
-    const isIndex = response.contentType === "application/json";
-    if (!isIndex) {
-      this.baseUrl = undefined;
-      return {
-        "main.lua": response.text,
-      };
-    }
-
-    this.baseUrl = this.entrypoint.split("/").slice(0, -1).join("/");
-    const filesIndex: string[] = response.json;
-    const files: Record<string, string> = {};
-    await Promise.all(
-      filesIndex.map(async (file) => {
-        files[file] = await this.load(file);
-      })
-    );
-    return files;
+    return response;
   }
 }

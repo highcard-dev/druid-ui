@@ -1,0 +1,15 @@
+package druid:ui;
+
+
+interface component {
+    use utils.{event, context};
+
+    init: func(ctx: context) -> string;
+    emit: func(nodeid: string, event: string, e: event);
+}
+
+
+world myworld {
+    import ui;
+    export component;
+}
