@@ -11,7 +11,10 @@
 		"jsxFactory": "customJsx",
 		"jsxFragmentFactory": "customJsxFrag",
 		"outDir": "./dist",
-		"allowJs": true
+		"allowJs": true,
+		"paths": {
+			"druid-ui/*": ["../../src/*"]
+		}
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", "dist"]

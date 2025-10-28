@@ -14,7 +14,7 @@ interface FileLoaderOptions {
 }
 
 interface HttpResponse {
-  text: ArrayBuffer;
+  buffer: ArrayBuffer;
   headers: Record<string, string>;
   contentType: string | null;
 }
@@ -100,7 +100,7 @@ export class HttpFileLoader {
     const contentType = res.headers.get("Content-Type");
 
     return {
-      text,
+      buffer: text,
       headers: responseHeaders,
       contentType,
     };

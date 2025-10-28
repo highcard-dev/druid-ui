@@ -6,7 +6,7 @@
   "compilerOptions": {
     "types": [
       "./generated/types/guest/import/interfaces/docs-adder-ui.d.ts",
-      "./generated/types/guest/import/myworld.d.ts"
+      "./generated/types/guest/import/druid-ui.d.ts"
     ],
     "target": "ES2022",
     "useDefineForClassFields": true,

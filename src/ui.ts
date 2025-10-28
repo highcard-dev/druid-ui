@@ -2,24 +2,12 @@ import { HttpFileLoader, type FileLoader } from "./file-loader";
 import hid from "hyperid";
 import { patch } from "./setup-snabbdom";
 import { h, type VNode, type VNodeChildren, type VNodeData } from "snabbdom";
-import { transpile } from "@bytecodealliance/jco";
 import {
   HistoryRoutingStrategy,
   type RoutingStrategy,
 } from "./routing-strategy";
 import type { Props } from "druid:ui/ui";
-class Event {
-  constructor(private _value: string = "", private _checked: boolean = false) {}
-
-  preventDefault() {}
-  stopPropagation() {}
-  value() {
-    return this._value;
-  }
-  checked() {
-    return this._checked;
-  }
-}
+import { loadTranspile } from "./transpile";
 
 export class DruidUI extends HTMLElement {
   private shadow: ShadowRoot;
@@ -49,7 +37,9 @@ export class DruidUI extends HTMLElement {
       console.warn("No entrypoint attribute set.");
       return;
     }
-    this.loadTranspile(entrypoint);
+    loadTranspile(entrypoint, loader).then(([moduleUrl, compile]) => {
+      this.loadEntrypointFromUrl(moduleUrl, compile);
+    });
   }
 
   static get observedAttributes() {
@@ -123,52 +113,13 @@ export class DruidUI extends HTMLElement {
     this.shadow.appendChild(this.wrapperEl);
   }
 
-  loadTranspile = async (file: string) => {
-    const response = await this.fl?.load(file);
-    if (!response) {
-      throw new Error(`Failed to load file: ${file}`);
-    }
-
-    const t = (await transpile(response.text, {
-      name: "test",
-      instantiation: { tag: "async" },
-    })) as {
-      files: Array<[string, Uint8Array]>;
-    };
-
-    for (const file of t.files) {
-      const [f, content] = file as [string, Uint8Array];
-
-      if (f.endsWith(".js")) {
-        console.log("found js file:");
-        console.log(content);
-        const blob = new Blob([new Uint8Array(content)], {
-          type: "application/javascript",
-        });
-
-        const moduleUrl = URL.createObjectURL(blob);
-
-        console.log("Importing module from URL:", moduleUrl);
-
-        this.loadEntrypointFromUrl(moduleUrl, (filename: string) => {
-          const [, content] = t.files.find((f) => f[0] === filename) || [];
-          if (!content) {
-            throw new Error(`File ${filename} not found in transpiled files.`);
-          }
-          return WebAssembly.compile(new Uint8Array(content));
-        });
-
-        URL.revokeObjectURL(moduleUrl);
-        break;
-      }
-    }
-  };
-
   async loadEntrypointFromUrl(
     entrypoint: string,
     loadCompile?: (file: string) => Promise<WebAssembly.Module>
   ) {
     const t = await import(/* @vite-ignore */ entrypoint!);
+
+    URL.revokeObjectURL(entrypoint);
 
     const i = await t.instantiate(loadCompile, {
       "druid:ui/ui": {
@@ -293,7 +244,6 @@ customElements.define("druid-ui", DruidUI);
 
 // Re-export everything for easy access
 export * from "./types";
-export * from "./util";
 export * from "./file-loader";
 export * from "./routing-strategy";
 

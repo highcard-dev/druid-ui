@@ -6,12 +6,10 @@
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
-    "build:esbuild": "esbuild src/component/adder.tsx --bundle --outfile=public/bundle.js --external:druid:ui/ui --external:druid:ui/initcomponent --format=esm",
-    "build:componentize": "jco componentize --wit ../../wit/ --world-name myworld --out public/adder.wasm --disable=all public/bundle.js",
-    "build:transpile": "jco transpile public/adder.wasm -o transpiled --instantiation async",
-    "build": "npm run build:esbuild && npm run build:componentize"
+    "build": "tsx ../../src/cli/index.ts src/component/adder.tsx dist"
   },
   "devDependencies": {
+    "tsx": "^4.20.6",
     "typescript": "~5.9.3",
     "vite": "^7.1.7",
     "vite-plugin-top-level-await": "^1.6.0",

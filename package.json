@@ -32,7 +32,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "prepublishOnly": "npm run build",
-    "gen:types": "jco guest-types -o generated/types/guest/import wit/druid-ui.wit --world-name myworld"
+    "gen:types": "jco guest-types -o generated/types/guest/import wit --world-name druid-ui"
   },
   "devDependencies": {
     "@bytecodealliance/jco": "^1.15.1",
@@ -57,6 +57,8 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "@bytecodealliance/componentize-js": "^0.19.3",
+    "esbuild-wasm": "^0.25.11",
     "hyperid": "^3.3.0",
     "snabbdom": "^3.6.2"
   },

@@ -1,12 +1,18 @@
-import type { VNode } from "snabbdom";
+export class Event {
+  private _value: string;
+  private _checked: boolean;
 
-export type Component = {
-  view: (props?: any) => VNode;
-  oninit?: () => void;
-};
+  constructor(_value: string = "", _checked: boolean = false) {
+    this._value = _value;
+    this._checked = _checked;
+  }
 
-export interface Routes {
-  index: Component;
-  notfound: Component;
-  [key: string]: Component;
+  preventDefault() {}
+  stopPropagation() {}
+  value() {
+    return this._value;
+  }
+  checked() {
+    return this._checked;
+  }
 }

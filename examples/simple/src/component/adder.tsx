@@ -1,8 +1,9 @@
-/// <reference types="../../../../generated/types/guest/import/myworld.d.ts" />
+/// <reference types="../../../../generated/types/guest/import/druid-ui.d.ts" />
+/// <reference types="../../../../src/component/jsx.d.ts" />
 /** @jsx d */
-import { Event, Context } from "druid:ui/initcomponent";
-import { d, emit } from "./ui";
+import { Event, Context } from "druid:ui/utils";
 import { log } from "druid:ui/ui";
+import { d, emit } from "druid-ui/component";
 
 let i = 0;
 

@@ -9,7 +9,7 @@ interface component {
 }
 
 
-world myworld {
+world druid-ui {
     import ui;
     export component;
 }
