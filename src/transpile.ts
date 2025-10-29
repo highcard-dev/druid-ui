@@ -21,15 +21,11 @@ export const loadTranspile = async (
     const [f, content] = file as [string, Uint8Array];
 
     if (f.endsWith(".js")) {
-      console.log("found js file:");
-      console.log(content);
       const blob = new Blob([new Uint8Array(content)], {
         type: "application/javascript",
       });
 
       const moduleUrl = URL.createObjectURL(blob);
-
-      console.log("Importing module from URL:", moduleUrl);
 
       return [
         moduleUrl,

@@ -1,4 +1,4 @@
-import { HttpFileLoader, type FileLoader } from "./file-loader";
+import { HttpFileLoader } from "./file-loader";
 import hid from "hyperid";
 import { patch } from "./setup-snabbdom";
 import { h, type VNode, type VNodeChildren, type VNodeData } from "snabbdom";
@@ -15,8 +15,8 @@ export class DruidUI extends HTMLElement {
   private mountEl: HTMLElement;
   private profile: boolean = false;
   private currentVNode: VNode | null = null;
-  private fl?: FileLoader;
   private routeStrategy: RoutingStrategy = new HistoryRoutingStrategy();
+  private loader: HttpFileLoader | null = null;
 
   private nodes = new Map<
     string,
@@ -29,17 +29,24 @@ export class DruidUI extends HTMLElement {
 
   private rootComponent: any;
 
-  set fileloader(loader: HttpFileLoader) {
-    this.fl = loader;
-
+  public reloadComponent() {
     const entrypoint = this.getAttribute("entrypoint");
     if (!entrypoint) {
       console.warn("No entrypoint attribute set.");
       return;
     }
-    loadTranspile(entrypoint, loader).then(([moduleUrl, compile]) => {
+    if (!this.loader) {
+      console.warn("No file loader set.");
+      return;
+    }
+    loadTranspile(entrypoint, this.loader).then(([moduleUrl, compile]) => {
       this.loadEntrypointFromUrl(moduleUrl, compile);
     });
+  }
+
+  set fileloader(loader: HttpFileLoader) {
+    this.loader = loader;
+    this.reloadComponent();
   }
 
   static get observedAttributes() {
@@ -124,7 +131,6 @@ export class DruidUI extends HTMLElement {
     const i = await t.instantiate(loadCompile, {
       "druid:ui/ui": {
         d: (element: string, props: Props, children: string[]) => {
-          console.log("Creating element:", element, props, children);
           const id = hid();
 
           this.nodes.set(id.uuid, { element, props, children });
@@ -173,7 +179,6 @@ export class DruidUI extends HTMLElement {
       console.warn("Root DOM is a string, cannot render:", dom);
       return;
     }
-    console.log({ dom });
     if (this.currentVNode) {
       patch(this.currentVNode, dom);
     } else {

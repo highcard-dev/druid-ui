@@ -1,9 +1,10 @@
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
 import { defineConfig } from "vite";
+import hmr from "./hmr";
 
 export default defineConfig({
-  plugins: [topLevelAwait(), wasm()],
+  plugins: [topLevelAwait(), wasm(), hmr()],
   optimizeDeps: {
     exclude: ["@bytecodealliance/jco"],
   }, // add this config

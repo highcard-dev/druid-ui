@@ -15,6 +15,7 @@ const ComponentV2 = {
     </div>
   ),
 };
+
 const ComponentV3 = ({ title, description }) => (
   <div>
     <h1>{title}</h1>
@@ -37,8 +38,8 @@ export const component = {
       <div class="hello">
         <h2>lol</h2>
         <main>
-          wuuuu
-          <div>fuckme</div>
+          I can give you speed!
+          <div>MM❤️</div>
           <input
             type="text"
             onChange={(e: Event) => log(`Input changed: ${e.value()}`)}
