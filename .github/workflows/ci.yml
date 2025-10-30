@@ -2,9 +2,8 @@ name: Build and Semantic Release
 
 on:
   push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+    branches:
+      - "**"
 
 jobs:
   build-and-test-main:
