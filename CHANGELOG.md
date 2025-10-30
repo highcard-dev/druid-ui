@@ -1,3 +1,9 @@
+## [1.7.2-next.2](https://github.com/highcard-dev/druid-ui/compare/v1.7.2-next.1...v1.7.2-next.2) (2025-10-30)
+
+### Chores
+
+* ci ([2a82818](https://github.com/highcard-dev/druid-ui/commit/2a8281818b8a2c10f38563fef6fccdecb989fca1))
+
 ## [1.7.2-next.1](https://github.com/highcard-dev/druid-ui/compare/v1.7.1...v1.7.2-next.1) (2025-10-30)
 
 ### Chores
