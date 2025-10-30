@@ -22,7 +22,8 @@
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "wit"
   ],
   "scripts": {
     "dev": "vite",

@@ -39,7 +39,6 @@ export const component = {
         <h2>lol</h2>
         <main>
           I can give you speed!
-          <div>MM❤️</div>
           <input
             type="text"
             onChange={(e: Event) => log(`Input changed: ${e.value()}`)}

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
-    "build": "tsx ../../src/cli/index.ts src/component/adder.tsx dist"
+    "build": "node ../../bin src/component/adder.tsx dist"
   },
   "devDependencies": {
     "tsx": "^4.20.6",

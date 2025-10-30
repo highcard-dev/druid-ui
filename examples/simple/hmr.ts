@@ -1,5 +1,5 @@
 import { PluginOption } from "vite";
-import { buildWasm } from "../../src/cli/build";
+import { buildWasm } from "../../bin/build";
 
 export default function I18nHotReload(): PluginOption {
   return {
