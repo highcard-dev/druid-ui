@@ -1,3 +1,17 @@
+## [1.7.2-next.1](https://github.com/highcard-dev/druid-ui/compare/v1.7.1...v1.7.2-next.1) (2025-10-30)
+
+### Chores
+
+* browser transpile ([7ad571f](https://github.com/highcard-dev/druid-ui/commit/7ad571fbf8a89464085a5778e4e47f9569e9f7ae))
+* component model ([d0513ba](https://github.com/highcard-dev/druid-ui/commit/d0513ba870ae1598ce30a591657a0a6a2c0f3958))
+* good shit ([486111d](https://github.com/highcard-dev/druid-ui/commit/486111d47a1689e098c08fa6d9fd5661516fcc0f))
+* polish ([14d976d](https://github.com/highcard-dev/druid-ui/commit/14d976df3d92da3d2845be03f1297ce4d22aa685))
+* pr ci ([d0bb7cc](https://github.com/highcard-dev/druid-ui/commit/d0bb7cc8b4503f9419408d98cd9054c8ad39c7c4))
+* refinment ([4431d93](https://github.com/highcard-dev/druid-ui/commit/4431d93301638fd908ac031dae31cca6c4f288b3))
+* semrelease ([f88f462](https://github.com/highcard-dev/druid-ui/commit/f88f462962b56c3cae1ddb6f789cf7850c258e75))
+* small changes ([7e1d4b5](https://github.com/highcard-dev/druid-ui/commit/7e1d4b562ecddb6220d2e95674228bff53633dea))
+* split up wit files ([a655350](https://github.com/highcard-dev/druid-ui/commit/a6553506629de26249490277e16bf76968691182))
+
 ## [1.7.1](https://github.com/highcard-dev/druid-ui/compare/v1.7.0...v1.7.1) (2025-10-28)
 
 ### Bug Fixes
