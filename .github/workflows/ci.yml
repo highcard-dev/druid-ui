@@ -7,7 +7,7 @@ on:
     branches: [main, master]
 
 jobs:
-  build-and-test:
+  build-and-test-main:
     runs-on: ubuntu-latest
 
     strategy:
@@ -37,7 +37,7 @@ jobs:
         run: npm pack --dry-run
 
   release:
-    needs: build-and-test
+    needs: build-and-test-main
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -73,6 +73,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx semantic-release \
-          --branches canary \
-          --ci
+        run: npx semantic-release

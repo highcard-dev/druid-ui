@@ -1,3 +1,9 @@
+## [1.7.1](https://github.com/highcard-dev/druid-ui/compare/v1.7.0...v1.7.1) (2025-10-28)
+
+### Bug Fixes
+
+* event handler rerender ([2af0e19](https://github.com/highcard-dev/druid-ui/commit/2af0e1914d4145dd1305b56ac014dcdd962385c4))
+
 ## [1.7.0](https://github.com/highcard-dev/druid-ui/compare/v1.6.5...v1.7.0) (2025-10-09)
 
 ### Features
