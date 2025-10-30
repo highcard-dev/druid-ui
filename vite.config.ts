@@ -10,12 +10,8 @@ export default defineConfig(({ mode }) => {
   return {
     build: {
       lib: {
-        entry: resolve(__dirname, "src/ui.ts"),
+        entry: { ui: resolve(__dirname, "src/ui.ts") },
         name: "DruidUI",
-        fileName: (format) => {
-          const suffix = isStandalone ? "standalone" : "lib";
-          return `druid-ui.${suffix}.${format === "es" ? "esm" : format}.js`;
-        },
         formats: ["es", "umd"],
       },
       sourcemap: true,

@@ -5,7 +5,6 @@
   ],
   "compilerOptions": {
     "types": [
-      "./generated/types/guest/import/interfaces/docs-adder-ui.d.ts",
       "./generated/types/guest/import/druid-ui.d.ts"
     ],
     "target": "ES2022",
@@ -22,6 +21,7 @@
     "declaration": true,
     "declarationMap": true,
     "outDir": "dist",
+    "allowImportingTsExtensions": true,
 
     /* Linting */
     "strict": true,

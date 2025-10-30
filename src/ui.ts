@@ -246,11 +246,3 @@ export class DruidUI extends HTMLElement {
 }
 
 customElements.define("druid-ui", DruidUI);
-
-// Re-export everything for easy access
-export * from "./types";
-export * from "./file-loader";
-export * from "./routing-strategy";
-
-// Export React component (conditional to avoid errors when React is not available)
-export { DruidUI as DruidUIReact } from "./react";
