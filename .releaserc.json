@@ -1,14 +1,7 @@
 {
   "branches": [
     "main",
-    {
-      "name": "canary",
-      "prerelease": "canary"
-    },
-    {
-      "name": "pr/*",
-      "prerelease": "canary"
-    }
+    { "name": "next", "channel": "next", "prerelease": true }
   ],
   "plugins": [
     [

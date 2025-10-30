@@ -69,6 +69,4 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          BRANCH_NAME="pr/${PR_NUMBER:-canary}"
-          echo "Running canary release for branch: $BRANCH_NAME"
-          npx semantic-release --branches $BRANCH_NAME --ci
+          npx semantic-release
