@@ -8,9 +8,6 @@ import {
 import { loadTranspile } from "./transpile";
 import { createDomFromIdRec, dfunc, logfunc } from "./host-functions";
 import { Event } from "./types";
-
-// Provide a Props interface so other modules importing from "druid:ui/ui" have a concrete type.
-// Matches the shape consumed in host-functions when building real DOM from recorded nodes.
 export interface Props {
   prop: { key: string; value: any }[];
   on: [string, string][]; // [eventType, fnid]
