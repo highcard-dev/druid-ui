@@ -3,21 +3,17 @@
   "private": false,
   "version": "1.7.2-next.2",
   "type": "module",
-  "main": "./dist/druid-ui.lib.umd.js",
-  "module": "./dist/druid-ui.lib.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/ui.umd.cjs",
+  "module": "./dist/ui.js",
+  "types": "./dist/types/index.d.ts",
   "bin": {
     "druid-ui-build": "bin/index.js"
   },
   "exports": {
     ".": {
-      "types": "./dist/main.d.ts",
-      "import": "./dist/druid-ui.lib.js",
-      "require": "./dist/druid-ui.lib.umd.js"
-    },
-    "./build": {
-      "import": "./bin/build.js",
-      "require": "./bin/build.js"
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/ui.js",
+      "require": "./dist/ui.umd.cjs"
     }
   },
   "files": [
@@ -29,7 +25,7 @@
     "dev": "vite",
     "build": "rm -rf dist && npm run build:lib && npm run build:types",
     "build:lib": "vite build --mode production",
-    "build:types": "tsc --emitDeclarationOnly --outDir dist",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
     "preview": "vite preview",
     "test": "echo 'No tests specified' && exit 0",
     "test:run": "vitest run",

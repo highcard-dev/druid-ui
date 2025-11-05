@@ -2301,7 +2301,9 @@ function logfunc(msg) {
 }
 
 // ../../src/component/raw.ts
-var dfunc = window.druid?.d;
+var dfunc = window.druid?.d || (() => {
+  throw new Error("druid.d function not defined");
+});
 var d = createDFunc(dfunc);
 
 // public/adder.tsx

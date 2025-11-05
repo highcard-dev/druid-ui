@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-import { buildWasm } from "./build.js";
+import { buildWasm, buildRaw } from "../dist/ui.js";
 
 let args = process.argv;
 
-let buildRaw = false;
+let duBuildRaw = false;
 
 args = args.filter((arg) => {
   if (arg === "--raw") {
-    buildRaw = true;
+    duBuildRaw = true;
   }
   return arg === "--raw";
 });
@@ -22,7 +22,7 @@ if (!entryFile) {
 
 const outfolder = args[3] || "./dist";
 
-if (buildRaw) {
+if (duBuildRaw) {
   buildRaw(entryFile, outfolder);
 } else {
   buildWasm(entryFile, outfolder);

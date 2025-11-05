@@ -1,5 +1,5 @@
 import { type PluginOption, type ViteDevServer } from "vite";
-import { buildWasm, buildRaw } from "../../bin/build";
+import { buildWasm, buildRaw } from "../build";
 
 // Simple monotonic version to use as a cache-busting query param for rebuilt wasm.
 // Incremented after each successful rebuild.
