@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   return {
     build: {
       lib: {
-        entry: { ui: resolve(__dirname, "src/ui.ts") },
+        entry: { ui: resolve(__dirname, "src/index.ts") },
         name: "DruidUI",
         formats: ["es", "umd"],
       },
