@@ -1,4 +1,7 @@
 import { DruidUI } from "../../../src/ui";
+import { ViteHMR } from "../../../src/dev";
+
+console.log("Starting simple example");
 
 const druidUiElement = new DruidUI();
 
@@ -9,14 +12,4 @@ const app = document.getElementById("app");
 
 app?.appendChild(druidUiElement);
 
-//vite hot reloading
-if (import.meta.hot) {
-  console.log("HMR enabled");
-  import.meta.hot.on("ui-update", (data) => {
-    //just file name not path
-    const fileName = data?.file.split("/").pop();
-    console.log("UI update for file:", fileName);
-
-    druidUiElement.reloadComponent();
-  });
-}
+ViteHMR(druidUiElement);

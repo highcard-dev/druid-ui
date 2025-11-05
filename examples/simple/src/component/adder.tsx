@@ -1,9 +1,7 @@
 /// <reference types="../../../../generated/types/guest/import/druid-ui.d.ts" />
 /// <reference types="../../../../src/component/jsx.d.ts" />
 /** @jsx d */
-import { Event, Context } from "druid:ui/utils";
-import { log } from "druid:ui/ui";
-import { d, emit } from "druid-ui/component";
+import { Context, d, emit, Event, log } from "druid-ui/component";
 
 let i = 0;
 
@@ -15,7 +13,6 @@ const ComponentV2 = {
     </div>
   ),
 };
-
 const ComponentV3 = ({ title, description }) => (
   <div>
     <h1>{title}</h1>
@@ -30,7 +27,7 @@ export const component = {
       return (
         <div>
           <a href="/">go back</a>
-          Test path reached!
+          Test path reached
         </div>
       );
     }

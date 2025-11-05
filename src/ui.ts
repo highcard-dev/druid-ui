@@ -1,13 +1,26 @@
 import { HttpFileLoader } from "./file-loader";
-import hid from "hyperid";
 import { patch } from "./setup-snabbdom";
-import { h, type VNode, type VNodeChildren, type VNodeData } from "snabbdom";
+import { type VNode } from "snabbdom";
 import {
   HistoryRoutingStrategy,
   type RoutingStrategy,
 } from "./routing-strategy";
-import type { Props } from "druid:ui/ui";
 import { loadTranspile } from "./transpile";
+import { createDomFromIdRec, dfunc, logfunc } from "./host-functions";
+import { Event } from "./types";
+
+// Provide a Props interface so other modules importing from "druid:ui/ui" have a concrete type.
+// Matches the shape consumed in host-functions when building real DOM from recorded nodes.
+export interface Props {
+  prop: { key: string; value: any }[];
+  on: [string, string][]; // [eventType, fnid]
+}
+
+// Dev-time log function exposed for components importing from "druid:ui/ui".
+export function log(msg: string) {
+  // Reuse internal logfunc for consistent labeling.
+  logfunc(msg);
+}
 
 export class DruidUI extends HTMLElement {
   private shadow: ShadowRoot;
@@ -17,15 +30,7 @@ export class DruidUI extends HTMLElement {
   private currentVNode: VNode | null = null;
   private routeStrategy: RoutingStrategy = new HistoryRoutingStrategy();
   private loader: HttpFileLoader | null = null;
-
-  private nodes = new Map<
-    string,
-    {
-      element: string;
-      props?: Props;
-      children?: Array<string>;
-    }
-  >();
+  private _sandbox: boolean = true;
 
   private rootComponent: any;
 
@@ -39,9 +44,13 @@ export class DruidUI extends HTMLElement {
       console.warn("No file loader set.");
       return;
     }
-    loadTranspile(entrypoint, this.loader).then(([moduleUrl, compile]) => {
-      this.loadEntrypointFromUrl(moduleUrl, compile);
-    });
+    if (this._sandbox) {
+      loadTranspile(entrypoint, this.loader).then(([moduleUrl, compile]) => {
+        this.loadEntrypointFromWasmUrl(moduleUrl, compile);
+      });
+    } else {
+      this.loadEntrypointFromJavaScriptUrl(entrypoint);
+    }
   }
 
   set fileloader(loader: HttpFileLoader) {
@@ -49,8 +58,12 @@ export class DruidUI extends HTMLElement {
     this.reloadComponent();
   }
 
+  set sandbox(sandbox: boolean) {
+    this._sandbox = sandbox;
+  }
+
   static get observedAttributes() {
-    return ["entrypoint", "path", "profile", "css", "style", "fileloader"];
+    return ["entrypoint", "path", "profile", "css", "style", "no-sandbox"];
   }
 
   attributeChangedCallback(
@@ -59,6 +72,9 @@ export class DruidUI extends HTMLElement {
     newValue: string
   ) {
     switch (name) {
+      case "no-sandbox":
+        this._sandbox = newValue !== "true";
+        break;
       case "entrypoint":
         this.fileloader = new HttpFileLoader(newValue);
         break;
@@ -120,7 +136,22 @@ export class DruidUI extends HTMLElement {
     this.shadow.appendChild(this.wrapperEl);
   }
 
-  async loadEntrypointFromUrl(
+  async loadEntrypointFromJavaScriptUrl(entrypoint: string) {
+    window.druid = {};
+    window.druid.d = dfunc;
+    const bundleContent = await fetch(entrypoint).then((r) => r.text());
+    //load bundleContent as a module
+    const blob = new Blob([bundleContent], { type: "application/javascript" });
+    const moduleUrl = URL.createObjectURL(blob);
+    const t = await import(/* @vite-ignore */ moduleUrl);
+
+    this.rootComponent = t;
+    this.rerender();
+    URL.revokeObjectURL(moduleUrl);
+    console.log("Loaded module:", t);
+  }
+
+  async loadEntrypointFromWasmUrl(
     entrypoint: string,
     loadCompile?: (file: string) => Promise<WebAssembly.Module>
   ) {
@@ -131,13 +162,10 @@ export class DruidUI extends HTMLElement {
     const i = await t.instantiate(loadCompile, {
       "druid:ui/ui": {
         d: (element: string, props: Props, children: string[]) => {
-          const id = hid();
-
-          this.nodes.set(id.uuid, { element, props, children });
-          return id.uuid;
+          return dfunc(element, props, children);
         },
         log: (msg: string) => {
-          console.log("UI LOG:", msg);
+          logfunc(msg);
         },
       },
       "druid:ui/utils": {
@@ -173,7 +201,17 @@ export class DruidUI extends HTMLElement {
     }
 
     this.mountEl.innerHTML = "";
-    const dom = this.createDomFromIdRec(rootId);
+    const dom = createDomFromIdRec(
+      rootId,
+      (fnid, eventType, e) => {
+        this.rootComponent.component.emit(fnid, eventType, e);
+        this.rerender();
+      },
+      (href: string) => {
+        this.routeStrategy.navigateTo(href);
+        this.rerender();
+      }
+    );
 
     if (dom instanceof String) {
       console.warn("Root DOM is a string, cannot render:", dom);
@@ -191,57 +229,6 @@ export class DruidUI extends HTMLElement {
         `Render completed in ${(renderEnd - renderStart!).toFixed(2)} ms`
       );
     }
-  }
-
-  private createDomFromIdRec(id: string): VNode | String {
-    const node = this.nodes.get(id);
-    //it is a bit strange to do it like that, in theory we want to better distinguish between text nodes and element nodes
-    if (!node) {
-      return id;
-    }
-
-    const data: VNodeData = {};
-
-    // Set properties
-    if (node.props) {
-      data.props = {};
-      for (const prop of node.props.prop) {
-        data.props[prop.key] = prop.value;
-      }
-      data.on = {};
-      for (const eventHandler of node.props.on) {
-        const [eventType, fnid] = eventHandler;
-        if (eventHandler) {
-          data.on[eventType] = (e) => {
-            this.rootComponent.component.emit(
-              fnid,
-              eventType,
-              new Event(e?.currentTarget?.value, e?.currentTarget?.checked)
-            );
-            this.rerender();
-          };
-        }
-      }
-      const href = data.props["href"];
-      if (href && !data.on["click"]) {
-        data.on.click = (e) => {
-          e.preventDefault();
-          console.log("Navigating to overwrite", href);
-          this.routeStrategy.navigateTo(href);
-          this.rerender();
-        };
-      }
-    }
-
-    const ch: VNodeChildren = [];
-    if (node.children) {
-      for (const childId of node.children) {
-        const childEl = this.createDomFromIdRec(childId);
-        ch.push(childEl);
-      }
-    }
-
-    return h(node.element, data, ch);
   }
 }
 

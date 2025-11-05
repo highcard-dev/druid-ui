@@ -1,10 +1,7 @@
-// src/component/adder.tsx
-import { log } from "druid:ui/ui";
-
 // ../../src/component/index.ts
-import "druid:ui/utils";
 import { d as dfunc } from "druid:ui/ui";
-var eventMap = {};
+
+// ../../src/component/utils.ts
 function fnv1aHash(str) {
   let hash = 2166136261;
   for (let i2 = 0; i2 < str.length; i2++) {
@@ -13,37 +10,45 @@ function fnv1aHash(str) {
   }
   return (hash >>> 0).toString(36);
 }
-function d(tag, props, ...children) {
-  if (typeof tag !== "string") {
-    if (typeof tag === "function") {
-      return tag(props);
-    }
-    return tag.view(props);
-  }
-  const ps = { prop: [], on: [] };
-  if (props) {
-    for (const [key, value] of Object.entries(props)) {
-      if (value instanceof Function) {
-        const eventKey = key.startsWith("on") ? key.slice(2).toLowerCase() : key;
-        const cbId = fnv1aHash(value.toString());
-        eventMap[cbId] = eventMap[cbId] || {};
-        eventMap[cbId][eventKey] = value;
-        ps.on.push([eventKey, cbId]);
-      } else {
-        ps.prop.push({ key, value });
-      }
-    }
-  }
-  return dfunc(
-    tag,
-    ps,
-    children.map((c) => c.toString())
-  );
-}
+var eventMap = {};
 function emit(nodeid, event, e) {
   const callbacks = eventMap[nodeid];
   callbacks?.[event]?.(e);
 }
+var createDFunc = (dfunc2) => {
+  return (tag, props, ...children) => {
+    if (typeof tag !== "string") {
+      if (typeof tag === "function") {
+        return tag(props);
+      }
+      return tag.view(props);
+    }
+    const ps = { prop: [], on: [] };
+    if (props) {
+      for (const [key, value] of Object.entries(props)) {
+        if (value instanceof Function) {
+          const eventKey = key.startsWith("on") ? key.slice(2).toLowerCase() : key;
+          const cbId = fnv1aHash(value.toString());
+          eventMap[cbId] = eventMap[cbId] || {};
+          eventMap[cbId][eventKey] = value;
+          ps.on.push([eventKey, cbId]);
+        } else {
+          ps.prop.push({ key, value });
+        }
+      }
+    }
+    return dfunc2(
+      tag,
+      ps,
+      children.map((c) => c.toString())
+    );
+  };
+};
+
+// ../../src/component/index.ts
+import { Event } from "druid:ui/utils";
+import { log } from "druid:ui/ui";
+var d = createDFunc(dfunc);
 
 // src/component/adder.tsx
 var i = 0;
@@ -55,7 +60,7 @@ var component = {
   init: (ctx) => {
     log(`Init called with path: ${ctx.path}`);
     if (ctx.path == "/test") {
-      return /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("a", { href: "/" }, "go back"), "Test path reached!");
+      return /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("a", { href: "/" }, "go back"), "Test path reached");
     }
     return /* @__PURE__ */ d("div", { class: "hello" }, /* @__PURE__ */ d("h2", null, "lol"), /* @__PURE__ */ d("main", null, "I can give you speed!", /* @__PURE__ */ d(
       "input",

@@ -1,0 +1,21 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "Node",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"jsx": "react",
+		"jsxFactory": "customJsx",
+		"jsxFragmentFactory": "customJsxFrag",
+		"outDir": "./dist",
+		"allowJs": true,
+		"paths": {
+			"druid-ui/*": ["../../src/*"]
+		}
+	},
+	"include": ["src/**/*", "public/**/*"],
+	"exclude": ["node_modules", "dist"]
+}
