@@ -1,5 +1,7 @@
 import type { Prop, Props } from "druid:ui/ui";
+import { log, rerender } from "druid:ui/ui";
 import type { Event } from "../types";
+import type { Context } from "druid:ui/component";
 
 export function fnv1aHash(str: string) {
   let hash = 0x811c9dc5; // FNV offset basis
@@ -14,6 +16,7 @@ export function fnv1aHash(str: string) {
 export const eventMap: Record<string, Record<string, Function>> = {};
 
 export function emit(nodeid: string, event: string, e: Event) {
+  log(`Emit called for nodeid: ${nodeid}, event: ${event}`);
   const callbacks = eventMap[nodeid];
   callbacks?.[event]?.(e);
 }
@@ -59,3 +62,41 @@ export const createDFunc = (
     );
   };
 };
+
+// Module-level map that tracks pending async operations initiated through wrappers
+const pendingOperations = new Map<
+  string,
+  { resolve: (value: any) => void; reject: (error: any) => void }
+>();
+
+export const asyncCallback = (
+  id: string,
+  result: { tag: "ok" | "err"; val: any }
+) => {
+  log(`Async callback received for id: ${id} with result: ${result.tag}`);
+  const pending = pendingOperations.get(id);
+  if (pending) {
+    if (result.tag === "ok") {
+      pending.resolve(result.val);
+    } else {
+      pending.reject(new Error(result.val));
+    }
+    pendingOperations.delete(id);
+    rerender();
+  }
+};
+
+export const rawAsyncToPromise =
+  <T>(fn: (...args: any[]) => any) =>
+  (...args: any[]) => {
+    return new Promise<T>((resolve, reject) => {
+      const asyncId = fn(...args);
+      pendingOperations.set(asyncId, { resolve, reject });
+    });
+  };
+
+export const createComponent = (j: (ctx: Context) => string | JSX.Element) => ({
+  init: (ctx: Context) => j(ctx),
+  emit: emit,
+  asyncComplete: asyncCallback,
+});

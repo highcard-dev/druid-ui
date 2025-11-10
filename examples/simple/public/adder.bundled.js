@@ -44,11 +44,36 @@ var createDFunc = (dfunc2) => {
     );
   };
 };
+var pendingOperations = /* @__PURE__ */ new Map();
+var asyncCallback = (id, result) => {
+  const pending = pendingOperations.get(id);
+  if (pending) {
+    if (result.tag === "ok") {
+      pending.resolve(result.val);
+    } else {
+      pending.reject(new Error(result.val));
+    }
+    pendingOperations.delete(id);
+  }
+};
+var rawAsyncToPromise = (fn) => (...args) => {
+  return new Promise((resolve, reject) => {
+    const asyncId = fn(...args);
+    pendingOperations.set(asyncId, { resolve, reject });
+  });
+};
+var createComponent = (j) => ({
+  init: (ctx) => j(ctx),
+  emit,
+  asyncComplete: asyncCallback
+});
 
 // ../../src/component/index.ts
+import { fetch as rawFetch } from "druid:ui/ui";
 import { Event } from "druid:ui/utils";
 import { log } from "druid:ui/ui";
 var d = createDFunc(dfunc);
+var fetch = rawAsyncToPromise(rawFetch);
 
 // src/component/adder.tsx
 var i = 0;
@@ -56,33 +81,34 @@ var ComponentV2 = {
   view: ({ title, description }) => /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("h1", null, title), /* @__PURE__ */ d("h2", null, description))
 };
 var ComponentV3 = ({ title, description }) => /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("h1", null, title), /* @__PURE__ */ d("h2", null, description));
-var component = {
-  init: (ctx) => {
-    log(`Init called with path: ${ctx.path}`);
-    if (ctx.path == "/test") {
-      return /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("a", { href: "/" }, "go back"), "Test path reached");
-    }
-    return /* @__PURE__ */ d("div", { class: "hello" }, /* @__PURE__ */ d("h2", null, "lol"), /* @__PURE__ */ d("main", null, "I can give you speed!", /* @__PURE__ */ d(
-      "input",
-      {
-        type: "text",
-        onChange: (e) => log(`Input changed: ${e.value()}`)
-      }
-    ), /* @__PURE__ */ d(
-      "button",
-      {
-        onClick: (e) => {
-          i++;
-        }
-      },
-      "test"
-    ), "uut!!", i, /* @__PURE__ */ d(ComponentV2, { title: "This is it!", description: "newschool" }), /* @__PURE__ */ d(ComponentV3, { title: "This is it!", description: "newschool" }), i > 5 && /* @__PURE__ */ d("div", null, "more than 5 clicks!")), /* @__PURE__ */ d("a", { href: "/test" }, "go to test"), "Hello!");
-  },
-  emit: (nodeid, event, e) => {
-    log(`Emitting event ${event} for node ${nodeid}`);
-    return emit(nodeid, event, e);
-  }
+var t = async () => {
+  log("Starting fetch poll...");
+  const res = await fetch("https://api.github.com");
+  log(res);
+  log("Fetch poll set up.");
 };
+var component = createComponent((ctx) => {
+  t();
+  log(`Init called with path: ${ctx.path}`);
+  if (ctx.path == "/test") {
+    return /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("a", { href: "/" }, "go back"), "Test path reached");
+  }
+  return /* @__PURE__ */ d("div", { class: "hello" }, /* @__PURE__ */ d("h2", null, "lol"), /* @__PURE__ */ d("main", null, "I can give you speed!", /* @__PURE__ */ d(
+    "input",
+    {
+      type: "text",
+      onChange: (e) => log(`Input changed: ${e.value()}`)
+    }
+  ), /* @__PURE__ */ d(
+    "button",
+    {
+      onClick: (e) => {
+        i++;
+      }
+    },
+    "test"
+  ), "uut!!", i, /* @__PURE__ */ d(ComponentV2, { title: "This is it!", description: "newschool" }), /* @__PURE__ */ d(ComponentV3, { title: "This is it!", description: "newschool" }), i > 5 && /* @__PURE__ */ d("div", null, "more than 5 clicks!")), /* @__PURE__ */ d("a", { href: "/test" }, "go to test"), "Hello!");
+});
 export {
   component
 };

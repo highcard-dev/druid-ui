@@ -8,6 +8,8 @@ import {
 import { loadTranspile } from "./transpile";
 import { createDomFromIdRec, dfunc, logfunc } from "./host-functions";
 import { Event } from "./types";
+import { PromiseToResult, setCb } from "./utils";
+
 export interface Props {
   prop: { key: string; value: any }[];
   on: [string, string][]; // [eventType, fnid]
@@ -28,7 +30,7 @@ export class DruidUI extends HTMLElement {
   private routeStrategy: RoutingStrategy = new HistoryRoutingStrategy();
   private loader: HttpFileLoader | null = null;
   private _sandbox: boolean = true;
-
+  private _extensionObject: object = {};
   private rootComponent: any;
 
   public reloadComponent() {
@@ -50,9 +52,16 @@ export class DruidUI extends HTMLElement {
     }
   }
 
+  public getWrapper(): HTMLElement {
+    return this.wrapperEl;
+  }
   set fileloader(loader: HttpFileLoader) {
     this.loader = loader;
     this.reloadComponent();
+  }
+
+  set extensionObject(obj: object) {
+    this._extensionObject = obj;
   }
 
   set sandbox(sandbox: boolean) {
@@ -133,19 +142,48 @@ export class DruidUI extends HTMLElement {
     this.shadow.appendChild(this.wrapperEl);
   }
 
+  private getExtensionObject() {
+    return {
+      "druid:ui/ui": {
+        d: (element: string, props: Props, children: string[]) => {
+          return dfunc(element, props, children);
+        },
+        log: (msg: string) => {
+          logfunc(msg);
+        },
+        fetch: PromiseToResult(async (url: string) => {
+          const res = await fetch(url);
+          return res.text();
+        }),
+        rerender: () => {
+          console.log("Rerender called from WASM");
+          setTimeout(() => this.rerender(), 0);
+        },
+      },
+      "druid:ui/utils": {
+        Event: Event,
+      },
+      ...this._extensionObject,
+    };
+  }
+
   async loadEntrypointFromJavaScriptUrl(entrypoint: string) {
-    window.druid = {};
-    window.druid.d = dfunc;
+    window["druid-ui"] = {
+      d: dfunc,
+    };
+
+    window["druid-extension"] = this.getExtensionObject();
+
     const bundleContent = await fetch(entrypoint).then((r) => r.text());
     //load bundleContent as a module
     const blob = new Blob([bundleContent], { type: "application/javascript" });
     const moduleUrl = URL.createObjectURL(blob);
     const t = await import(/* @vite-ignore */ moduleUrl);
 
+    setCb(t.component.asyncComplete);
     this.rootComponent = t;
     this.rerender();
     URL.revokeObjectURL(moduleUrl);
-    console.log("Loaded module:", t);
   }
 
   async loadEntrypointFromWasmUrl(
@@ -156,24 +194,16 @@ export class DruidUI extends HTMLElement {
 
     URL.revokeObjectURL(entrypoint);
 
-    const i = await t.instantiate(loadCompile, {
-      "druid:ui/ui": {
-        d: (element: string, props: Props, children: string[]) => {
-          return dfunc(element, props, children);
-        },
-        log: (msg: string) => {
-          logfunc(msg);
-        },
-      },
-      "druid:ui/utils": {
-        Event: Event,
-      },
-    });
+    const i = await t.instantiate(loadCompile, this.getExtensionObject());
+    console.log("WASM module instantiated:", i);
+    setCb(i.component.asyncComplete);
+
     this.rootComponent = i;
     this.rerender();
   }
 
   rerender() {
+    console.log("Rerender called");
     if (!this.rootComponent) {
       console.warn("Root component not initialized yet.");
       return;
@@ -185,11 +215,16 @@ export class DruidUI extends HTMLElement {
       renderStart = performance.now();
     }
 
-    console.log("Rerendering at path:", this.routeStrategy.getCurrentPath());
+    console.log(
+      "Rerendering at path:",
+      this.routeStrategy.getCurrentPath(),
+      this.rootComponent.component
+    );
     const rootId = this.rootComponent.component.init({
       path: this.routeStrategy.getCurrentPath(),
     });
 
+    console.log("Root ID from init:", rootId);
     if (this.profile) {
       const initEnd = performance.now();
       console.log(
@@ -201,7 +236,9 @@ export class DruidUI extends HTMLElement {
     const dom = createDomFromIdRec(
       rootId,
       (fnid, eventType, e) => {
-        this.rootComponent.component.emit(fnid, eventType, e);
+        console.log("Emitting event from rerender:", { fnid, eventType, e });
+        console.log("Root component:", this.rootComponent);
+        //this.rootComponent.component.emit(fnid, eventType, e);
         this.rerender();
       },
       (href: string) => {

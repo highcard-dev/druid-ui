@@ -13,7 +13,7 @@
 		"outDir": "./dist",
 		"allowJs": true,
 		"paths": {
-			"druid-ui/*": ["../../src/*"]
+			"druid-ui/*": ["../../src/*"],
 		}
 	},
 	"include": ["src/**/*", "public/**/*"],

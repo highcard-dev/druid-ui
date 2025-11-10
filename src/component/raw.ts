@@ -1,11 +1,17 @@
-import { createDFunc } from "./utils";
+//this file fully works in the browser, this hopefully can be remvoved in the future and unified with
+import { fetchFunc } from "../host-functions";
+import { createDFunc, rawAsyncToPromise } from "./utils";
 
 const dfunc =
-  window.druid?.d ||
+  window["druid-ui"]?.d ||
   (() => {
     throw new Error("druid.d function not defined");
   });
 
 export const d = createDFunc(dfunc);
-export { emit } from "./utils";
-export { logfunc as log } from "../host-functions";
+
+export const fetch = rawAsyncToPromise<string>(fetchFunc);
+
+export const log = (msg: string) => console.log("UI LOG:", msg);
+
+export { createComponent, rawAsyncToPromise } from "./utils";

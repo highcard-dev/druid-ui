@@ -1,22 +1,23 @@
 import { type PluginOption, type ViteDevServer } from "vite";
-import { buildWasm, buildRaw } from "../build";
+import { buildWasm, buildRaw, type WitExtension } from "../build";
 
 // Simple monotonic version to use as a cache-busting query param for rebuilt wasm.
 // Incremented after each successful rebuild.
 export function ViteHMRPlugin(
   components: string[],
-  buildType: "wasm" | "raw" = "wasm"
+  buildType: "wasm" | "raw" = "wasm",
+  ext?: WitExtension
 ): PluginOption {
   let wasmVersion = Date.now();
 
   async function rebuildAll(server: ViteDevServer, reason: string) {
     console.log(`[${buildType}] Rebuilding (${reason})…`);
     const start = Date.now();
-    // Build all components in parallel and await completion to avoid partial writes.
+
     await Promise.all(
       components.map(async (comp) => {
         if (buildType === "raw") return await buildRaw(comp, "public");
-        await buildWasm(comp, "public");
+        await buildWasm(comp, "public", ext);
         console.log(`[wasm] Build complete for '${comp}'`);
       })
     );

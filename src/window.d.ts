@@ -1,14 +1,14 @@
 // Augment the Window interface to include 'druid'.
 // We define a lightweight shape for better intellisense; extend as needed.
-interface DruidAPI {
-  d?: (element: string, props: any, children: string[]) => any;
-  log?: (msg: string) => void;
-  // Add additional fields exported by the runtime here.
-}
+
+type DruidAPI = Record<string, any>;
 
 declare global {
   interface Window {
-    druid?: DruidAPI;
+    "druid-ui": {
+      d: (...args: any[]) => any;
+    };
+    "druid-extension"?: DruidAPI;
   }
 }
 

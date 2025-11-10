@@ -2,6 +2,7 @@ import hyperid from "hyperid";
 import type { Props } from "druid:ui/ui";
 import { h, type VNode, type VNodeChildren, type VNodeData } from "snabbdom";
 import { Event } from "./types";
+import { PromiseToResult } from "./utils";
 
 const nodes = new Map<
   string,
@@ -78,3 +79,8 @@ export function createDomFromIdRec(
 
   return h(node.element, data, ch);
 }
+
+export const fetchFunc = PromiseToResult(async (url: string) => {
+  const res = await fetch(url);
+  return res.text();
+});

@@ -7,8 +7,8 @@ var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
 };
-var __commonJS = (cb, mod) => function __require() {
-  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+var __commonJS = (cb2, mod) => function __require() {
+  return mod || (0, cb2[__getOwnPropNames(cb2)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
 var __export = (target, all) => {
   for (var name in all)
@@ -2173,7 +2173,7 @@ var require_hyperid = __commonJS({
       return b && b.Buffer ? b.Buffer : require_buffer().Buffer;
     }
     var base64Padding = Buffer2.from("==", "base64");
-    function hyperid2(opts) {
+    function hyperid3(opts) {
       let fixedLength = false;
       let urlSafe = false;
       let maxInt = Math.pow(2, 31) - 1;
@@ -2245,9 +2245,41 @@ var require_hyperid = __commonJS({
       };
       return result;
     }
-    module.exports = hyperid2;
+    module.exports = hyperid3;
     module.exports.decode = decode;
   }
+});
+
+// ../../src/host-functions.ts
+var import_hyperid2 = __toESM(require_hyperid(), 1);
+
+// ../../src/utils.ts
+var import_hyperid = __toESM(require_hyperid(), 1);
+var cb;
+var PromiseToResult = (promiseFn) => {
+  return (...args) => {
+    const id = (0, import_hyperid.default)().uuid;
+    promiseFn(...args).then((result) => {
+      console.log("PromiseToResult resolved:", id, result);
+      cb(id, {
+        tag: "ok",
+        val: result
+      });
+    }).catch((error) => {
+      console.log("Error in PromiseToResult:", error);
+      cb(id, {
+        tag: "err",
+        val: error.message
+      });
+    });
+    return id;
+  };
+};
+
+// ../../src/host-functions.ts
+var fetchFunc = PromiseToResult(async (url) => {
+  const res = await fetch(url);
+  return res.text();
 });
 
 // ../../src/component/utils.ts
@@ -2293,18 +2325,37 @@ var createDFunc = (dfunc2) => {
     );
   };
 };
-
-// ../../src/host-functions.ts
-var import_hyperid = __toESM(require_hyperid(), 1);
-function logfunc(msg) {
-  console.log("UI LOG:", msg);
-}
+var pendingOperations = /* @__PURE__ */ new Map();
+var asyncCallback = (id, result) => {
+  const pending = pendingOperations.get(id);
+  if (pending) {
+    if (result.tag === "ok") {
+      pending.resolve(result.val);
+    } else {
+      pending.reject(new Error(result.val));
+    }
+    pendingOperations.delete(id);
+  }
+};
+var rawAsyncToPromise = (fn) => (...args) => {
+  return new Promise((resolve, reject) => {
+    const asyncId = fn(...args);
+    pendingOperations.set(asyncId, { resolve, reject });
+  });
+};
+var createComponent = (j) => ({
+  init: (ctx) => j(ctx),
+  emit,
+  asyncComplete: asyncCallback
+});
 
 // ../../src/component/raw.ts
 var dfunc = window.druid?.d || (() => {
   throw new Error("druid.d function not defined");
 });
 var d = createDFunc(dfunc);
+var fetch2 = rawAsyncToPromise(fetchFunc);
+var log = (msg) => console.log("UI LOG:", msg);
 
 // public/adder.tsx
 var i = 0;
@@ -2312,33 +2363,27 @@ var ComponentV2 = {
   view: ({ title, description }) => /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("h1", null, title), /* @__PURE__ */ d("h2", null, description))
 };
 var ComponentV3 = ({ title, description }) => /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("h1", null, title), /* @__PURE__ */ d("h2", null, description));
-var component = {
-  init: (ctx) => {
-    logfunc(`Init called with path: ${ctx.path}`);
-    if (ctx.path == "/test") {
-      return /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("a", { href: "/" }, "go back"), "Test path reached");
-    }
-    return /* @__PURE__ */ d("div", { class: "hello" }, /* @__PURE__ */ d("h2", null, "lol"), /* @__PURE__ */ d("main", null, "I can give you speed!!! I can give you strength!", /* @__PURE__ */ d(
-      "input",
-      {
-        type: "text",
-        onChange: (e) => logfunc(`Input changed: ${e.value()}`)
-      }
-    ), /* @__PURE__ */ d(
-      "button",
-      {
-        onClick: (e) => {
-          i++;
-        }
-      },
-      "test"
-    ), "uut!!", i, /* @__PURE__ */ d(ComponentV2, { title: "This is it!", description: "newschool" }), /* @__PURE__ */ d(ComponentV3, { title: "This is it!", description: "newschool" }), i > 5 && /* @__PURE__ */ d("div", null, "more than 5 clicks!")), /* @__PURE__ */ d("a", { href: "/test" }, "go to test"), "Hello!");
-  },
-  emit: (nodeid, event, e) => {
-    logfunc(`Emitting event ${event} for node ${nodeid}`);
-    return emit(nodeid, event, e);
+var component = createComponent((ctx) => {
+  log(`Init called with path: ${ctx.path}`);
+  if (ctx.path == "/test") {
+    return /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("a", { href: "/" }, "go back"), "Test path reached");
   }
-};
+  return /* @__PURE__ */ d("div", { class: "hello" }, /* @__PURE__ */ d("h2", null, "lol"), /* @__PURE__ */ d("main", null, "I can give you speed!!! I can give you strength!", /* @__PURE__ */ d(
+    "input",
+    {
+      type: "text",
+      onChange: (e) => log(`Input changed: ${e.value()}`)
+    }
+  ), /* @__PURE__ */ d(
+    "button",
+    {
+      onClick: (e) => {
+        i++;
+      }
+    },
+    "test"
+  ), "uut!!", i, /* @__PURE__ */ d(ComponentV2, { title: "This is it!", description: "newschool" }), /* @__PURE__ */ d(ComponentV3, { title: "This is it!", description: "newschool" }), i > 5 && /* @__PURE__ */ d("div", null, "more than 5 clicks!")), /* @__PURE__ */ d("a", { href: "/test" }, "go to test"), "Hello!");
+});
 export {
   component
 };
