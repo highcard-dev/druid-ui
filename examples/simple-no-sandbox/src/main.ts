@@ -1,8 +1,6 @@
 import { DruidUI } from "../../../src/ui";
 import { ViteHMR } from "../../../src/dev";
 
-console.log("Starting simple example");
-
 const druidUiElement = new DruidUI();
 druidUiElement.sandbox = false;
 

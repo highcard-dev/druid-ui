@@ -146,14 +146,12 @@ export class DruidUI extends HTMLElement {
     return {
       "druid:ui/ui": {
         d: (element: string, props: Props, children: string[]) => {
-          console.log("d function called with:", { element, props, children });
           return dfunc(element, props, children);
         },
         log: (msg: string) => {
           logfunc(msg);
         },
         rerender: () => {
-          console.log("Rerender called from WASM");
           setTimeout(() => this.rerender(), 0);
         },
       },
@@ -192,7 +190,6 @@ export class DruidUI extends HTMLElement {
     URL.revokeObjectURL(entrypoint);
 
     const i = await t.instantiate(loadCompile, this.getExtensionObject());
-    console.log("WASM module instantiated:", i);
     setCb(i.component.asyncComplete);
 
     this.rootComponent = i;
@@ -200,28 +197,20 @@ export class DruidUI extends HTMLElement {
   }
 
   rerender() {
-    console.log("Rerender called");
     if (!this.rootComponent) {
       console.warn("Root component not initialized yet.");
       return;
     }
     let renderStart;
     if (this.profile) {
-      console.log("Rerendering with profiling enabled");
       // Start profiling
       renderStart = performance.now();
     }
 
-    console.log(
-      "Rerendering at path:",
-      this.routeStrategy.getCurrentPath(),
-      this.rootComponent.component
-    );
     const rootId = this.rootComponent.component.init({
       path: this.routeStrategy.getCurrentPath(),
     });
 
-    console.log("Root ID from init:", rootId);
     if (this.profile) {
       const initEnd = performance.now();
       console.log(
@@ -233,8 +222,6 @@ export class DruidUI extends HTMLElement {
     const dom = createDomFromIdRec(
       rootId,
       (fnid, eventType, e) => {
-        console.log("Emitting event from rerender:", { fnid, eventType, e });
-        console.log("Root component:", this.rootComponent);
         this.rootComponent.component.emit(fnid, eventType, e);
         this.rerender();
       },
