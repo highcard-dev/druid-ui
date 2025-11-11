@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [
     topLevelAwait(),
     wasm(),
-    ViteHMRPlugin(["public/adder.tsx"], "raw"),
+    ViteHMRPlugin(["public/simple.tsx"], "raw"),
   ],
   optimizeDeps: {
     exclude: ["@bytecodealliance/jco", "@bytecodealliance/componentize-js"],

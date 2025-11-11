@@ -79,8 +79,3 @@ export function createDomFromIdRec(
 
   return h(node.element, data, ch);
 }
-
-export const fetchFunc = PromiseToResult(async (url: string) => {
-  const res = await fetch(url);
-  return res.text();
-});

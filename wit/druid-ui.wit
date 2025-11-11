@@ -17,7 +17,6 @@ interface ui {
     d: func(element: string, props: props, children: children) -> string;
     log: func(msg: string);
 
-    fetch: func(url: string) -> async-id;
     rerender: func();
 }
 

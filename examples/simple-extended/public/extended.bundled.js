@@ -35,6 +35,12 @@ var createDFunc = (dfunc2) => {
           eventMap[cbId][eventKey] = value;
           ps.on.push([eventKey, cbId]);
         } else {
+          if (typeof value === "boolean") {
+            if (value) {
+              ps.prop.push({ key, value: "true" });
+            }
+            continue;
+          }
           ps.prop.push({ key, value });
         }
       }
@@ -42,7 +48,7 @@ var createDFunc = (dfunc2) => {
     return dfunc2(
       tag,
       ps,
-      children.map((c) => c.toString())
+      children.filter((c) => typeof c !== "boolean").map((c) => c.toString())
     );
   };
 };
@@ -73,32 +79,47 @@ var createComponent = (j) => ({
 });
 
 // ../../src/component/index.ts
-import { fetch as rawFetch } from "druid:ui/ui";
 import { Event } from "druid:ui/utils";
 import { log as log2 } from "druid:ui/ui";
 var d = createDFunc(dfunc);
-var fetch = rawAsyncToPromise(rawFetch);
 
 // src/component/extended.tsx
 import { requestGet } from "druid:ui/extension";
 var done = false;
+var disabled = false;
+var content = "";
+var url = "https://api.github.com/";
 var component = createComponent(() => {
   if (!done) {
-    rawAsyncToPromise(requestGet)("https://api.github.com/").then((data) => {
-      log2("Fetched data from extension:" + data);
-    });
     done = true;
   }
   return /* @__PURE__ */ d("div", { class: "hello" }, /* @__PURE__ */ d("h2", null, "Hello!"), /* @__PURE__ */ d(
+    "input",
+    {
+      type: "text",
+      value: url,
+      onKeyUp: (e) => {
+        url = e.value();
+      }
+    }
+  ), /* @__PURE__ */ d(
     "button",
     {
+      disabled: disabled ? "true" : "",
       onClick: (e) => {
-        log2("Button clicked!");
+        disabled = true;
+        rawAsyncToPromise(requestGet)("https://api.github.com/").then((data) => {
+          log2("Fetched data:" + data);
+          content = data;
+        }).finally(() => {
+          log2("Fetch operation completed");
+          disabled = false;
+        });
         e.preventDefault();
       }
     },
     "Click me"
-  ));
+  ), !!content && /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("hr", null), /* @__PURE__ */ d("h2", null, "Content"), /* @__PURE__ */ d("pre", null, content)));
 });
 export {
   component

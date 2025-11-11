@@ -51,6 +51,13 @@ export const createDFunc = (
 
           ps.on.push([eventKey, cbId]);
         } else {
+          if (typeof value === "boolean") {
+            //e.g. disabled, checked does not have a "false"
+            if (value) {
+              ps.prop.push({ key, value: "true" });
+            }
+            continue;
+          }
           ps.prop.push({ key, value });
         }
       }
@@ -58,7 +65,7 @@ export const createDFunc = (
     return dfunc(
       tag,
       ps,
-      children.map((c) => c.toString())
+      children.filter((c) => typeof c !== "boolean").map((c) => c.toString())
     );
   };
 };

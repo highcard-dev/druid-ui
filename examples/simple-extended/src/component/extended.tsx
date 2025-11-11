@@ -9,27 +9,51 @@ import {
   rawAsyncToPromise,
 } from "druid-ui/component";
 import { requestGet } from "druid:ui/extension";
-//import { rerender } from "druid:ui/ui";
 
 let done = false;
+let disabled = false;
+let content = "";
+
+let url = "https://api.github.com/";
 export const component = createComponent(() => {
   if (!done) {
-    rawAsyncToPromise(requestGet)("https://api.github.com/").then((data) => {
-      log("Fetched data from extension:" + data);
-    });
     done = true;
   }
   return (
     <div class="hello">
       <h2>Hello!</h2>
+      <input
+        type="text"
+        value={url}
+        onKeyUp={(e: Event) => {
+          url = e.value();
+        }}
+      />
       <button
+        disabled={disabled ? "true" : ""}
         onClick={(e: Event) => {
-          log("Button clicked!");
+          disabled = true;
+          rawAsyncToPromise(requestGet)("https://api.github.com/")
+            .then((data) => {
+              log(("Fetched data:" + data) as string);
+              content = data as string;
+            })
+            .finally(() => {
+              log("Fetch operation completed");
+              disabled = false;
+            });
           e.preventDefault();
         }}
       >
         Click me
       </button>
+      {!!content && (
+        <div>
+          <hr />
+          <h2>Content</h2>
+          <pre>{content}</pre>
+        </div>
+      )}
     </div>
   );
 });

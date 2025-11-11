@@ -8,7 +8,7 @@ import {
 import { loadTranspile } from "./transpile";
 import { createDomFromIdRec, dfunc, logfunc } from "./host-functions";
 import { Event } from "./types";
-import { PromiseToResult, setCb } from "./utils";
+import { setCb } from "./utils";
 
 export interface Props {
   prop: { key: string; value: any }[];
@@ -146,15 +146,12 @@ export class DruidUI extends HTMLElement {
     return {
       "druid:ui/ui": {
         d: (element: string, props: Props, children: string[]) => {
+          console.log("d function called with:", { element, props, children });
           return dfunc(element, props, children);
         },
         log: (msg: string) => {
           logfunc(msg);
         },
-        fetch: PromiseToResult(async (url: string) => {
-          const res = await fetch(url);
-          return res.text();
-        }),
         rerender: () => {
           console.log("Rerender called from WASM");
           setTimeout(() => this.rerender(), 0);
@@ -238,7 +235,7 @@ export class DruidUI extends HTMLElement {
       (fnid, eventType, e) => {
         console.log("Emitting event from rerender:", { fnid, eventType, e });
         console.log("Root component:", this.rootComponent);
-        //this.rootComponent.component.emit(fnid, eventType, e);
+        this.rootComponent.component.emit(fnid, eventType, e);
         this.rerender();
       },
       (href: string) => {

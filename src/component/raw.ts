@@ -1,6 +1,5 @@
 //this file fully works in the browser, this hopefully can be remvoved in the future and unified with
-import { fetchFunc } from "../host-functions";
-import { createDFunc, rawAsyncToPromise } from "./utils";
+import { createDFunc } from "./utils";
 
 const dfunc =
   window["druid-ui"]?.d ||
@@ -9,8 +8,6 @@ const dfunc =
   });
 
 export const d = createDFunc(dfunc);
-
-export const fetch = rawAsyncToPromise<string>(fetchFunc);
 
 export const log = (msg: string) => console.log("UI LOG:", msg);
 
