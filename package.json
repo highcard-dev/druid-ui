@@ -24,7 +24,7 @@
   "scripts": {
     "dev": "vite",
     "build": "rm -rf dist && npm run build:lib && npm run build:types",
-    "build:lib": "vite build --mode production",
+    "build:lib": "parcel build src/index.ts",
     "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
     "build:cli": "esbuild src/build/cmd/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/index.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
     "build:cli-types": "esbuild src/build/cmd/gen-types.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/gen-types.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@bytecodealliance/componentize-js": "^0.19.3",
-    "@bytecodealliance/jco": "^1.15.1",
+    "@bytecodealliance/jco": "^1.15.3",
     "@bytecodealliance/preview2-shim": "^0.17.5",
     "esbuild": "^0.25.11",
     "hyperid": "^3.3.0",
@@ -47,6 +47,8 @@
     "snabbdom": "^3.6.2"
   },
   "devDependencies": {
+    "@parcel/packager-ts": "^2.16.1",
+    "@parcel/transformer-typescript-types": "^2.16.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.0",
     "@semantic-release/git": "^10.0.1",
@@ -60,6 +62,8 @@
     "@types/react": "^19.1.11",
     "@vitest/ui": "^3.2.4",
     "conventional-changelog-conventionalcommits": "^9.1.0",
+    "parce": "^1.2.8",
+    "parcel": "^2.16.1",
     "semantic-release": "^24.0.0",
     "typescript": "~5.8.3",
     "vite": "^7.1.2",
