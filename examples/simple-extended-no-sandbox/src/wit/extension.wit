@@ -1,0 +1,11 @@
+package druid:ui;
+
+interface extension {
+    request-get: func(url: string) -> string;
+}
+
+world druid-ui-extended {
+    import ui;
+    import extension;
+    export component;
+}

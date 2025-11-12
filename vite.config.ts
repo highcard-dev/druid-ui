@@ -5,30 +5,12 @@ import { fileURLToPath } from "node:url";
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig(({ mode }) => {
-  const isStandalone = mode === "standalone";
-
   return {
     build: {
       lib: {
-        entry: resolve(__dirname, "src/main.ts"),
+        entry: { ui: resolve(__dirname, "src/index.ts") },
         name: "DruidUI",
-        fileName: (format) => {
-          const suffix = isStandalone ? "standalone" : "lib";
-          return `druid-ui.${suffix}.${format === "es" ? "esm" : format}.js`;
-        },
         formats: ["es", "umd"],
-      },
-      rollupOptions: {
-        // External dependencies only for library build
-        external: isStandalone ? [] : ["wasmoon", "morphdom"],
-        output: {
-          globals: isStandalone
-            ? undefined
-            : {
-                wasmoon: "wasmoon",
-                morphdom: "morphdom",
-              },
-        },
       },
       sourcemap: true,
       emptyOutDir: false, // Don't empty on each build so we can build both

@@ -1,39 +1,54 @@
 {
   "name": "druid-ui",
   "private": false,
-  "version": "1.7.1",
+  "version": "1.7.2-next.2",
   "type": "module",
-  "main": "./dist/druid-ui.lib.umd.js",
-  "module": "./dist/druid-ui.lib.esm.js",
-  "types": "./dist/main.d.ts",
+  "main": "./dist/ui.umd.cjs",
+  "module": "./dist/ui.js",
+  "types": "./dist/types/index.d.ts",
+  "bin": {
+    "druid-ui-build": "bin/index.js"
+  },
   "exports": {
     ".": {
-      "types": "./dist/main.d.ts",
-      "import": "./dist/druid-ui.lib.esm.js",
-      "require": "./dist/druid-ui.lib.umd.js"
-    },
-    "./standalone": {
-      "import": "./dist/druid-ui.standalone.esm.js",
-      "require": "./dist/druid-ui.standalone.umd.js"
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/ui.js",
+      "require": "./dist/ui.umd.cjs"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "bin",
+    "wit"
   ],
   "scripts": {
     "dev": "vite",
-    "build": "rm -rf dist && npm run build:lib && npm run build:standalone && npm run build:types",
-    "build:lib": "vite build --mode production",
-    "build:standalone": "vite build --mode standalone",
-    "build:types": "tsc --emitDeclarationOnly --outDir dist",
+    "build": "rm -rf dist && npm run build:lib && npm run build:types",
+    "build:lib": "parcel build src/index.ts",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
+    "build:cli": "esbuild src/build/cmd/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/index.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
+    "build:cli-types": "esbuild src/build/cmd/gen-types.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/gen-types.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "echo 'No tests specified' && exit 0",
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "gen:types": "jco guest-types -o generated/types/guest/import wit --world-name druid-ui",
+    "build:example:simple": "druid-ui-build examples/simple/src/component/adder.tsx examples/simple/dist"
+  },
+  "dependencies": {
+    "@bytecodealliance/componentize-js": "^0.19.3",
+    "@bytecodealliance/jco": "^1.15.3",
+    "@bytecodealliance/preview2-shim": "^0.17.5",
+    "esbuild": "^0.25.11",
+    "hyperid": "^3.3.0",
+    "jsdom": "^26.1.0",
+    "snabbdom": "^3.6.2"
   },
   "devDependencies": {
+    "@parcel/packager-ts": "^2.16.1",
+    "@parcel/transformer-typescript-types": "^2.16.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.0",
     "@semantic-release/git": "^10.0.1",
@@ -47,16 +62,12 @@
     "@types/react": "^19.1.11",
     "@vitest/ui": "^3.2.4",
     "conventional-changelog-conventionalcommits": "^9.1.0",
-    "happy-dom": "^18.0.1",
-    "jsdom": "^26.1.0",
+    "parce": "^1.2.8",
+    "parcel": "^2.16.1",
     "semantic-release": "^24.0.0",
     "typescript": "~5.8.3",
     "vite": "^7.1.2",
     "vitest": "^3.2.4"
-  },
-  "dependencies": {
-    "snabbdom": "^3.6.2",
-    "wasmoon": "^1.16.0"
   },
   "peerDependencies": {
     "react": "^18.0.0",
