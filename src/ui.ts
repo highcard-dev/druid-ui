@@ -28,13 +28,14 @@ export class DruidUI extends HTMLElement {
   private profile: boolean = false;
   private currentVNode: VNode | null = null;
   private routeStrategy: RoutingStrategy = new HistoryRoutingStrategy();
-  private loader: HttpFileLoader | null = null;
+  private loader = new HttpFileLoader();
   private _sandbox: boolean = true;
   private _extensionObject: object = {};
+  private _entrypoint?: string;
   private rootComponent: any;
 
   public reloadComponent() {
-    const entrypoint = this.getAttribute("entrypoint");
+    const entrypoint = this._entrypoint;
     if (!entrypoint) {
       console.warn("No entrypoint attribute set.");
       return;
@@ -63,6 +64,10 @@ export class DruidUI extends HTMLElement {
   set extensionObject(obj: object) {
     this._extensionObject = obj;
   }
+  set entrypoint(entrypoint: string) {
+    this._entrypoint = entrypoint;
+    this.reloadComponent();
+  }
 
   set sandbox(sandbox: boolean) {
     this._sandbox = sandbox;
@@ -82,7 +87,7 @@ export class DruidUI extends HTMLElement {
         this._sandbox = newValue !== "true";
         break;
       case "entrypoint":
-        this.fileloader = new HttpFileLoader(newValue);
+        this.entrypoint = newValue;
         break;
       case "path":
         if (oldValue) {

@@ -27,15 +27,14 @@ export class HttpFileLoader {
   private authOptions?: AuthOptions | undefined;
   private defaultHeaders?: Record<string, string> | undefined;
 
-  private entrypoint: string;
   private baseUrl?: string | undefined;
 
   constructor(
-    entrypoint: string,
+    baseUrl?: string,
     authOptions?: AuthOptions,
     defaultHeaders?: Record<string, string>
   ) {
-    this.entrypoint = entrypoint;
+    this.baseUrl = baseUrl;
     this.authOptions = authOptions;
     this.defaultHeaders = defaultHeaders;
   }
@@ -107,7 +106,7 @@ export class HttpFileLoader {
   }
 
   async load(path: string, options?: FileLoaderOptions) {
-    const filePath = this.baseUrl ? `${this.baseUrl}/${path}` : this.entrypoint;
+    const filePath = this.baseUrl ? `${this.baseUrl}/${path}` : path;
     const response = await this.loadHttp(filePath, options);
     return response;
   }

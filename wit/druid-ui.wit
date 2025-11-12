@@ -9,7 +9,7 @@ interface ui {
 
     record props {
         prop: list<prop>,
-        on: list<tuple<string, test>>,
+        on: list<tuple<string, string>>,
     }
 
     type async-id = string;
