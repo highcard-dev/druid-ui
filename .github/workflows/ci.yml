@@ -72,6 +72,9 @@ jobs:
         run: npm run build
       - name: Build component library
         run: npm run build:component-lib
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: Build CLI tool
         run: npm run build:cli && npm run build:cli-types
 
