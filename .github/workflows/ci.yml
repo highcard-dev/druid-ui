@@ -31,6 +31,8 @@ jobs:
 
       - name: Build package
         run: npm run build
+      - name: Build component library
+        run: npm run build:component-lib
       - name: Build CLI tool
         run: npm run build:cli && npm run build:cli-types
 
@@ -68,6 +70,8 @@ jobs:
 
       - name: Build package
         run: npm run build
+      - name: Build component library
+        run: npm run build:component-lib
       - name: Build CLI tool
         run: npm run build:cli && npm run build:cli-types
 
