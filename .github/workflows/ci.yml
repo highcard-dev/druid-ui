@@ -31,6 +31,8 @@ jobs:
 
       - name: Build package
         run: npm run build
+      - name: Build CLI tool
+        run: npm run build:cli && npm run build:cli-types
 
       - name: Check package contents
         run: npm pack --dry-run
