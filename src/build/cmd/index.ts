@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { buildWasm, buildRaw } from "../";
-
+console.log("Druid UI Build Tool");
 let args = process.argv;
 
 let duBuildRaw = false;
@@ -10,29 +10,31 @@ const witFiles: string[] = [];
 args = args.filter((arg) => {
   if (arg === "--raw") {
     duBuildRaw = true;
-    return true;
+    return false;
   }
   if (arg.startsWith("--wit=")) {
     witFiles.push(arg.slice(6));
-    return true;
+    return false;
   }
-  return false;
+  return true;
 });
 
 const entryFile = args[2];
 
 if (!entryFile) {
-  console.error("Usage: ts-node src/cli/index.ts <entry-file> [out-folder]");
+  console.error("Usage: ./cli <entry-file> [out-folder]");
   process.exit(1);
 }
 
 const outfolder = args[3] || "./dist";
-
+console.log(`Building ${entryFile} to ${outfolder}...`);
 if (duBuildRaw) {
-  buildRaw(entryFile, outfolder);
+  await buildRaw(entryFile, outfolder);
 } else {
-  buildWasm(entryFile, outfolder, {
+  await buildWasm(entryFile, outfolder, {
     worldName: "druid-ui",
     files: witFiles,
   });
 }
+
+console.log("Build complete.");
