@@ -71,6 +71,7 @@ export class DruidUI extends HTMLElement {
 
   set sandbox(sandbox: boolean) {
     this._sandbox = sandbox;
+    this.reloadComponent();
   }
 
   static get observedAttributes() {
