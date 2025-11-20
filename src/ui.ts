@@ -27,7 +27,7 @@ export class DruidUI extends HTMLElement {
   private mountEl: HTMLElement;
   private profile: boolean = false;
   private currentVNode: VNode | null = null;
-  private routeStrategy: RoutingStrategy = new HistoryRoutingStrategy();
+  private _routeStrategy: RoutingStrategy = new HistoryRoutingStrategy();
   private loader = new HttpFileLoader();
   private _sandbox: boolean = true;
   private _extensionObject: object = {};
@@ -71,6 +71,11 @@ export class DruidUI extends HTMLElement {
 
   set sandbox(sandbox: boolean) {
     this._sandbox = sandbox;
+    this.reloadComponent();
+  }
+
+  set routeStrategy(strategy: RoutingStrategy) {
+    this._routeStrategy = strategy;
     this.reloadComponent();
   }
 
@@ -214,7 +219,7 @@ export class DruidUI extends HTMLElement {
     }
 
     const rootId = this.rootComponent.component.init({
-      path: this.routeStrategy.getCurrentPath(),
+      path: this._routeStrategy.getCurrentPath(),
     });
 
     if (this.profile) {
@@ -232,7 +237,7 @@ export class DruidUI extends HTMLElement {
         this.rerender();
       },
       (href: string) => {
-        this.routeStrategy.navigateTo(href);
+        this._routeStrategy.navigateTo(href);
         this.rerender();
       }
     );

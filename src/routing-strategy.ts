@@ -1,7 +1,6 @@
 export interface RoutingStrategy {
   getCurrentPath(): string;
   navigateTo(path: string): void;
-  setCurrentPath?(path: string): void;
 }
 
 export class HistoryRoutingStrategy implements RoutingStrategy {
