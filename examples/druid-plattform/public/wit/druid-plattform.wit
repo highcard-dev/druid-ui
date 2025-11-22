@@ -1,0 +1,11 @@
+package druid:ui;
+
+interface plattform {
+    request: func(url: string, method: string, body: string, header: tuple<string, string>) -> string;
+}
+
+world druid-plattform {
+    import ui;
+    import plattform;
+    export component;
+}

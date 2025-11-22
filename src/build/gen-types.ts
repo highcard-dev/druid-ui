@@ -9,7 +9,7 @@ export async function genTypes(
   typePath = "types",
   witPath = "wit-out"
 ) {
-  await getWitFolder(withFiles);
+  await getWitFolder(withFiles, witPath);
   const t = await generateTypes(worldName, {
     wit: {
       tag: "path",

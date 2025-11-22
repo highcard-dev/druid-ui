@@ -29,12 +29,13 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "rm -rf dist && npm run build:lib && npm run build:types && npm run build:component-lib",
+    "build": "rm -rf dist && npm run build:plattform-types && npm run build:types &&  npm run build:lib && npm run build:component-lib",
     "build:lib": "parcel build src/index.ts",
     "build:component-lib": "esbuild src/component/index.ts --bundle --outfile=dist/component/index.js --format=esm --external:druid:ui/ui --external:druid:ui/utils",
     "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
     "build:cli": "esbuild src/build/cmd/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/index.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
     "build:cli-types": "esbuild src/build/cmd/gen-types.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/gen-types.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
+    "build:plattform-types": "tsx ./src/build/cmd/gen-types.ts druid-plattform src/plattform/wit/druid-plattform.wit --temp-wit-path=./src/plattform/wit-dist --out-dir=./src/plattform/types",
     "preview": "vite preview",
     "test": "echo 'No tests specified' && exit 0",
     "test:run": "vitest run",
@@ -72,6 +73,7 @@
     "parce": "^1.2.8",
     "parcel": "^2.16.1",
     "semantic-release": "^24.0.0",
+    "tsx": "^4.20.6",
     "typescript": "~5.8.3",
     "vite": "^7.1.2",
     "vitest": "^3.2.4"
