@@ -112,6 +112,10 @@ export class DruidUI extends HTMLElement {
         const lastLink = Array.from(
           this.shadow.querySelectorAll('link[rel="stylesheet"]')
         ).pop();
+        //clear previous style elements
+        const existingStyles = this.shadow.querySelectorAll("style");
+        existingStyles.forEach((style) => style.remove());
+
         if (lastLink) {
           this.shadow.insertBefore(styleEl, lastLink.nextSibling);
         } else {
