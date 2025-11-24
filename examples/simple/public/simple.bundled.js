@@ -35,6 +35,12 @@ var createDFunc = (dfunc2) => {
           eventMap[cbId][eventKey] = value;
           ps.on.push([eventKey, cbId]);
         } else {
+          if (typeof value === "boolean") {
+            if (value) {
+              ps.prop.push({ key, value: "true" });
+            }
+            continue;
+          }
           ps.prop.push({ key, value });
         }
       }
@@ -42,7 +48,7 @@ var createDFunc = (dfunc2) => {
     return dfunc2(
       tag,
       ps,
-      children.map((c) => c.toString())
+      children.filter((c) => typeof c !== "boolean").map((c) => c.toString())
     );
   };
 };
