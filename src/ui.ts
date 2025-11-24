@@ -184,7 +184,10 @@ export class DruidUI extends HTMLElement {
 
     window["druid-extension"] = this.getExtensionObject();
 
-    const bundleContent = await fetch(entrypoint).then((r) => r.text());
+    const response = await this.loader.load(entrypoint);
+
+    const bundleContent = response.buffer;
+
     //load bundleContent as a module
     const blob = new Blob([bundleContent], { type: "application/javascript" });
     const moduleUrl = URL.createObjectURL(blob);
