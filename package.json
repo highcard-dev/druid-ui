@@ -26,6 +26,9 @@
       "require": "./dist/plattform/index.js"
     }
   },
+  "browserslist": [
+    "last 1 Chrome version"
+  ],
   "files": [
     "dist",
     "bin",
@@ -33,7 +36,6 @@
     "src"
   ],
   "scripts": {
-    "dev": "vite",
     "build": "rm -rf dist && npm run build:plattform-types && npm run build:plattform && npm run build:types &&  npm run build:lib && npm run build:component-lib",
     "build:lib": "parcel build src/index.ts",
     "build:component-lib": "esbuild src/component/index.ts --bundle --outfile=dist/component/index.js --format=esm --external:druid:ui/ui --external:druid:ui/utils",
