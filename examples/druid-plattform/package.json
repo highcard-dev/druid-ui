@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build": "tsx ../../src/build/cmd/index.ts --wit=../../src/plattform/wit/druid-plattform.wit --world-name=druid-plattform src/component/druid.tsx dist"
   },
   "devDependencies": {
     "tsx": "^4.20.6",
