@@ -19,6 +19,20 @@ druidUiElement.extensionObject = {
         return res.text();
       }
     ),
+    loadFileFromDeployment: PromiseToResult(async (path: string) => {
+      console.log(`Loading file from deployment: ${path}`);
+      // Implement your logic to load the file from deployment
+      return "file content";
+    }),
+    saveFileToDeployment: PromiseToResult(
+      async (path: string, content: string) => {
+        console.log(
+          `Saving file to deployment: ${path} with content: ${content}`
+        );
+        // Implement your logic to save the file to deployment
+        return "success";
+      }
+    ),
   },
 };
 druidUiElement.setAttribute("entrypoint", "/druid.wasm");

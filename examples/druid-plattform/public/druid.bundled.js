@@ -84,13 +84,30 @@ import { log as log2 } from "druid:ui/ui";
 var d = createDFunc(dfunc);
 
 // ../../src/plattform/index.ts
-import { request as requestRaw } from "druid:ui/plattform";
+import {
+  request as requestRaw,
+  loadFileFromDeployment as loadFileFromDeploymentRaw,
+  saveFileToDeployment as saveFileToDeploymentRaw
+} from "druid:ui/plattform";
 var request = rawAsyncToPromise(requestRaw);
+var loadFileFromDeployment = rawAsyncToPromise(
+  loadFileFromDeploymentRaw
+);
+var saveFileToDeployment = rawAsyncToPromise(saveFileToDeploymentRaw);
 
 // src/component/druid.tsx
+var content = "test";
 var component = createComponent((ctx) => {
   log2("Druid Plattform Component");
-  return /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("button", { onClick: () => request("url", "GET", "", ["header", "value"]) }, "request"), /* @__PURE__ */ d("br", null), "todo: create a better example for using the druid plattform");
+  return /* @__PURE__ */ d("div", null, /* @__PURE__ */ d(
+    "button",
+    {
+      onClick: async () => {
+        content = await loadFileFromDeployment("url");
+      }
+    },
+    "request"
+  ), /* @__PURE__ */ d("div", null, content));
 });
 export {
   component

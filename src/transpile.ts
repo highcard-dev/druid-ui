@@ -4,6 +4,34 @@ interface TranspileResult {
   files: Array<[string, Uint8Array]>;
 }
 
+interface CacheEntry {
+  jsUrl: string;
+  fileUrls: Record<string, string>;
+}
+
+const CACHE_KEY_PREFIX = "transpile_cache_";
+
+// Helper functions for localStorage caching
+const getCachedEntry = (file: string): CacheEntry | null => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY_PREFIX + file);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (e) {
+    console.warn("Failed to read from cache:", e);
+  }
+  return null;
+};
+
+const setCachedEntry = (file: string, entry: CacheEntry): void => {
+  try {
+    localStorage.setItem(CACHE_KEY_PREFIX + file, JSON.stringify(entry));
+  } catch (e) {
+    console.warn("Failed to write to cache:", e);
+  }
+};
+
 const transpileInWorker = async (
   buffer: ArrayBuffer,
   name: string
@@ -37,6 +65,30 @@ export const loadTranspile = async (
   file: string,
   fileLoader: FileLoader
 ): Promise<[string, (filename: string) => Promise<WebAssembly.Module>]> => {
+  // Check cache first
+  const cached = getCachedEntry(file);
+  if (cached) {
+    // Verify URLs are still valid
+    try {
+      await fetch(cached.jsUrl, { method: "HEAD" });
+      return [
+        cached.jsUrl,
+        async (filename: string) => {
+          const url = cached.fileUrls[filename];
+          if (!url) {
+            throw new Error(`File ${filename} not found in transpiled output.`);
+          }
+          const wasmResponse = await fetch(url);
+          const wasmBuffer = await wasmResponse.arrayBuffer();
+          return await WebAssembly.compile(wasmBuffer);
+        },
+      ];
+    } catch (e) {
+      // Cache is stale, proceed with transpilation
+      console.warn("Cached URLs are stale, re-transpiling");
+    }
+  }
+
   const response = await fileLoader.load(file);
   if (!response) {
     throw new Error(`Failed to load file: ${file}`);
@@ -68,6 +120,14 @@ export const loadTranspile = async (
   if (!jsFileEntry) {
     throw new Error("No JavaScript file found in transpiled output.");
   }
+
+  // Cache the result
+  const cacheEntry: CacheEntry = {
+    jsUrl: jsFileEntry[1],
+    fileUrls: files,
+  };
+  setCachedEntry(file, cacheEntry);
+
   return [
     jsFileEntry[1],
     async (filename: string) => {

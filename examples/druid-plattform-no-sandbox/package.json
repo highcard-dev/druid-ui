@@ -1,0 +1,18 @@
+{
+  "name": "druid-plattform-no-sandboxexample",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "preview": "vite preview",
+    "build": "tsx ../../src/build/cmd/index.ts --wit=../../src/plattform/wit/druid-plattform.wit --world-name=druid-plattform src/component/druid.tsx dist"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.7",
+    "vite-plugin-top-level-await": "^1.6.0",
+    "vite-plugin-wasm": "^3.5.0"
+  }
+}

@@ -39,7 +39,7 @@
     "build": "rm -rf dist && npm run build:plattform-types && npm run build:plattform && npm run build:types &&  npm run build:lib && npm run build:component-lib",
     "build:lib": "parcel build src/index.ts",
     "build:component-lib": "esbuild src/component/index.ts --bundle --outfile=dist/component/index.js --format=esm --external:druid:ui/ui --external:druid:ui/utils",
-    "build:plattform": "esbuild src/plattform/index.ts --bundle --outfile=dist/plattform/index.js --format=esm --external:druid:ui/ui --external:druid:ui/utils --external:druid:ui/plattform",
+    "build:plattform": "esbuild src/plattform/index.ts --bundle --outfile=dist/plattform/index.js --format=esm --external:druid:ui/ui --external:druid:ui/utils --external:druid:ui/plattform --external:druid-ui/component",
     "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
     "build:cli": "esbuild src/build/cmd/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/index.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
     "build:cli-types": "esbuild src/build/cmd/gen-types.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/gen-types.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
