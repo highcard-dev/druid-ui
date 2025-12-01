@@ -65,7 +65,7 @@ export const createDFunc = (
     return dfunc(
       tag,
       ps,
-      children.filter((c) => typeof c !== "boolean").map((c) => c.toString())
+      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString())
     );
   };
 };
