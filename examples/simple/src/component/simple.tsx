@@ -10,23 +10,23 @@ interface ComponentTitle {
   description: string;
 }
 
-const ComponentTitle = ({ title, description }: ComponentTitle) => (
+const ComponentTitle: DruidFC<ComponentTitle> = ({ title, description }) => (
   <div>
     <h1>{title}</h1>
     <h2>{description}</h2>
   </div>
 );
 
-function ComponentTitle2({ title, description }: ComponentTitle) {
+const ComponentTitle2: DruidComponent<ComponentTitle> = () => {
   return {
-    view: () => (
+    view: ({ title, description }) => (
       <div>
         <h1>{title}</h1>
         <h2>{description}</h2>
       </div>
     ),
   };
-}
+};
 
 export const component = createComponent((ctx: Context) => {
   //setTimeout(() => log("lol"), 5000);
@@ -47,7 +47,7 @@ export const component = createComponent((ctx: Context) => {
       />
       <ComponentTitle2
         title="Hello World2"
-        description="Just a simple component2"
+        description="Just a simple component 2"
       />
       <main>
         <button

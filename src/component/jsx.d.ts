@@ -1,21 +1,20 @@
-declare namespace JSX {
-  interface IntrinsicElements {
-    [key: string]: any;
-  }
+type DruidComponent<T = any> = () => { view: (props: T) => JSX.Element };
+type DruidFC<T = any> = (props: T) => JSX.Element;
 
-  interface Element {
-    // the type that your customJsx returns
-    type: any;
-    props: any;
-  }
+declare namespace JSX {
+  interface Element {}
 
   interface ElementAttributesProperty {
-    props: {};
+    view: any; // TS will infer props from `view`
+  }
+
+  interface IntrinsicElements {
+    [key: string]: any;
   }
 
   interface ElementChildrenAttribute {
     children: {};
   }
 
-  type ElementType = string | Function;
+  type ElementType = string | DruidFC | DruidComponent;
 }
