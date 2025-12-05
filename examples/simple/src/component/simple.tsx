@@ -17,6 +17,17 @@ const ComponentTitle = ({ title, description }: ComponentTitle) => (
   </div>
 );
 
+function ComponentTitle2({ title, description }: ComponentTitle) {
+  return {
+    view: () => (
+      <div>
+        <h1>{title}</h1>
+        <h2>{description}</h2>
+      </div>
+    ),
+  };
+}
+
 export const component = createComponent((ctx: Context) => {
   //setTimeout(() => log("lol"), 5000);
   log(`Init called with path: ${ctx.path}`);
@@ -33,6 +44,10 @@ export const component = createComponent((ctx: Context) => {
       <ComponentTitle
         title="Hello World"
         description="Just a simple component"
+      />
+      <ComponentTitle2
+        title="Hello World2"
+        description="Just a simple component2"
       />
       <main>
         <button

@@ -25,13 +25,22 @@ export const createDFunc = (
   dfunc: (element: string, props: Props, children: string[]) => string
 ) => {
   return (
-    tag: string | { view: (props?: any) => void } | ((props?: any) => void),
+    tag:
+      | string
+      | { view: (props?: any) => void }
+      | ((props?: any) => void)
+      | ((props?: any) => { view: (props?: any) => void }),
     props?: Record<string, any>,
     ...children: string[]
   ) => {
     if (typeof tag !== "string") {
       if (typeof tag === "function") {
-        return tag(props);
+        const fnresult = tag(props);
+        if (fnresult?.view) {
+          return fnresult.view(props);
+        } else {
+          return fnresult;
+        }
       }
       return tag.view(props);
     }

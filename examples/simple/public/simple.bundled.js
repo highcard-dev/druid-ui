@@ -21,7 +21,12 @@ var createDFunc = (dfunc2) => {
   return (tag, props, ...children) => {
     if (typeof tag !== "string") {
       if (typeof tag === "function") {
-        return tag(props);
+        const fnresult = tag(props);
+        if (fnresult?.view) {
+          return fnresult.view(props);
+        } else {
+          return fnresult;
+        }
       }
       return tag.view(props);
     }
@@ -48,7 +53,7 @@ var createDFunc = (dfunc2) => {
     return dfunc2(
       tag,
       ps,
-      children.filter((c) => typeof c !== "boolean").map((c) => c.toString())
+      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString())
     );
   };
 };
@@ -80,6 +85,11 @@ var d = createDFunc(dfunc);
 // src/component/simple.tsx
 var i = 0;
 var ComponentTitle = ({ title, description }) => /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("h1", null, title), /* @__PURE__ */ d("h2", null, description));
+function ComponentTitle2({ title, description }) {
+  return {
+    view: () => /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("h1", null, title), /* @__PURE__ */ d("h2", null, description))
+  };
+}
 var component = createComponent((ctx) => {
   log2(`Init called with path: ${ctx.path}`);
   if (ctx.path == "/test") {
@@ -90,6 +100,12 @@ var component = createComponent((ctx) => {
     {
       title: "Hello World",
       description: "Just a simple component"
+    }
+  ), /* @__PURE__ */ d(
+    ComponentTitle2,
+    {
+      title: "Hello World2",
+      description: "Just a simple component2"
     }
   ), /* @__PURE__ */ d("main", null, /* @__PURE__ */ d(
     "button",
