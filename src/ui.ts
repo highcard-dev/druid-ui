@@ -232,7 +232,7 @@ export class DruidUI extends HTMLElement {
 
     if (this.profile) {
       const initEnd = performance.now();
-      console.log(
+      console.debug(
         `Init completed in ${(initEnd - renderStart!).toFixed(2)} ms`
       );
     }
@@ -262,7 +262,7 @@ export class DruidUI extends HTMLElement {
     this.currentVNode = dom;
     if (this.profile) {
       const renderEnd = performance.now();
-      console.log(
+      console.debug(
         `Render completed in ${(renderEnd - renderStart!).toFixed(2)} ms`
       );
     }

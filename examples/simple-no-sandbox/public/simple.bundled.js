@@ -31,7 +31,6 @@ var createDFunc = (dfunc2) => {
           return tag(props);
         }
       }
-      console.log("Creating component for tag:", tag, props);
       const id2 = tag.view(props);
       registerHooks(id2, tag);
       return id2;

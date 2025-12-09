@@ -62,7 +62,6 @@ export const createDFunc = (dfunc: typeof d) => {
           return tag(props);
         }
       }
-      console.log("Creating component for tag:", tag, props);
       const id = tag.view(props);
       registerHooks(id, tag);
       return id;

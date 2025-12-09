@@ -14,7 +14,7 @@ const nodes = new Map<
 >();
 
 export function setHook(id: string, callback: string) {
-  console.log(`Setting hook for id ${id} with callback ${callback}`);
+  console.debug(`Setting hook for id ${id} with callback ${callback}`);
   const node = nodes.get(id);
   if (node) {
     node.hooks = node.hooks || [];
@@ -25,7 +25,7 @@ export function setHook(id: string, callback: string) {
 }
 
 export function dfunc(element: string, props: Props, children: string[]) {
-  console.log("Creating DOM node:", element, props, children);
+  console.debug("Creating DOM node:", element, props, children);
   const id = hyperid();
 
   nodes.set(id.uuid, { element, props, children });
@@ -33,7 +33,7 @@ export function dfunc(element: string, props: Props, children: string[]) {
 }
 
 export function logfunc(msg: string) {
-  console.log("UI LOG:", msg);
+  console.debug("UI LOG:", msg);
 }
 
 export function createDomFromIdRec(
@@ -45,7 +45,7 @@ export function createDomFromIdRec(
   const node = nodes.get(id);
   //it is a bit strange to do it like that, in theory we want to better distinguish between text nodes and element nodes
   if (!node) {
-    console.log("Creating text node for id:", id);
+    console.debug("Creating text node for id:", id);
     return id;
   }
 
@@ -60,7 +60,7 @@ export function createDomFromIdRec(
     data.on = {};
     for (const eventType of node.props.on) {
       data.on[eventType] = (e) => {
-        console.log("Emitting event:", id, eventType, e);
+        console.debug("Emitting event:", id, eventType, e);
         emitEvent(
           id,
           eventType,
