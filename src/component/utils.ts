@@ -1,5 +1,5 @@
 import type { Prop, Props } from "druid:ui/ui";
-import { log, rerender } from "druid:ui/ui";
+import { log, rerender, d, setHook } from "druid:ui/ui";
 import type { Event } from "../types";
 import type { Context } from "druid:ui/component";
 
@@ -13,39 +13,63 @@ export function fnv1aHash(str: string) {
   return (hash >>> 0).toString(36);
 }
 
-export const eventMap: Record<string, Record<string, Function>> = {};
+export const callbackMap: Record<string, Record<string, Function>> = {};
 
 export function emit(nodeid: string, event: string, e: Event) {
   log(`Emit called for nodeid: ${nodeid}, event: ${event}`);
-  const callbacks = eventMap[nodeid];
+  const callbacks = callbackMap[nodeid];
   callbacks?.[event]?.(e);
 }
 
-export const createDFunc = (
-  dfunc: (element: string, props: Props, children: string[]) => string
+const registerHooks = (
+  id: string,
+  fnresult: {
+    view: (props?: any) => string;
+    init?: () => void;
+  }
 ) => {
+  switch (true) {
+    case !!fnresult.init:
+      setHook(id, "init");
+      callbackMap[id] = {
+        ...callbackMap[id],
+        init: fnresult.init,
+      };
+      break;
+  }
+};
+
+export const createDFunc = (dfunc: typeof d) => {
   return (
     tag:
       | string
-      | { view: (props?: any) => void }
+      | { view: (props?: any) => string; init?: () => void }
       | ((props?: any) => void)
-      | ((props?: any) => { view: (props?: any) => void }),
+      | ((props?: any) => { view: (props?: any) => string; init?: () => void }),
     props?: Record<string, any>,
-    ...children: string[]
+    ...children: string[] | Array<string[]>
   ) => {
+    //flatten children, e.g. .map(...) returns array of arrays
+    children = children.flat();
     if (typeof tag !== "string") {
       if (typeof tag === "function") {
         const fnresult = tag(props);
         if (fnresult?.view) {
-          return fnresult.view(props);
+          const id = fnresult.view(props);
+          registerHooks(id, fnresult);
+          return id;
         } else {
-          return fnresult;
+          return tag(props);
         }
       }
-      return tag.view(props);
+      console.log("Creating component for tag:", tag, props);
+      const id = tag.view(props);
+      registerHooks(id, tag);
+      return id;
     }
 
     const ps: Props = { prop: [] as Prop[], on: [] };
+    const cbObj: Record<string, Function> = {};
     if (props) {
       for (const [key, value] of Object.entries(props)) {
         if (value instanceof Function) {
@@ -53,12 +77,9 @@ export const createDFunc = (
             ? key.slice(2).toLowerCase()
             : key;
 
-          const cbId = fnv1aHash(value.toString());
+          cbObj[eventKey] = value;
 
-          eventMap[cbId] = eventMap[cbId] || {};
-          eventMap[cbId][eventKey] = value;
-
-          ps.on.push([eventKey, cbId]);
+          ps.on.push(eventKey);
         } else {
           if (typeof value === "boolean") {
             //e.g. disabled, checked does not have a "false"
@@ -71,11 +92,17 @@ export const createDFunc = (
         }
       }
     }
-    return dfunc(
+    const id = dfunc(
       tag,
       ps,
-      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString())
+      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString()),
+      {}
     );
+    callbackMap[id] = {
+      ...callbackMap[id],
+      ...cbObj,
+    };
+    return id;
   };
 };
 

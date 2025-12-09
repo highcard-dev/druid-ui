@@ -10,12 +10,17 @@ interface ComponentTitle {
   description: string;
 }
 
-const ComponentTitle = ({ title, description }: ComponentTitle) => (
-  <div>
-    <h1>{title}</h1>
-    <h2>{description}</h2>
-  </div>
-);
+const ComponentTitle = {
+  init: () => {
+    log("ComponentTitle init called");
+  },
+  view: ({ title, description }: ComponentTitle) => (
+    <div>
+      <h1>{title}</h1>
+      <h2>{description}</h2>
+    </div>
+  ),
+};
 
 export const component = createComponent((ctx: Context) => {
   //setTimeout(() => log("lol"), 5000);
@@ -30,6 +35,9 @@ export const component = createComponent((ctx: Context) => {
   }
   return (
     <div>
+      {["1", "2", "3"].map((val) => (
+        <div>{val}</div>
+      ))}
       <ComponentTitle
         title="Hello World"
         description="Just a simple component"

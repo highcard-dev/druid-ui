@@ -1,36 +1,49 @@
 // ../../src/component/utils.ts
-var { log, rerender } = window["druid-extension"]["druid:ui/ui"];
-function fnv1aHash(str) {
-  let hash = 2166136261;
-  for (let i2 = 0; i2 < str.length; i2++) {
-    hash ^= str.charCodeAt(i2);
-    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
-  }
-  return (hash >>> 0).toString(36);
-}
-var eventMap = {};
+var { log, rerender, d, setHook } = window["druid-extension"]["druid:ui/ui"];
+var callbackMap = {};
 function emit(nodeid, event, e) {
   log(`Emit called for nodeid: ${nodeid}, event: ${event}`);
-  const callbacks = eventMap[nodeid];
+  const callbacks = callbackMap[nodeid];
   callbacks?.[event]?.(e);
 }
+var registerHooks = (id, fnresult) => {
+  switch (true) {
+    case !!fnresult.init:
+      setHook(id, "init");
+      callbackMap[id] = {
+        ...callbackMap[id],
+        init: fnresult.init
+      };
+      break;
+  }
+};
 var createDFunc = (dfunc2) => {
   return (tag, props, ...children) => {
+    children = children.flat();
     if (typeof tag !== "string") {
       if (typeof tag === "function") {
-        return tag(props);
+        const fnresult = tag(props);
+        if (fnresult?.view) {
+          const id3 = fnresult.view(props);
+          registerHooks(id3, fnresult);
+          return id3;
+        } else {
+          return tag(props);
+        }
       }
-      return tag.view(props);
+      console.log("Creating component for tag:", tag, props);
+      const id2 = tag.view(props);
+      registerHooks(id2, tag);
+      return id2;
     }
     const ps = { prop: [], on: [] };
+    const cbObj = {};
     if (props) {
       for (const [key, value] of Object.entries(props)) {
         if (value instanceof Function) {
           const eventKey = key.startsWith("on") ? key.slice(2).toLowerCase() : key;
-          const cbId = fnv1aHash(value.toString());
-          eventMap[cbId] = eventMap[cbId] || {};
-          eventMap[cbId][eventKey] = value;
-          ps.on.push([eventKey, cbId]);
+          cbObj[eventKey] = value;
+          ps.on.push(eventKey);
         } else {
           if (typeof value === "boolean") {
             if (value) {
@@ -42,11 +55,17 @@ var createDFunc = (dfunc2) => {
         }
       }
     }
-    return dfunc2(
+    const id = dfunc2(
       tag,
       ps,
-      children.filter((c) => typeof c !== "boolean").map((c) => c.toString())
+      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString()),
+      {}
     );
+    callbackMap[id] = {
+      ...callbackMap[id],
+      ...cbObj
+    };
+    return id;
   };
 };
 var pendingOperations = /* @__PURE__ */ new Map();
@@ -73,24 +92,29 @@ var createComponent = (j) => ({
 var dfunc = window["druid-ui"]?.d || (() => {
   throw new Error("druid.d function not defined");
 });
-var d = createDFunc(dfunc);
+var d2 = createDFunc(dfunc);
 var log2 = (msg) => console.log("UI LOG:", msg);
 
 // public/simple.tsx
 var i = 0;
-var ComponentTitle = ({ title, description }) => /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("h1", null, title), /* @__PURE__ */ d("h2", null, description));
+var ComponentTitle = {
+  init: () => {
+    log2("ComponentTitle init called");
+  },
+  view: ({ title, description }) => /* @__PURE__ */ d2("div", null, /* @__PURE__ */ d2("h1", null, title), /* @__PURE__ */ d2("h2", null, description))
+};
 var component = createComponent((ctx) => {
   log2(`Init called with path: ${ctx.path}`);
   if (ctx.path == "/test") {
-    return /* @__PURE__ */ d("div", null, /* @__PURE__ */ d("a", { href: "/" }, "go back"), "Test path reached");
+    return /* @__PURE__ */ d2("div", null, /* @__PURE__ */ d2("a", { href: "/" }, "go back"), "Test path reached");
   }
-  return /* @__PURE__ */ d("div", null, /* @__PURE__ */ d(
+  return /* @__PURE__ */ d2("div", null, ["1", "2", "3"].map((val) => /* @__PURE__ */ d2("div", null, val)), /* @__PURE__ */ d2(
     ComponentTitle,
     {
       title: "Hello World",
       description: "Just a simple component"
     }
-  ), /* @__PURE__ */ d("main", null, /* @__PURE__ */ d(
+  ), /* @__PURE__ */ d2("main", null, /* @__PURE__ */ d2(
     "button",
     {
       onClick: (e) => {
@@ -99,7 +123,7 @@ var component = createComponent((ctx) => {
       }
     },
     "Do click"
-  ), /* @__PURE__ */ d("hr", null), /* @__PURE__ */ d("b", null, "Clicks: "), " ", i, i > 5 ? /* @__PURE__ */ d("div", null, "more than 5 clicks!") : ""), /* @__PURE__ */ d("a", { href: "/test" }, "go to test page"));
+  ), /* @__PURE__ */ d2("hr", null), /* @__PURE__ */ d2("b", null, "Clicks: "), " ", i, i > 5 ? /* @__PURE__ */ d2("div", null, "more than 5 clicks!") : ""), /* @__PURE__ */ d2("a", { href: "/test" }, "go to test page"));
 });
 export {
   component

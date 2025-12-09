@@ -7,10 +7,22 @@ const nodes = new Map<
   string,
   {
     element: string;
-    props?: any;
+    props?: Props;
     children?: Array<string>;
+    hooks?: string[];
   }
 >();
+
+export function setHook(id: string, callback: string) {
+  console.log(`Setting hook for id ${id} with callback ${callback}`);
+  const node = nodes.get(id);
+  if (node) {
+    node.hooks = node.hooks || [];
+    node.hooks.push(callback);
+  } else {
+    console.warn(`setHook: No node found for id ${id}`);
+  }
+}
 
 export function dfunc(element: string, props: Props, children: string[]) {
   console.log("Creating DOM node:", element, props, children);
@@ -26,12 +38,14 @@ export function logfunc(msg: string) {
 
 export function createDomFromIdRec(
   id: string,
-  emitEvent: (fnid: string, eventType: string, event: Event) => void,
+  rerender: () => void,
+  emitEvent: (id: string, eventType: string, event: Event) => void,
   navigate?: (href: string) => void
 ): VNode | String {
   const node = nodes.get(id);
   //it is a bit strange to do it like that, in theory we want to better distinguish between text nodes and element nodes
   if (!node) {
+    console.log("Creating text node for id:", id);
     return id;
   }
 
@@ -44,18 +58,16 @@ export function createDomFromIdRec(
       data.props[prop.key] = prop.value;
     }
     data.on = {};
-    for (const eventHandler of node.props.on) {
-      const [eventType, fnid] = eventHandler;
-      if (eventHandler) {
-        data.on[eventType] = (e) => {
-          console.log("Emitting event:", fnid, eventType, e);
-          emitEvent(
-            fnid,
-            eventType,
-            new Event(e?.currentTarget?.value, e?.currentTarget?.checked)
-          );
-        };
-      }
+    for (const eventType of node.props.on) {
+      data.on[eventType] = (e) => {
+        console.log("Emitting event:", id, eventType, e);
+        emitEvent(
+          id,
+          eventType,
+          new Event(e?.currentTarget?.value, e?.currentTarget?.checked)
+        );
+        rerender();
+      };
     }
     const href = data.props["href"];
     if (href && !data.on["click"]) {
@@ -66,12 +78,26 @@ export function createDomFromIdRec(
         };
       }
     }
+
+    if (node.hooks) {
+      data.hook = {};
+      for (const hookName of node.hooks) {
+        data.hook[hookName as keyof typeof data.hook] = () => {
+          emitEvent(id, hookName, new Event());
+        };
+      }
+    }
   }
 
   const ch: VNodeChildren = [];
   if (node.children) {
     for (const childId of node.children) {
-      const childEl = createDomFromIdRec(childId, emitEvent, navigate);
+      const childEl = createDomFromIdRec(
+        childId,
+        rerender,
+        emitEvent,
+        navigate
+      );
       ch.push(childEl);
     }
   }

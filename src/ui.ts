@@ -6,13 +6,13 @@ import {
   type RoutingStrategy,
 } from "./routing-strategy";
 import { loadTranspile } from "./transpile";
-import { createDomFromIdRec, dfunc, logfunc } from "./host-functions";
+import { createDomFromIdRec, dfunc, logfunc, setHook } from "./host-functions";
 import { Event } from "./types";
 import { setCb } from "./utils";
 
 export interface Props {
   prop: { key: string; value: any }[];
-  on: [string, string][]; // [eventType, fnid]
+  on: string[]; // [eventType, fnid]
 }
 
 // Dev-time log function exposed for components importing from "druid:ui/ui".
@@ -169,6 +169,7 @@ export class DruidUI extends HTMLElement {
         rerender: () => {
           setTimeout(() => this.rerender(), 0);
         },
+        setHook: setHook,
       },
       "druid:ui/utils": {
         Event: Event,
@@ -239,9 +240,9 @@ export class DruidUI extends HTMLElement {
     this.mountEl.innerHTML = "";
     const dom = createDomFromIdRec(
       rootId,
-      (fnid, eventType, e) => {
-        this.rootComponent.component.emit(fnid, eventType, e);
-        this.rerender();
+      this.rerender.bind(this),
+      (nodeId, eventType, e) => {
+        this.rootComponent.component.emit(nodeId, eventType, e);
       },
       (href: string) => {
         this._routeStrategy.navigateTo(href);
