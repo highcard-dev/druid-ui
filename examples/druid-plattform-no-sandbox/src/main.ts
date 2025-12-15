@@ -3,7 +3,7 @@ import { ViteHMR } from "../../../src/dev";
 import { PromiseToResult } from "../../../src/utils";
 
 console.log("Starting simple example");
-
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const druidUiElement = new DruidUI();
 druidUiElement.extensionObject = {
   "druid:ui/plattform": {
@@ -22,7 +22,8 @@ druidUiElement.extensionObject = {
     loadFileFromDeployment: PromiseToResult(async (path: string) => {
       console.log(`Loading file from deployment: ${path}`);
       // Implement your logic to load the file from deployment
-      return "file content";
+      await sleep(1000);
+      return "test=hallo";
     }),
     saveFileToDeployment: PromiseToResult(
       async (path: string, content: string) => {
