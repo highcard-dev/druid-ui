@@ -14,7 +14,6 @@ const dispatch = (id: string, result: Parameters<Callback>[1]) => {
 
   pending.push({ id, result });
 };
-
 export const setCb = (
   callback: (id: string, result: { tag: "ok" | "err"; val: any }) => void
 ) => {
