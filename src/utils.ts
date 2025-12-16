@@ -3,6 +3,7 @@ import hyperid from "hyperid";
 type Callback = (id: string, result: { tag: "ok" | "err"; val: any }) => void;
 
 let cb: Callback | undefined;
+
 const pending: Array<{ id: string; result: Parameters<Callback>[1] }> = [];
 
 const dispatch = (id: string, result: Parameters<Callback>[1]) => {
