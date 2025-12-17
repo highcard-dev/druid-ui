@@ -33,8 +33,26 @@ export class DruidUI extends HTMLElement {
   private _extensionObject: object = {};
   private _entrypoint?: string;
   private rootComponent: any;
+  private _connected: boolean = false;
+
+  public connectedCallback() {
+    this._connected = true;
+    if (this.rootComponent) {
+      this.rerender();
+      return;
+    }
+    this.reloadComponent();
+  }
+
+  public disconnectedCallback() {
+    this._connected = false;
+  }
 
   public reloadComponent() {
+    if (!this._connected) {
+      console.warn("Component not connected, skipping reload.");
+      return;
+    }
     const entrypoint = this._entrypoint;
     if (!entrypoint) {
       console.warn("No entrypoint attribute set.");
@@ -76,7 +94,7 @@ export class DruidUI extends HTMLElement {
 
   set routeStrategy(strategy: RoutingStrategy) {
     this._routeStrategy = strategy;
-    this.reloadComponent();
+    this.rerender();
   }
 
   static get observedAttributes() {
