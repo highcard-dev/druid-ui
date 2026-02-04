@@ -5,13 +5,16 @@ import { join, resolve } from "node:path";
 import { execSync } from "node:child_process";
 
 const projectName = process.argv[2];
+const projectPath = process.argv[3];
 
 if (!projectName) {
-	console.error("Usage: create-druid-ui <project-name>");
+	console.error("Usage: create-druid-ui <project-name> [path]");
 	process.exit(1);
 }
 
-const projectDir = resolve(projectName);
+const projectDir = projectPath
+	? resolve(projectPath, projectName)
+	: resolve(projectName);
 
 console.log(`Creating druid-ui project in ${projectDir}...`);
 
