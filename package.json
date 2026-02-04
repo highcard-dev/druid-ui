@@ -7,7 +7,8 @@
   "module": "./dist/ui.js",
   "types": "./dist/types/index.d.ts",
   "bin": {
-    "druid-ui-build": "bin/index.js"
+    "druid-ui-build": "bin/index.js",
+    "create-druid-ui": "bin/create.js"
   },
   "exports": {
     ".": {
@@ -43,6 +44,7 @@
     "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
     "build:cli": "esbuild src/build/cmd/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/index.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
     "build:cli-types": "esbuild src/build/cmd/gen-types.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/gen-types.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
+    "build:create-cli": "esbuild src/create-druid-ui/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/create.js",
     "build:plattform-types": "tsx ./src/build/cmd/gen-types.ts druid-plattform src/plattform/wit/druid-plattform.wit --temp-wit-path=./src/plattform/wit-dist --out-dir=./src/plattform/types",
     "preview": "vite preview",
     "test": "echo 'No tests specified' && exit 0",

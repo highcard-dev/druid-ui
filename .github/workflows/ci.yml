@@ -32,7 +32,7 @@ jobs:
       - name: Build package
         run: npm run build
       - name: Build CLI tool
-        run: npm run build:cli && npm run build:cli-types
+        run: npm run build:cli && npm run build:cli-types && npm run build:create-cli
 
       - name: Check package contents
         run: npm pack --dry-run
@@ -71,7 +71,7 @@ jobs:
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
       - name: Build CLI tool
-        run: npm run build:cli && npm run build:cli-types
+        run: npm run build:cli && npm run build:cli-types && npm run build:create-cli
 
       - name: Release
         env:

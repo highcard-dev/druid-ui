@@ -8,6 +8,16 @@ This framework makes heavy use of the [Component Model](https://component-model.
 DruidUI is mainly developed for scenarios where you want to support user-generated content/UIs on your platform and thus want to sandbox any execution.
 WebAssembly is a great use case for that, as it encapsulates any run code fully. Only functions that are explicitly forwarded to the WASM target, can be executed.
 
+## Quick Start
+
+```bash
+npx -p druid-ui create-druid-ui my-app
+cd my-app
+npm run build
+```
+
+This scaffolds a new project with `druid-ui` as a dependency, a pre-configured `tsconfig.json`, and an empty `src/index.tsx` entry point.
+
 ## Installation
 
 ```bash
