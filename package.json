@@ -75,7 +75,6 @@
     "@testing-library/jest-dom": "^6.8.0",
     "@tsconfig/node20": "^20.1.6",
     "@tsconfig/strictest": "^2.0.5",
-    "@types/react": "^19.1.11",
     "@vitest/ui": "^3.2.4",
     "conventional-changelog-conventionalcommits": "^9.1.0",
     "parce": "^1.2.8",
@@ -85,9 +84,5 @@
     "typescript": "~5.8.3",
     "vite": "^7.1.2",
     "vitest": "^3.2.4"
-  },
-  "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
   }
 }

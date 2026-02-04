@@ -1,4 +1,7 @@
-type DruidComponent<T = any> = () => { view: (props: T) => JSX.Element };
+type DruidComponent<T = any> = () => {
+  init: () => void;
+  view: (props: T) => JSX.Element;
+};
 type DruidFC<T = any> = (props: T) => JSX.Element;
 
 declare namespace JSX {
