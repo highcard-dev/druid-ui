@@ -28,7 +28,7 @@ const entryFile = args[2];
 
 if (!entryFile) {
   console.error(
-    "Usage: ./cli <entry-file> [out-folder] [--world-name=<name>] [--wit=<file>] [--raw]"
+    "Usage: ./cli <entry-file> [out-folder] [--world-name=<name>] [--wit=<file>] [--raw]",
   );
   process.exit(1);
 }

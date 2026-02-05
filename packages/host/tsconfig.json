@@ -4,7 +4,7 @@
     "rootDir": "src",
     "outDir": "dist/types",
     "allowImportingTsExtensions": true,
-    "types": ["../component/src/types/druid-ui.d.ts"]
+    "types": ["../component/dist/types/druid-ui.d.ts"]
   },
   "include": ["src"]
 }

@@ -26,7 +26,7 @@ const registerHooks = (
   fnresult: {
     view: (props?: any) => string;
     init?: () => void;
-  }
+  },
 ) => {
   switch (true) {
     case !!fnresult.init:
@@ -95,7 +95,6 @@ export const createDFunc = (dfunc: typeof d) => {
       tag,
       ps,
       children.filter((c) => typeof c !== "boolean").map((c) => c?.toString()),
-      {}
     );
     callbackMap[id] = {
       ...callbackMap[id],
@@ -113,7 +112,7 @@ const pendingOperations = new Map<
 
 export const asyncCallback = (
   id: string,
-  result: { tag: "ok" | "err"; val: any }
+  result: { tag: "ok" | "err"; val: any },
 ) => {
   log(`Async callback received for id: ${id} with result: ${result.tag}`);
   const pending = pendingOperations.get(id);

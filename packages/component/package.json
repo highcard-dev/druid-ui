@@ -34,7 +34,8 @@
     "build:types-ui": "druid-ui-gen-types druid-ui --out-dir=dist/types"
   },
   "dependencies": {
-    "@druid-ui/build": "*"
+    "@druid-ui/build": "*",
+    "@druid-ui/host": "*"
   },
   "devDependencies": {
     "esbuild": "^0.25.11",

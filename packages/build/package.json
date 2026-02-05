@@ -21,7 +21,7 @@
     "src"
   ],
   "scripts": {
-    "build": "npm run build:lib && npm run build:cli && npm run build:cli-types && npm run build:types",
+    "build": "npm run build:lib && npm run build:cli && npm run build:cli-types && npm run build:types && npm rebuild --ignore-scripts @druid-ui/build",
     "build:lib": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/index.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js --external:@druid-ui/component",
     "build:cli": "esbuild src/cmd/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/index.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js --external:@druid-ui/component",
     "build:cli-types": "esbuild src/cmd/gen-types.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/gen-types.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
@@ -34,6 +34,7 @@
     "esbuild": "^0.25.11"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "~5.8.3"
   }
 }
