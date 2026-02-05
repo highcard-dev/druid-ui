@@ -9,9 +9,6 @@
   ],
   "scripts": {
     "build": "turbo build --filter='./packages/*'",
-    "test": "vitest run",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
     "gen:types": "jco guest-types -o generated/types/guest/import wit --world-name druid-ui",
     "release": "multi-semantic-release",
     "dev:simple": "turbo dev --filter=simple",
@@ -39,7 +36,6 @@
     "multi-semantic-release": "^3.0.0",
     "semantic-release": "^24.0.0",
     "turbo": "^2.5.3",
-    "typescript": "~5.8.3",
-    "vitest": "^3.2.4"
+    "typescript": "~5.8.3"
   }
 }
