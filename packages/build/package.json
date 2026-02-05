@@ -14,7 +14,12 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "bin", "wit", "src"],
+  "files": [
+    "dist",
+    "bin",
+    "wit",
+    "src"
+  ],
   "scripts": {
     "build": "npm run build:lib && npm run build:cli && npm run build:cli-types && npm run build:types",
     "build:lib": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/index.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js --external:@druid-ui/component",
@@ -26,7 +31,6 @@
     "@bytecodealliance/componentize-js": "^0.19.3",
     "@bytecodealliance/jco": "^1.15.3",
     "@bytecodealliance/preview2-shim": "^0.17.5",
-    "@druid-ui/component": "1.7.2-next.2",
     "esbuild": "^0.25.11"
   },
   "devDependencies": {
