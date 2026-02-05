@@ -14,7 +14,10 @@
       "import": "./dist/client.js"
     }
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "npm run build:plugin && npm run build:client && npm run build:types",
     "build:plugin": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/index.js --external:vite --external:@druid-ui/build",
@@ -30,6 +33,7 @@
     "vite": "^7.0.0"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "esbuild": "^0.25.11",
     "vite": "^7.1.2",
     "typescript": "~5.8.3"

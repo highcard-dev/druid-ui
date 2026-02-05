@@ -1,4 +1,4 @@
-import type { IncomingMessage, ServerResponse } from "node:http";
+import type { IncomingMessage, ServerResponse } from "http";
 import { type PluginOption, type ViteDevServer } from "vite";
 import { buildWasm, buildRaw, type WitExtension } from "@druid-ui/build";
 import { glob } from "tinyglobby";
