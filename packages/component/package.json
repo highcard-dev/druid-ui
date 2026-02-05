@@ -19,7 +19,7 @@
       "types": "./src/jsx.d.ts"
     },
     "./types": {
-      "types": "./src/types/druid-ui.d.ts"
+      "types": "./dist/types/druid-ui.d.ts"
     }
   },
   "files": [
@@ -30,13 +30,12 @@
     "build": "npm run build:lib && npm run build:raw && npm run build:types",
     "build:lib": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm --external:druid:ui/ui --external:druid:ui/utils --external:druid:ui/component --external:@druid-ui/host",
     "build:raw": "esbuild src/raw.ts --bundle --outfile=dist/raw.js --format=esm --external:@druid-ui/host --external:druid:ui/ui --external:druid:ui/utils --external:druid:ui/component",
-    "build:types": "tsc --emitDeclarationOnly --outDir dist/types"
-  },
-  "dependencies": {
-    "@druid-ui/host": "1.7.2-next.2"
+    "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
+    "build:types-ui": "druid-ui-gen-types druid-ui --out-dir=dist/types"
   },
   "devDependencies": {
     "esbuild": "^0.25.11",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "@druid-ui/build": "*"
   }
 }

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { genTypes } from "../gen-types";
 
 // Expected signature: genTypes(withFiles: string[], worldName: string, typePath: string, witPath: string)
@@ -26,7 +27,7 @@ args = args.filter((arg) => {
 
 if (args.length < 1) {
   console.error(
-    "Usage: gen-types <world-name> [additional-wit-files...] [--wit-path=<path>] [--out-dir=<path>]"
+    "Usage: gen-types <world-name> [additional-wit-files...] [--wit-path=<path>] [--out-dir=<path>]",
   );
   process.exit(1);
 }
