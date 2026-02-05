@@ -1,6 +1,5 @@
-import { DruidUI } from "../../../src/ui";
-import { ViteHMR } from "../../../src/dev";
-import { PromiseToResult } from "../../../src/utils";
+import { DruidUI, PromiseToResult } from "@druid-ui/host";
+import { ViteHMR } from "@druid-ui/vite/client";
 
 console.log("Starting simple example");
 

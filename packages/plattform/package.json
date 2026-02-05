@@ -1,0 +1,32 @@
+{
+  "name": "@druid-ui/plattform",
+  "version": "1.7.2-next.2",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "wit"
+  ],
+  "scripts": {
+    "build": "npm run build:plattform-types && npm run build:lib && npm run build:types",
+    "build:plattform-types": "tsx ../build/src/cmd/gen-types.ts druid-plattform wit/druid-plattform.wit --temp-wit-path=./wit-dist --out-dir=./src/types",
+    "build:lib": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm --external:druid:ui/ui --external:druid:ui/utils --external:druid:ui/plattform --external:@druid-ui/component",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist/types"
+  },
+  "dependencies": {
+    "@druid-ui/component": "1.7.2-next.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.11",
+    "tsx": "^4.20.6",
+    "typescript": "~5.8.3"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "@druid-ui/vite",
+  "version": "1.7.2-next.2",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/types/client.d.ts",
+      "import": "./dist/client.js"
+    }
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "npm run build:plugin && npm run build:client && npm run build:types",
+    "build:plugin": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/index.js --external:vite --external:@druid-ui/build",
+    "build:client": "esbuild src/client.ts --bundle --format=esm --outfile=dist/client.js --external:@druid-ui/host",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist/types"
+  },
+  "dependencies": {
+    "@druid-ui/build": "1.7.2-next.2",
+    "@druid-ui/host": "1.7.2-next.2",
+    "tinyglobby": "^0.2.15"
+  },
+  "peerDependencies": {
+    "vite": "^7.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.11",
+    "vite": "^7.1.2",
+    "typescript": "~5.8.3"
+  }
+}

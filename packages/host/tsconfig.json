@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist/types",
+    "allowImportingTsExtensions": true,
+    "types": ["../component/src/types/druid-ui.d.ts"]
+  },
+  "include": ["src"]
+}

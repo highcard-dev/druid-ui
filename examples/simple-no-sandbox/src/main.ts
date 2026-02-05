@@ -1,5 +1,5 @@
-import { DruidUI } from "../../../src/ui";
-import { ViteHMR } from "../../../src/dev";
+import { DruidUI } from "@druid-ui/host";
+import { ViteHMR } from "@druid-ui/vite/client";
 
 const druidUiElement = new DruidUI();
 druidUiElement.sandbox = false;

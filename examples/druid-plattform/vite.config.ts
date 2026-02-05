@@ -1,31 +1,32 @@
 import path from "path";
+import { fileURLToPath } from "url";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
 import { defineConfig } from "vite";
-import { ViteHMRPlugin } from "../../src/dev/plugin";
+import { ViteHMRPlugin } from "@druid-ui/vite";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const plattformPkgDir = path.resolve(__dirname, "../../packages/plattform");
 
 export default defineConfig({
   plugins: [
     topLevelAwait(),
     wasm(),
-    ViteHMRPlugin(["src/component/druid.tsx"], "wasm", {
+    ViteHMRPlugin("src/component/**", "wasm", {
       worldName: "druid-plattform",
-      files: ["../../src/plattform/wit/druid-plattform.wit"],
+      files: [path.resolve(plattformPkgDir, "wit/druid-plattform.wit")],
     }),
   ],
   optimizeDeps: {
-    exclude: ["@bytecodealliance/jco", "@bytecodealliance/componentize-js"],
-  }, // add this config
+    exclude: [
+      "@bytecodealliance/jco",
+      "@bytecodealliance/componentize-js",
+      "@druid-ui/host",
+    ],
+  },
   server: {
     fs: {
-      // Allow serving files from one level up to the project root
       allow: ["../.."],
-    },
-  },
-  resolve: {
-    alias: {
-      // Use absolute paths so Vite doesn't attempt relative resolution from the importing file.
-      "druid:ui/ui": path.resolve(__dirname, "../../src/ui.ts"),
     },
   },
 });

@@ -3,13 +3,11 @@ package druid:ui;
 
 interface ui {
 
-    test: func() -> string;
-
     record prop { key: string, value: string, }
 
     record props {
         prop: list<prop>,
-        on: list<tuple<string, string>>,
+        on: list<string>,
     }
 
     type async-id = string;
@@ -18,7 +16,7 @@ interface ui {
 
     d: func(element: string, props: props, children: children) -> string;
     log: func(msg: string);
-
+    set-hook: func(id: async-id, hook: string);
     rerender: func();
 }
 

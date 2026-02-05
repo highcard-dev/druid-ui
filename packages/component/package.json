@@ -1,0 +1,42 @@
+{
+  "name": "@druid-ui/component",
+  "version": "1.7.2-next.2",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./raw": {
+      "types": "./dist/types/raw.d.ts",
+      "import": "./dist/raw.js",
+      "default": "./dist/raw.js"
+    },
+    "./jsx": {
+      "types": "./src/jsx.d.ts"
+    },
+    "./types": {
+      "types": "./src/types/druid-ui.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "npm run build:lib && npm run build:raw && npm run build:types",
+    "build:lib": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm --external:druid:ui/ui --external:druid:ui/utils --external:druid:ui/component --external:@druid-ui/host",
+    "build:raw": "esbuild src/raw.ts --bundle --outfile=dist/raw.js --format=esm --external:@druid-ui/host --external:druid:ui/ui --external:druid:ui/utils --external:druid:ui/component",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist/types"
+  },
+  "dependencies": {
+    "@druid-ui/host": "1.7.2-next.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.11",
+    "typescript": "~5.8.3"
+  }
+}

@@ -1,72 +1,29 @@
 {
-  "name": "druid-ui",
-  "private": false,
-  "version": "1.7.2-next.2",
+  "name": "druid-ui-monorepo",
+  "private": true,
   "type": "module",
-  "main": "./dist/ui.umd.cjs",
-  "module": "./dist/ui.js",
-  "types": "./dist/types/index.d.ts",
-  "bin": {
-    "druid-ui-build": "bin/index.js",
-    "create-druid-ui": "bin/create.js"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/ui.js",
-      "require": "./dist/ui.umd.cjs"
-    },
-    "./component": {
-      "types": "./dist/types/component/index.d.ts",
-      "import": "./dist/component/index.js",
-      "require": "./dist/component/index.js"
-    },
-    "./plattform": {
-      "types": "./dist/types/plattform/index.d.ts",
-      "import": "./dist/plattform/index.js",
-      "require": "./dist/plattform/index.js"
-    }
-  },
-  "browserslist": [
-    "last 1 Chrome version"
-  ],
-  "files": [
-    "dist",
-    "bin",
-    "wit",
-    "src"
+  "packageManager": "npm@10.8.2",
+  "workspaces": [
+    "packages/*",
+    "examples/*"
   ],
   "scripts": {
-    "build": "rm -rf dist && npm run build:plattform-types && npm run build:plattform && npm run build:types &&  npm run build:lib && npm run build:component-lib",
-    "build:lib": "parcel build src/index.ts",
-    "build:component-lib": "esbuild src/component/index.ts --bundle --outfile=dist/component/index.js --format=esm --external:druid:ui/ui --external:druid:ui/utils",
-    "build:plattform": "esbuild src/plattform/index.ts --bundle --outfile=dist/plattform/index.js --format=esm --external:druid:ui/ui --external:druid:ui/utils --external:druid:ui/plattform --external:druid-ui/component",
-    "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
-    "build:cli": "esbuild src/build/cmd/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/index.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
-    "build:cli-types": "esbuild src/build/cmd/gen-types.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/gen-types.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
-    "build:create-cli": "esbuild src/create-druid-ui/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/create.js",
-    "build:plattform-types": "tsx ./src/build/cmd/gen-types.ts druid-plattform src/plattform/wit/druid-plattform.wit --temp-wit-path=./src/plattform/wit-dist --out-dir=./src/plattform/types",
-    "preview": "vite preview",
-    "test": "echo 'No tests specified' && exit 0",
-    "test:run": "vitest run",
+    "build": "turbo build --filter='./packages/*'",
+    "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "prepublishOnly": "npm run build",
     "gen:types": "jco guest-types -o generated/types/guest/import wit --world-name druid-ui",
-    "build:example:simple": "druid-ui-build examples/simple/src/component/adder.tsx examples/simple/dist"
-  },
-  "dependencies": {
-    "@bytecodealliance/componentize-js": "^0.19.3",
-    "@bytecodealliance/jco": "^1.15.3",
-    "@bytecodealliance/preview2-shim": "^0.17.5",
-    "esbuild": "^0.25.11",
-    "hyperid": "^3.3.0",
-    "jsdom": "^26.1.0",
-    "snabbdom": "^3.6.2"
+    "release": "multi-semantic-release",
+    "dev:simple": "turbo dev --filter=simple",
+    "dev:simple-no-sandbox": "turbo dev --filter=simple-no-sandbox",
+    "dev:simple-extended": "turbo dev --filter=simple-extended",
+    "dev:simple-extended-no-sandbox": "turbo dev --filter=simple-extended-no-sandbox",
+    "dev:druid-plattform": "turbo dev --filter=druid-plattform",
+    "dev:druid-plattform-no-sandbox": "turbo dev --filter=druid-plattform-no-sandbox"
   },
   "devDependencies": {
-    "@parcel/packager-ts": "^2.16.1",
-    "@parcel/transformer-typescript-types": "^2.16.1",
+    "@parcel/packager-ts": "^2.16.4",
+    "@parcel/transformer-typescript-types": "^2.16.4",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.0",
     "@semantic-release/git": "^10.0.1",
@@ -79,12 +36,10 @@
     "@tsconfig/strictest": "^2.0.5",
     "@vitest/ui": "^3.2.4",
     "conventional-changelog-conventionalcommits": "^9.1.0",
-    "parce": "^1.2.8",
-    "parcel": "^2.16.1",
+    "multi-semantic-release": "^3.0.0",
     "semantic-release": "^24.0.0",
-    "tsx": "^4.20.6",
+    "turbo": "^2.5.3",
     "typescript": "~5.8.3",
-    "vite": "^7.1.2",
     "vitest": "^3.2.4"
   }
 }

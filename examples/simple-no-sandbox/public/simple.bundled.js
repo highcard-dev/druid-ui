@@ -1,5 +1,5 @@
-// ../../src/component/utils.ts
-var { log, rerender, d, setHook } = window["druid-extension"]["druid:ui/ui"];
+// ../../packages/component/dist/raw.js
+var { log, rerender, setHook } = window["druid-extension"]["druid:ui/ui"];
 var callbackMap = {};
 function emit(nodeid, event, e) {
   log(`Emit called for nodeid: ${nodeid}, event: ${event}`);
@@ -86,8 +86,6 @@ var createComponent = (j) => ({
   emit,
   asyncComplete: asyncCallback
 });
-
-// ../../src/component/raw.ts
 var dfunc = window["druid-ui"]?.d || (() => {
   throw new Error("druid.d function not defined");
 });

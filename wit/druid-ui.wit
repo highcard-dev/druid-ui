@@ -14,7 +14,16 @@ interface ui {
 
     type children = option<list<string>>;
 
-    d: func(element: string, props: props, children: children) -> string;
+    record hooks {
+        oninit: option<string>,
+        oncreate: option<string>,
+        onupdate: option<string>,
+        onbeforeremove: option<string>,
+        onremove: option<string>,
+        onbeforeupdate: option<string>,
+    }
+
+    d: func(element: string, props: props, children: children, hooks: hooks) -> string;
     log: func(msg: string);
     set-hook: func(id: async-id, hook: string);
     rerender: func();
@@ -35,3 +44,4 @@ interface utils {
     }
 
 }
+

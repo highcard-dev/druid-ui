@@ -1,5 +1,5 @@
-// ../../src/component/utils.ts
-var { log, rerender, d, setHook } = window["druid-extension"]["druid:ui/ui"];
+// ../../packages/component/dist/raw.js
+var { log, rerender, setHook } = window["druid-extension"]["druid:ui/ui"];
 var callbackMap = {};
 function emit(nodeid, event, e) {
   log(`Emit called for nodeid: ${nodeid}, event: ${event}`);
@@ -92,15 +92,13 @@ var createComponent = (j) => ({
   emit,
   asyncComplete: asyncCallback
 });
-
-// ../../src/component/raw.ts
 var dfunc = window["druid-ui"]?.d || (() => {
   throw new Error("druid.d function not defined");
 });
 var d2 = createDFunc(dfunc);
 var log2 = (msg) => console.log("UI LOG:", msg);
 
-// ../../src/plattform/index.ts
+// ../../packages/plattform/dist/index.js
 var { request: requestRaw, loadFileFromDeployment: loadFileFromDeploymentRaw, saveFileToDeployment: saveFileToDeploymentRaw } = window["druid-extension"]["druid:ui/plattform"];
 var request = rawAsyncToPromise(requestRaw);
 var loadFileFromDeployment = rawAsyncToPromise(

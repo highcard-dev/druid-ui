@@ -1,8 +1,8 @@
-/// <reference types="../../../../src/plattform/types/druid-plattform.d.ts" />
-/// <reference types="../../../../src/component/jsx.d.ts" />
+/// <reference types="@druid-ui/plattform" />
+/// <reference types="@druid-ui/component/jsx" />
 /** @jsx d */
-import { Context, d, createComponent, log } from "druid-ui/component";
-import { request, loadFileFromDeployment } from "druid-ui/plattform";
+import { Context, d, createComponent, log } from "@druid-ui/component";
+import { request, loadFileFromDeployment } from "@druid-ui/plattform";
 let content = "test";
 export const component = createComponent((ctx: Context) => {
   log("Druid Plattform Component");

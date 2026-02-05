@@ -1,39 +1,51 @@
-// ../../src/component/index.ts
+// ../../packages/component/dist/index.js
 import { d as dfunc } from "druid:ui/ui";
-
-// ../../src/component/utils.ts
-import { log, rerender } from "druid:ui/ui";
-function fnv1aHash(str) {
-  let hash = 2166136261;
-  for (let i = 0; i < str.length; i++) {
-    hash ^= str.charCodeAt(i);
-    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
-  }
-  return (hash >>> 0).toString(36);
-}
-var eventMap = {};
+import { log, rerender, setHook } from "druid:ui/ui";
+import { Event } from "druid:ui/utils";
+import { log as log2 } from "druid:ui/ui";
+var callbackMap = {};
 function emit(nodeid, event, e) {
   log(`Emit called for nodeid: ${nodeid}, event: ${event}`);
-  const callbacks = eventMap[nodeid];
+  const callbacks = callbackMap[nodeid];
   callbacks?.[event]?.(e);
 }
+var registerHooks = (id, fnresult) => {
+  switch (true) {
+    case !!fnresult.init:
+      setHook(id, "init");
+      callbackMap[id] = {
+        ...callbackMap[id],
+        init: fnresult.init
+      };
+      break;
+  }
+};
 var createDFunc = (dfunc2) => {
   return (tag, props, ...children) => {
+    children = children.flat();
     if (typeof tag !== "string") {
       if (typeof tag === "function") {
-        return tag(props);
+        const fnresult = tag(props);
+        if (fnresult?.view) {
+          const id3 = fnresult.view(props);
+          registerHooks(id3, fnresult);
+          return id3;
+        } else {
+          return tag(props);
+        }
       }
-      return tag.view(props);
+      const id2 = tag.view(props);
+      registerHooks(id2, tag);
+      return id2;
     }
     const ps = { prop: [], on: [] };
+    const cbObj = {};
     if (props) {
       for (const [key, value] of Object.entries(props)) {
         if (value instanceof Function) {
           const eventKey = key.startsWith("on") ? key.slice(2).toLowerCase() : key;
-          const cbId = fnv1aHash(value.toString());
-          eventMap[cbId] = eventMap[cbId] || {};
-          eventMap[cbId][eventKey] = value;
-          ps.on.push([eventKey, cbId]);
+          cbObj[eventKey] = value;
+          ps.on.push(eventKey);
         } else {
           if (typeof value === "boolean") {
             if (value) {
@@ -45,11 +57,17 @@ var createDFunc = (dfunc2) => {
         }
       }
     }
-    return dfunc2(
+    const id = dfunc2(
       tag,
       ps,
-      children.filter((c) => typeof c !== "boolean").map((c) => c.toString())
+      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString()),
+      {}
     );
+    callbackMap[id] = {
+      ...callbackMap[id],
+      ...cbObj
+    };
+    return id;
   };
 };
 var pendingOperations = /* @__PURE__ */ new Map();
@@ -77,13 +95,9 @@ var createComponent = (j) => ({
   emit,
   asyncComplete: asyncCallback
 });
+var d2 = createDFunc(dfunc);
 
-// ../../src/component/index.ts
-import { Event } from "druid:ui/utils";
-import { log as log2 } from "druid:ui/ui";
-var d = createDFunc(dfunc);
-
-// ../../src/plattform/index.ts
+// ../../packages/plattform/dist/index.js
 import {
   request as requestRaw,
   loadFileFromDeployment as loadFileFromDeploymentRaw,
@@ -99,7 +113,7 @@ var saveFileToDeployment = rawAsyncToPromise(saveFileToDeploymentRaw);
 var content = "test";
 var component = createComponent((ctx) => {
   log2("Druid Plattform Component");
-  return /* @__PURE__ */ d("div", null, /* @__PURE__ */ d(
+  return /* @__PURE__ */ d2("div", null, /* @__PURE__ */ d2(
     "button",
     {
       onClick: async () => {
@@ -107,7 +121,7 @@ var component = createComponent((ctx) => {
       }
     },
     "request"
-  ), /* @__PURE__ */ d("div", null, content));
+  ), /* @__PURE__ */ d2("div", null, content));
 });
 export {
   component

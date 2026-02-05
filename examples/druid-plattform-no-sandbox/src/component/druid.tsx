@@ -1,12 +1,12 @@
-/// <reference types="../../../../generated/types/guest/import/druid-ui.d.ts" />
-/// <reference types="../../../../src/component/jsx.d.ts" />
+/// <reference types="@druid-ui/component/types" />
+/// <reference types="@druid-ui/component/jsx" />
 /** @jsx d */
-import { Context, d, Event, log, createComponent } from "druid-ui/component";
+import { Context, d, Event, log, createComponent } from "@druid-ui/component";
 import {
   request,
   loadFileFromDeployment,
   saveFileToDeployment,
-} from "druid-ui/plattform";
+} from "@druid-ui/plattform";
 
 let i = 0;
 const config: Record<string, unknown> = {};

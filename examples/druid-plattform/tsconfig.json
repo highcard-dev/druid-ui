@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"target": "ESNext",
 		"module": "ESNext",
-		"moduleResolution": "Node",
+		"moduleResolution": "bundler",
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
@@ -11,10 +11,7 @@
 		"jsxFactory": "customJsx",
 		"jsxFragmentFactory": "customJsxFrag",
 		"outDir": "./dist",
-		"allowJs": true,
-		"paths": {
-			"druid-ui/*": ["../../src/*"]
-		}
+		"allowJs": true
 	},
 	"include": ["src/**/*", "public/**/*"],
 	"exclude": ["node_modules", "dist"]

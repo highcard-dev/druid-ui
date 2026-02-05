@@ -1,5 +1,5 @@
 /// <reference types="../../types/druid-ui-extended.d.ts" />
-/// <reference types="../../../../src/component/jsx.d.ts" />
+/// <reference types="@druid-ui/component/jsx" />
 /** @jsx d */
 import {
   createComponent,
@@ -7,7 +7,7 @@ import {
   type Event,
   log,
   rawAsyncToPromise,
-} from "druid-ui/component";
+} from "@druid-ui/component";
 import { requestGet } from "druid:ui/extension";
 
 let done = false;

@@ -1,0 +1,35 @@
+{
+  "name": "@druid-ui/build",
+  "version": "1.7.2-next.2",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
+  "bin": {
+    "druid-ui-build": "./bin/index.js",
+    "druid-ui-gen-types": "./bin/gen-types.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "bin", "wit", "src"],
+  "scripts": {
+    "build": "npm run build:lib && npm run build:cli && npm run build:cli-types && npm run build:types",
+    "build:lib": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/index.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js --external:@druid-ui/component",
+    "build:cli": "esbuild src/cmd/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/index.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js --external:@druid-ui/component",
+    "build:cli-types": "esbuild src/cmd/gen-types.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/gen-types.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist/types"
+  },
+  "dependencies": {
+    "@bytecodealliance/componentize-js": "^0.19.3",
+    "@bytecodealliance/jco": "^1.15.3",
+    "@bytecodealliance/preview2-shim": "^0.17.5",
+    "@druid-ui/component": "1.7.2-next.2",
+    "esbuild": "^0.25.11"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3"
+  }
+}

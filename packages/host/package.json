@@ -1,0 +1,33 @@
+{
+  "name": "@druid-ui/host",
+  "version": "1.7.2-next.2",
+  "type": "module",
+  "main": "./dist/ui.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/ui.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "browserslist": [
+    "last 1 Chrome version"
+  ],
+  "scripts": {
+    "build": "parcel build src/index.ts"
+  },
+  "dependencies": {
+    "@bytecodealliance/jco": "^1.16.1",
+    "hyperid": "^3.3.0",
+    "jsdom": "^26.1.0",
+    "snabbdom": "^3.6.2"
+  },
+  "devDependencies": {
+    "parcel": "^2.16.1",
+    "typescript": "~5.8.3"
+  }
+}
