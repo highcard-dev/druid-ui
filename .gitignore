@@ -8,8 +8,17 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
-dist-ssr
+
+# Package build outputs
+packages/*/dist
+packages/*/bin
+
+# Example build artifacts
+examples/*/dist
+
+# Turborepo
+.turbo
+
 *.local
 
 # Editor directories and files
@@ -22,3 +31,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.parcel-cache
+
+types
+wit-out
+wit-dist

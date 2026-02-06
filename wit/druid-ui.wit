@@ -1,0 +1,47 @@
+package druid:ui;
+
+
+interface ui {
+
+    record prop { key: string, value: string, }
+
+    record props {
+        prop: list<prop>,
+        on: list<string>,
+    }
+
+    type async-id = string;
+
+    type children = option<list<string>>;
+
+    record hooks {
+        oninit: option<string>,
+        oncreate: option<string>,
+        onupdate: option<string>,
+        onbeforeremove: option<string>,
+        onremove: option<string>,
+        onbeforeupdate: option<string>,
+    }
+
+    d: func(element: string, props: props, children: children, hooks: hooks) -> string;
+    log: func(msg: string);
+    set-hook: func(id: async-id, hook: string);
+    rerender: func();
+}
+
+interface utils {
+
+    resource event {
+        constructor(value: string, checked: bool);
+        prevent-default: func();
+        stop-propagation: func();
+        value: func() -> string;
+        checked: func() -> bool;
+    }
+
+    record context {
+        path: string
+    }
+
+}
+

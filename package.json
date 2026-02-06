@@ -1,39 +1,27 @@
 {
-  "name": "druid-ui",
-  "private": false,
-  "version": "1.7.1",
+  "name": "druid-ui-monorepo",
+  "private": true,
   "type": "module",
-  "main": "./dist/druid-ui.lib.umd.js",
-  "module": "./dist/druid-ui.lib.esm.js",
-  "types": "./dist/main.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/main.d.ts",
-      "import": "./dist/druid-ui.lib.esm.js",
-      "require": "./dist/druid-ui.lib.umd.js"
-    },
-    "./standalone": {
-      "import": "./dist/druid-ui.standalone.esm.js",
-      "require": "./dist/druid-ui.standalone.umd.js"
-    }
-  },
-  "files": [
-    "dist"
+  "packageManager": "npm@10.8.2",
+  "workspaces": [
+    "packages/*",
+    "examples/*",
+    "!examples/**"
   ],
   "scripts": {
-    "dev": "vite",
-    "build": "rm -rf dist && npm run build:lib && npm run build:standalone && npm run build:types",
-    "build:lib": "vite build --mode production",
-    "build:standalone": "vite build --mode standalone",
-    "build:types": "tsc --emitDeclarationOnly --outDir dist",
-    "preview": "vite preview",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
-    "prepublishOnly": "npm run build"
+    "build": "turbo build --filter='./packages/*'",
+    "gen:types": "jco guest-types -o generated/types/guest/import wit --world-name druid-ui",
+    "release": "multi-semantic-release",
+    "dev:simple": "turbo dev --filter=simple",
+    "dev:simple-no-sandbox": "turbo dev --filter=simple-no-sandbox",
+    "dev:simple-extended": "turbo dev --filter=simple-extended",
+    "dev:simple-extended-no-sandbox": "turbo dev --filter=simple-extended-no-sandbox",
+    "dev:druid-plattform": "turbo dev --filter=druid-plattform",
+    "dev:druid-plattform-no-sandbox": "turbo dev --filter=druid-plattform-no-sandbox"
   },
   "devDependencies": {
+    "@parcel/packager-ts": "^2.16.4",
+    "@parcel/transformer-typescript-types": "^2.16.4",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.0",
     "@semantic-release/git": "^10.0.1",
@@ -44,22 +32,11 @@
     "@testing-library/jest-dom": "^6.8.0",
     "@tsconfig/node20": "^20.1.6",
     "@tsconfig/strictest": "^2.0.5",
-    "@types/react": "^19.1.11",
     "@vitest/ui": "^3.2.4",
     "conventional-changelog-conventionalcommits": "^9.1.0",
-    "happy-dom": "^18.0.1",
-    "jsdom": "^26.1.0",
+    "multi-semantic-release": "^3.0.0",
     "semantic-release": "^24.0.0",
-    "typescript": "~5.8.3",
-    "vite": "^7.1.2",
-    "vitest": "^3.2.4"
-  },
-  "dependencies": {
-    "snabbdom": "^3.6.2",
-    "wasmoon": "^1.16.0"
-  },
-  "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "turbo": "^2.5.3",
+    "typescript": "~5.8.3"
   }
 }
