@@ -69,7 +69,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          # Remove examples from workspaces temporarily for release
-          node -e "const p=require('./package.json'); p.workspaces=['packages/*']; require('fs').writeFileSync('./package.json', JSON.stringify(p, null, 2));"
-          npx multi-semantic-release
+        run: npx multi-semantic-release --ignore-private-packages

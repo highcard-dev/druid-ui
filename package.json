@@ -5,7 +5,8 @@
   "packageManager": "npm@10.8.2",
   "workspaces": [
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "!examples/**"
   ],
   "scripts": {
     "build": "turbo build --filter='./packages/*'",
