@@ -9,6 +9,7 @@ export function ViteHMRPlugin(
   ext?: WitExtension,
 ): PluginOption {
   let wasmVersion = Date.now();
+  let publicDir = "public";
 
   async function rebuildAll(server: ViteDevServer, reason: string) {
     const components = await glob(pattern);
@@ -17,8 +18,8 @@ export function ViteHMRPlugin(
 
     await Promise.all(
       components.map(async (comp) => {
-        if (buildType === "raw") return await buildRaw(comp, "public");
-        await buildWasm(comp, "public", ext);
+        if (buildType === "raw") return await buildRaw(comp, publicDir);
+        await buildWasm(comp, publicDir, ext);
         console.log(`[wasm] Build complete for '${comp}'`);
       }),
     );
@@ -36,6 +37,11 @@ export function ViteHMRPlugin(
 
   return {
     name: "vite-hmr",
+    configResolved(config) {
+      if (config.publicDir) {
+        publicDir = config.publicDir;
+      }
+    },
     async handleHotUpdate({ file, server }) {
       if (file.endsWith(".ts") || file.endsWith(".tsx")) {
         await rebuildAll(server, `change:${file}`);

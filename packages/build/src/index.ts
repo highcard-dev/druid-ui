@@ -15,10 +15,10 @@ export interface WitExtension {
   files: string[];
 }
 
-const getBundleFileName = (entryFile) => {
+const getBundleFileName = (entryFile, suffix = "") => {
   const name = basename(entryFile, ".tsx");
 
-  const outfilename = name + ".bundled.js";
+  const outfilename = name + ".bundled" + suffix + ".js";
   return outfilename;
 };
 
@@ -66,7 +66,7 @@ export async function buildWasm(
 }
 
 export async function buildRaw(entryFile, outfolder = "./dist") {
-  const outfilename = getBundleFileName(entryFile);
+  const outfilename = getBundleFileName(entryFile, "-raw");
 
   const outfile = outfolder + "/" + outfilename;
 

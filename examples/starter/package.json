@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host",
     "preview": "vite preview",
-    "build": "druid-ui-build src/component/app.tsx public"
+    "build": "druid-ui-build src/component/app.tsx dist",
+    "build:raw": "druid-ui-build src/component/app.tsx dist --raw"
   },
   "devDependencies": {
     "@druid-ui/host": "^1.0.1",

@@ -4,7 +4,7 @@ import { defineConfig } from "vite";
 import { ViteHMRPlugin } from "@druid-ui/vite";
 
 export default defineConfig({
-  plugins: [topLevelAwait(), wasm(), ViteHMRPlugin("src/component/**")],
+  plugins: [topLevelAwait(), wasm(), ViteHMRPlugin("src/component/**", "raw")],
   optimizeDeps: {
     exclude: [
       "@bytecodealliance/jco",
@@ -12,4 +12,5 @@ export default defineConfig({
       "@druid-ui/host",
     ],
   },
+  publicDir: "dist",
 });
