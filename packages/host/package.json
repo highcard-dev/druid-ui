@@ -1,6 +1,6 @@
 {
   "name": "@druid-ui/host",
-  "version": "1.7.2-next.2",
+  "version": "2.0.0",
   "type": "module",
   "main": "./dist/ui.js",
   "types": "./dist/types/index.d.ts",

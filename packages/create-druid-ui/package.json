@@ -1,11 +1,14 @@
 {
   "name": "create-druid-ui",
-  "version": "1.7.2-next.2",
+  "version": "2.0.0",
   "type": "module",
   "bin": {
     "create-druid-ui": "./bin/create.js"
   },
-  "files": ["bin", "src"],
+  "files": [
+    "bin",
+    "src"
+  ],
   "scripts": {
     "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/create.js"
   },
