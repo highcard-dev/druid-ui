@@ -22,7 +22,6 @@
     "build:types": "tsc --emitDeclarationOnly --outDir dist/types"
   },
   "dependencies": {
-    "@druid-ui/build": "*",
     "@druid-ui/component": "*"
   },
   "devDependencies": {
