@@ -1,4 +1,4 @@
-// ../../packages/component/dist/index.js
+// node_modules/@druid-ui/component/dist/index.js
 import { d as dfunc } from "druid:ui/ui";
 import { log, rerender, setHook } from "druid:ui/ui";
 import { Event } from "druid:ui/utils";
@@ -60,8 +60,7 @@ var createDFunc = (dfunc2) => {
     const id = dfunc2(
       tag,
       ps,
-      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString()),
-      {}
+      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString())
     );
     callbackMap[id] = {
       ...callbackMap[id],

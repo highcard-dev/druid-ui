@@ -1,5 +1,3 @@
-import hyperid from "hyperid";
-
 type Callback = (id: string, result: { tag: "ok" | "err"; val: any }) => void;
 
 let cb: Callback | undefined;
@@ -34,7 +32,7 @@ export const PromiseToResult = <T>(
   promiseFn: (...args: any[]) => Promise<T>
 ) => {
   return (...args: any[]) => {
-    const id = hyperid().uuid;
+    const id = crypto.randomUUID();
     promiseFn(...args)
       .then((result) => {
         dispatch(id, {

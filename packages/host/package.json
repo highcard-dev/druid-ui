@@ -22,7 +22,6 @@
   },
   "dependencies": {
     "@bytecodealliance/jco": "^1.16.1",
-    "hyperid": "^3.3.0",
     "jsdom": "^26.1.0",
     "snabbdom": "^3.6.2"
   },

@@ -1,4 +1,3 @@
-import hyperid from "hyperid";
 import type { Props } from "druid:ui/ui";
 import { h, type VNode, type VNodeChildren, type VNodeData } from "snabbdom";
 import { Event } from "./types";
@@ -26,10 +25,10 @@ export function setHook(id: string, callback: string) {
 
 export function dfunc(element: string, props: Props, children: string[]) {
   console.debug("Creating DOM node:", element, props, children);
-  const id = hyperid();
+  const id = crypto.randomUUID();
 
-  nodes.set(id.uuid, { element, props, children });
-  return id.uuid;
+  nodes.set(id, { element, props, children });
+  return id;
 }
 
 export function logfunc(msg: string) {
