@@ -9,10 +9,10 @@
     "build:types": "druid-ui-gen-types druid-ui-extended src/wit/extension.wit"
   },
   "devDependencies": {
-    "@druid-ui/host": "workspace:*",
-    "@druid-ui/vite": "workspace:*",
-    "@druid-ui/build": "workspace:*",
-    "@druid-ui/component": "workspace:*",
+    "@druid-ui/host": "*",
+    "@druid-ui/vite": "*",
+    "@druid-ui/build": "*",
+    "@druid-ui/component": "*",
     "typescript": "~5.9.3",
     "vite": "^7.1.7",
     "vite-plugin-top-level-await": "^1.6.0",

@@ -25,8 +25,8 @@
     "build:types": "tsc --emitDeclarationOnly --outDir dist/types"
   },
   "dependencies": {
-    "@druid-ui/build": "workspace:*",
-    "@druid-ui/host": "workspace:*",
+    "@druid-ui/build": "*",
+    "@druid-ui/host": "*",
     "tinyglobby": "^0.2.15"
   },
   "peerDependencies": {
