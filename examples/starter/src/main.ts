@@ -9,7 +9,7 @@ const druidUiElement = new DruidUI();
 if (import.meta.env.DEV) {
   // Dev mode: use raw (no sandbox) for speed
   druidUiElement.sandbox = false;
-  druidUiElement.setAttribute("entrypoint", "/app.bundled.js");
+  druidUiElement.setAttribute("entrypoint", "/app.bundled-raw.js");
 } else {
   // Production: use WASM sandbox
   druidUiElement.setAttribute("entrypoint", "/app.wasm");

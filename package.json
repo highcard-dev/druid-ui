@@ -11,7 +11,7 @@
   "scripts": {
     "build": "turbo build --filter='./packages/*'",
     "gen:types": "jco guest-types -o generated/types/guest/import wit --world-name druid-ui",
-    "release": "multi-semantic-release",
+    "release": "multi-semantic-release --deps.bump=override --deps.release=inherit",
     "dev:simple": "turbo dev --filter=simple",
     "dev:simple-no-sandbox": "turbo dev --filter=simple-no-sandbox",
     "dev:simple-extended": "turbo dev --filter=simple-extended",
