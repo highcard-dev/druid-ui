@@ -22,8 +22,8 @@
     "build:types": "tsc --emitDeclarationOnly --outDir dist/types"
   },
   "dependencies": {
-    "@druid-ui/build": "*",
-    "@druid-ui/component": "*"
+    "@druid-ui/build": "workspace:*",
+    "@druid-ui/component": "workspace:*"
   },
   "devDependencies": {
     "esbuild": "^0.25.11",

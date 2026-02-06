@@ -8,10 +8,10 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@druid-ui/host": "*",
-    "@druid-ui/vite": "*",
-    "@druid-ui/build": "*",
-    "@druid-ui/component": "*",
+    "@druid-ui/host": "workspace:*",
+    "@druid-ui/vite": "workspace:*",
+    "@druid-ui/build": "workspace:*",
+    "@druid-ui/component": "workspace:*",
     "typescript": "~5.9.3",
     "vite": "^7.1.7",
     "vite-plugin-top-level-await": "^1.6.0",
