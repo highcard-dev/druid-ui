@@ -10,10 +10,10 @@
     "build:raw": "druid-ui-build src/component/app.tsx dist --raw"
   },
   "devDependencies": {
-    "@druid-ui/host": "^1.0.1",
-    "@druid-ui/vite": "^1.0.1",
-    "@druid-ui/build": "^1.0.0",
-    "@druid-ui/component": "^1.0.1",
+    "@druid-ui/host": "^1.0.3",
+    "@druid-ui/vite": "^1.0.3",
+    "@druid-ui/build": "^1.0.3",
+    "@druid-ui/component": "^1.0.3",
     "typescript": "~5.9.3",
     "vite": "^7.1.7",
     "vite-plugin-top-level-await": "^1.6.0",
