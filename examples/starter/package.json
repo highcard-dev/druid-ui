@@ -9,10 +9,10 @@
     "build": "druid-ui-build src/component/app.tsx public"
   },
   "devDependencies": {
-    "@druid-ui/host": "next",
-    "@druid-ui/vite": "next",
-    "@druid-ui/build": "next",
-    "@druid-ui/component": "next",
+    "@druid-ui/host": "^1.0.1",
+    "@druid-ui/vite": "^1.0.1",
+    "@druid-ui/build": "^1.0.0",
+    "@druid-ui/component": "^1.0.1",
     "typescript": "~5.9.3",
     "vite": "^7.1.7",
     "vite-plugin-top-level-await": "^1.6.0",
