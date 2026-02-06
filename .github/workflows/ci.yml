@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - "**"
+  pull_request:
+    branches:
+      - main
+      - next
 
 jobs:
   build-and-test:
@@ -34,6 +38,7 @@ jobs:
 
   release:
     needs: build-and-test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/next'
     runs-on: ubuntu-latest
     permissions:
       contents: write
