@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "turbo build --filter='./packages/*'",
+    "release": "multi-semantic-release",
     "gen:types": "jco guest-types -o generated/types/guest/import wit --world-name druid-ui",
     "release": "multi-semantic-release",
     "dev:simple": "turbo dev --filter=simple",
