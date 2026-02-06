@@ -10,7 +10,10 @@
     "src"
   ],
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/create.js"
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --packages=external --outfile=bin/create.js"
+  },
+  "dependencies": {
+    "giget": "^2.0.0"
   },
   "devDependencies": {
     "esbuild": "^0.25.11",

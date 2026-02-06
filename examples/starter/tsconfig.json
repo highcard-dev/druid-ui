@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react",
+    "jsxFactory": "d",
+    "jsxFragmentFactory": "Fragment",
+    "outDir": "./dist",
+    "allowJs": true
+  },
+  "include": ["src/**/*", "public/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

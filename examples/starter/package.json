@@ -1,0 +1,21 @@
+{
+  "name": "starter",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "preview": "vite preview",
+    "build": "druid-ui-build src/component/app.tsx public"
+  },
+  "devDependencies": {
+    "@druid-ui/host": "next",
+    "@druid-ui/vite": "next",
+    "@druid-ui/build": "next",
+    "@druid-ui/component": "next",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.7",
+    "vite-plugin-top-level-await": "^1.6.0",
+    "vite-plugin-wasm": "^3.5.0"
+  }
+}
