@@ -63,9 +63,13 @@ export class DruidUI extends HTMLElement {
       return;
     }
     if (this._sandbox) {
-      loadTranspile(entrypoint, this.loader).then(([moduleUrl, compile]) => {
-        this.loadEntrypointFromWasmUrl(moduleUrl, compile);
-      });
+      loadTranspile(entrypoint, this.loader)
+        .then(([moduleUrl, compile]) => {
+          this.loadEntrypointFromWasmUrl(moduleUrl, compile);
+        })
+        .catch((e) => {
+          console.error("Failed to load and transpile entrypoint:", e);
+        });
     } else {
       this.loadEntrypointFromJavaScriptUrl(entrypoint);
     }
@@ -104,7 +108,7 @@ export class DruidUI extends HTMLElement {
   attributeChangedCallback(
     name: string,
     oldValue: string | null,
-    newValue: string
+    newValue: string,
   ) {
     switch (name) {
       case "no-sandbox":
@@ -128,7 +132,7 @@ export class DruidUI extends HTMLElement {
 
         // Insert style after all link elements
         const lastLink = Array.from(
-          this.shadow.querySelectorAll('link[rel="stylesheet"]')
+          this.shadow.querySelectorAll('link[rel="stylesheet"]'),
         ).pop();
         //clear previous style elements
         const existingStyles = this.shadow.querySelectorAll("style");
@@ -139,7 +143,7 @@ export class DruidUI extends HTMLElement {
         } else {
           this.shadow.insertBefore(
             styleEl,
-            this.shadowRoot?.firstChild || null
+            this.shadowRoot?.firstChild || null,
           );
         }
         break;
@@ -147,7 +151,7 @@ export class DruidUI extends HTMLElement {
         const css = newValue.split(",");
         //clear previous css links
         const existingLinks = this.shadow.querySelectorAll(
-          'link[rel="stylesheet"]'
+          'link[rel="stylesheet"]',
         );
         existingLinks.forEach((link) => link.remove());
 
@@ -220,7 +224,7 @@ export class DruidUI extends HTMLElement {
 
   async loadEntrypointFromWasmUrl(
     entrypoint: string,
-    loadCompile?: (file: string) => Promise<WebAssembly.Module>
+    loadCompile?: (file: string) => Promise<WebAssembly.Module>,
   ) {
     const t = await import(/* @vite-ignore */ entrypoint!);
 
@@ -251,7 +255,7 @@ export class DruidUI extends HTMLElement {
     if (this.profile) {
       const initEnd = performance.now();
       console.debug(
-        `Init completed in ${(initEnd - renderStart!).toFixed(2)} ms`
+        `Init completed in ${(initEnd - renderStart!).toFixed(2)} ms`,
       );
     }
 
@@ -265,7 +269,7 @@ export class DruidUI extends HTMLElement {
       (href: string) => {
         this._routeStrategy.navigateTo(href);
         this.rerender();
-      }
+      },
     );
 
     if (dom instanceof String) {
@@ -281,7 +285,7 @@ export class DruidUI extends HTMLElement {
     if (this.profile) {
       const renderEnd = performance.now();
       console.debug(
-        `Render completed in ${(renderEnd - renderStart!).toFixed(2)} ms`
+        `Render completed in ${(renderEnd - renderStart!).toFixed(2)} ms`,
       );
     }
   }
