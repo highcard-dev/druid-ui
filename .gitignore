@@ -15,6 +15,9 @@ packages/*/bin
 
 # Example build artifacts
 examples/*/dist
+examples/*/wasm
+examples/*/.wasm
+examples/*/public/*.wasm
 
 # Turborepo
 .turbo

@@ -18,7 +18,8 @@
     "dev:simple-extended": "turbo dev --filter=simple-extended",
     "dev:simple-extended-no-sandbox": "turbo dev --filter=simple-extended-no-sandbox",
     "dev:druid-plattform": "turbo dev --filter=druid-plattform",
-    "dev:druid-plattform-no-sandbox": "turbo dev --filter=druid-plattform-no-sandbox"
+    "dev:druid-plattform-no-sandbox": "turbo dev --filter=druid-plattform-no-sandbox",
+    "watch": "turbo watch build --filter='./packages/*'"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",

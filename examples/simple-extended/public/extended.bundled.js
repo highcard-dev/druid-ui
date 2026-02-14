@@ -7,7 +7,10 @@ var callbackMap = {};
 function emit(nodeid, event, e) {
   log(`Emit called for nodeid: ${nodeid}, event: ${event}`);
   const callbacks = callbackMap[nodeid];
-  callbacks?.[event]?.(e);
+  const result = callbacks?.[event]?.(e);
+  if (result instanceof Promise) {
+    result.then(() => rerender());
+  }
 }
 var registerHooks = (id, fnresult) => {
   switch (true) {
@@ -60,8 +63,7 @@ var createDFunc = (dfunc2) => {
     const id = dfunc2(
       tag,
       ps,
-      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString()),
-      {}
+      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString())
     );
     callbackMap[id] = {
       ...callbackMap[id],

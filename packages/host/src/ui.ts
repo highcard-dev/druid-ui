@@ -6,7 +6,13 @@ import {
   type RoutingStrategy,
 } from "./routing-strategy";
 import { loadTranspile } from "./transpile";
-import { createDomFromIdRec, dfunc, logfunc, setHook } from "./host-functions";
+import {
+  clearNodes,
+  createDomFromIdRec,
+  dfunc,
+  logfunc,
+  setHook,
+} from "./host-functions";
 import { Event } from "./types";
 import { setCb } from "./utils";
 
@@ -34,6 +40,7 @@ export class DruidUI extends HTMLElement {
   private _entrypoint?: string;
   private rootComponent: any;
   private _connected: boolean = false;
+  private reloadGeneration: number = 0;
 
   public connectedCallback() {
     this._connected = true;
@@ -62,6 +69,16 @@ export class DruidUI extends HTMLElement {
       console.warn("No file loader set.");
       return;
     }
+
+    // Increment generation to invalidate all pending operations from previous load
+    this.reloadGeneration++;
+    console.debug(
+      `[reloadComponent] Starting reload, generation: ${this.reloadGeneration}`,
+    );
+
+    // Clear nodes map to ensure fresh state
+    clearNodes();
+
     if (this._sandbox) {
       loadTranspile(entrypoint, this.loader)
         .then(([moduleUrl, compile]) => {
@@ -201,23 +218,51 @@ export class DruidUI extends HTMLElement {
   }
 
   async loadEntrypointFromJavaScriptUrl(entrypoint: string) {
+    // Capture the generation at the start of this load
+    const loadGeneration = this.reloadGeneration;
+    console.debug(
+      `[loadEntrypointFromJavaScriptUrl] Starting load for generation ${loadGeneration}`,
+    );
+
     window["druid-ui"] = {
       d: dfunc,
     };
 
     window["druid-extension"] = this.getExtensionObject();
 
-    const response = await this.loader.load(entrypoint);
-
+    // Force no-cache to get fresh content
+    const response = await this.loader.load(entrypoint, { cache: false });
     const bundleContent = response.buffer;
 
-    //load bundleContent as a module
+    // Create blob URL to avoid Vite's /public restrictions
     const blob = new Blob([bundleContent], { type: "application/javascript" });
     const moduleUrl = URL.createObjectURL(blob);
     const t = await import(/* @vite-ignore */ moduleUrl);
+    console.debug(
+      `[loadEntrypointFromJavaScriptUrl] Module loaded for generation ${loadGeneration}, current generation: ${this.reloadGeneration}`,
+    );
 
     setCb(t.component.asyncComplete);
+
+    // Only proceed if no newer reload has been triggered
+    if (this.reloadGeneration !== loadGeneration) {
+      console.debug(
+        `[loadEntrypointFromJavaScriptUrl] Aborting stale load (generation ${loadGeneration}, current: ${this.reloadGeneration})`,
+      );
+      URL.revokeObjectURL(moduleUrl);
+      return;
+    }
+
     this.rootComponent = t;
+
+    // Reset VNode right before rendering new module to ensure hooks fire
+    // This must be done here (not in reloadComponent) to avoid race conditions
+    // with pending rerenders from previous module
+    this.currentVNode = null;
+    console.debug(
+      `[loadEntrypointFromJavaScriptUrl] Rendering generation ${loadGeneration}`,
+    );
+
     this.rerender();
     URL.revokeObjectURL(moduleUrl);
   }
@@ -264,8 +309,17 @@ export class DruidUI extends HTMLElement {
       rootId,
       (nodeId, eventType, e) => {
         this.rootComponent.component.emit(nodeId, eventType, e);
+        // Capture the current generation
+        const generation = this.reloadGeneration;
         setTimeout(() => {
-          this.rerender();
+          // Only rerender if we're still in the same generation (no reload happened)
+          if (this.reloadGeneration === generation) {
+            this.rerender();
+          } else {
+            console.debug(
+              `[setTimeout] Skipping stale rerender (generation ${generation}, current: ${this.reloadGeneration})`,
+            );
+          }
         }, 0);
       },
       (href: string) => {

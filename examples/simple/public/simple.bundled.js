@@ -1,4 +1,4 @@
-// node_modules/@druid-ui/component/dist/index.js
+// ../../packages/component/dist/index.js
 import { d as dfunc } from "druid:ui/ui";
 import { log, rerender, setHook } from "druid:ui/ui";
 import { Event } from "druid:ui/utils";
@@ -7,7 +7,10 @@ var callbackMap = {};
 function emit(nodeid, event, e) {
   log(`Emit called for nodeid: ${nodeid}, event: ${event}`);
   const callbacks = callbackMap[nodeid];
-  callbacks?.[event]?.(e);
+  const result = callbacks?.[event]?.(e);
+  if (result instanceof Promise) {
+    result.then(() => rerender());
+  }
 }
 var registerHooks = (id, fnresult) => {
   switch (true) {
