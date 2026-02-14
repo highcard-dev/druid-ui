@@ -4,7 +4,10 @@ var callbackMap = {};
 function emit(nodeid, event, e) {
   log(`Emit called for nodeid: ${nodeid}, event: ${event}`);
   const callbacks = callbackMap[nodeid];
-  callbacks?.[event]?.(e);
+  const result = callbacks?.[event]?.(e);
+  if (result instanceof Promise) {
+    result.then(() => rerender());
+  }
 }
 var registerHooks = (id, fnresult) => {
   switch (true) {
@@ -57,8 +60,7 @@ var createDFunc = (dfunc2) => {
     const id = dfunc2(
       tag,
       ps,
-      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString()),
-      {}
+      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString())
     );
     callbackMap[id] = {
       ...callbackMap[id],
@@ -94,9 +96,11 @@ var log2 = (msg) => console.log("UI LOG:", msg);
 
 // public/simple.tsx
 var i = 0;
+var t = 0;
 var ComponentTitle = {
   init: () => {
     log2("ComponentTitle init called");
+    t++;
   },
   view: ({ title, description }) => /* @__PURE__ */ d2("div", null, /* @__PURE__ */ d2("h1", null, title), /* @__PURE__ */ d2("h2", null, description))
 };
@@ -108,7 +112,7 @@ var component = createComponent((ctx) => {
   return /* @__PURE__ */ d2("div", null, ["1", "2", "3"].map((val) => /* @__PURE__ */ d2("div", null, val)), /* @__PURE__ */ d2(
     ComponentTitle,
     {
-      title: "Hello World",
+      title: "Hello Worl1d",
       description: "Just a simple component"
     }
   ), /* @__PURE__ */ d2("main", null, /* @__PURE__ */ d2(
@@ -120,7 +124,7 @@ var component = createComponent((ctx) => {
       }
     },
     "Do click"
-  ), /* @__PURE__ */ d2("hr", null), /* @__PURE__ */ d2("b", null, "Clicks: "), " ", i, i > 5 ? /* @__PURE__ */ d2("div", null, "more than 5 clicks!") : ""), /* @__PURE__ */ d2("a", { href: "/test" }, "go to test page"));
+  ), "" + t, /* @__PURE__ */ d2("hr", null), /* @__PURE__ */ d2("b", null, "Clicks: "), " ", i, i > 5 ? /* @__PURE__ */ d2("div", null, "more than 5 clicks!") : ""), /* @__PURE__ */ d2("a", { href: "/test" }, "go to test page"));
 });
 export {
   component

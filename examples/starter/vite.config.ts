@@ -13,4 +13,9 @@ export default defineConfig({
     ],
   },
   publicDir: "dist",
+  server: {
+    fs: {
+      strict: false,
+    },
+  },
 });

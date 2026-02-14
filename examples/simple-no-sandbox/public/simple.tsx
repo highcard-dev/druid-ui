@@ -10,9 +10,11 @@ interface ComponentTitle {
   description: string;
 }
 
+let t = 0;
 const ComponentTitle = {
   init: () => {
     log("ComponentTitle init called");
+    t++;
   },
   view: ({ title, description }: ComponentTitle) => (
     <div>
@@ -33,13 +35,14 @@ export const component = createComponent((ctx: Context) => {
       </div>
     );
   }
+
   return (
     <div>
       {["1", "2", "3"].map((val) => (
         <div>{val}</div>
       ))}
       <ComponentTitle
-        title="Hello World"
+        title="Hello Worl1d"
         description="Just a simple component"
       />
       <main>
@@ -51,6 +54,7 @@ export const component = createComponent((ctx: Context) => {
         >
           Do click
         </button>
+        {"" + t}
         <hr />
         <b>Clicks: </b> {i}
         {i > 5 ? <div>more than 5 clicks!</div> : ""}

@@ -3,22 +3,16 @@ import { log, rerender, d, setHook } from "druid:ui/ui";
 import type { Event } from "@druid-ui/host";
 import type { Context } from "druid:ui/component";
 
-export function fnv1aHash(str: string) {
-  let hash = 0x811c9dc5; // FNV offset basis
-  for (let i = 0; i < str.length; i++) {
-    hash ^= str.charCodeAt(i);
-    hash +=
-      (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
-  }
-  return (hash >>> 0).toString(36);
-}
-
 export const callbackMap: Record<string, Record<string, Function>> = {};
 
 export function emit(nodeid: string, event: string, e: Event) {
   log(`Emit called for nodeid: ${nodeid}, event: ${event}`);
   const callbacks = callbackMap[nodeid];
-  callbacks?.[event]?.(e);
+  const result = callbacks?.[event]?.(e);
+  // if we have have shim3 with async support, we can call rerender external only
+  if (result instanceof Promise) {
+    result.then(() => rerender());
+  }
 }
 
 const registerHooks = (

@@ -262,9 +262,11 @@ export class DruidUI extends HTMLElement {
     this.mountEl.innerHTML = "";
     const dom = createDomFromIdRec(
       rootId,
-      this.rerender.bind(this),
       (nodeId, eventType, e) => {
         this.rootComponent.component.emit(nodeId, eventType, e);
+        setTimeout(() => {
+          this.rerender();
+        }, 0);
       },
       (href: string) => {
         this._routeStrategy.navigateTo(href);

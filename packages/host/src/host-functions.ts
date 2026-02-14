@@ -37,9 +37,8 @@ export function logfunc(msg: string) {
 
 export function createDomFromIdRec(
   id: string,
-  rerender: () => void,
   emitEvent: (id: string, eventType: string, event: Event) => void,
-  navigate?: (href: string) => void
+  navigate?: (href: string) => void,
 ): VNode | String {
   const node = nodes.get(id);
   //it is a bit strange to do it like that, in theory we want to better distinguish between text nodes and element nodes
@@ -63,9 +62,8 @@ export function createDomFromIdRec(
         emitEvent(
           id,
           eventType,
-          new Event(e?.currentTarget?.value, e?.currentTarget?.checked)
+          new Event(e?.currentTarget?.value, e?.currentTarget?.checked),
         );
-        rerender();
       };
     }
     const href = data.props["href"];
@@ -91,12 +89,7 @@ export function createDomFromIdRec(
   const ch: VNodeChildren = [];
   if (node.children) {
     for (const childId of node.children) {
-      const childEl = createDomFromIdRec(
-        childId,
-        rerender,
-        emitEvent,
-        navigate
-      );
+      const childEl = createDomFromIdRec(childId, emitEvent, navigate);
       ch.push(childEl);
     }
   }
