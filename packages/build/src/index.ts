@@ -25,7 +25,7 @@ const getBundleFileName = (entryFile, suffix = "") => {
 export async function buildWasm(
   entryFile,
   outfolder = "./dist",
-  witExtension?: WitExtension
+  witExtension?: WitExtension,
 ) {
   await fs.mkdir(outfolder, { recursive: true });
 
@@ -70,7 +70,7 @@ export async function buildRaw(entryFile, outfolder = "./dist") {
 
   const outfile = outfolder + "/" + outfilename;
 
-  const rawPath = require.resolve("@druid-ui/component/raw");
+  const rawPath = dirname(require.resolve("@druid-ui/component/raw"));
   await build({
     entryPoints: [entryFile],
     bundle: true,

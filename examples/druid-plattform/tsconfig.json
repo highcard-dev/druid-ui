@@ -7,9 +7,9 @@
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
-		"jsx": "react",
-		"jsxFactory": "customJsx",
-		"jsxFragmentFactory": "customJsxFrag",
+		"jsx": "react-jsx",
+		"jsxImportSource": "@druid-ui/component",
+		"types": ["@druid-ui/component/jsx"],
 		"outDir": "./dist",
 		"allowJs": true
 	},

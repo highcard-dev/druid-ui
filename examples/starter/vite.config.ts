@@ -12,10 +12,4 @@ export default defineConfig({
       "@druid-ui/host",
     ],
   },
-  publicDir: "dist",
-  server: {
-    fs: {
-      strict: false,
-    },
-  },
 });

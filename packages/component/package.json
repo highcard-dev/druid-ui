@@ -18,6 +18,11 @@
     "./jsx": {
       "types": "./src/jsx.d.ts"
     },
+    "./jsx-runtime": {
+      "types": "./dist/types/jsx-runtime.d.ts",
+      "import": "./dist/jsx-runtime.js",
+      "default": "./dist/jsx-runtime.js"
+    },
     "./types": {
       "types": "./dist/types/druid-ui.d.ts"
     }
@@ -27,9 +32,10 @@
     "src"
   ],
   "scripts": {
-    "build": "npm run build:types-ui && npm run build:lib && npm run build:raw && npm run build:types",
+    "build": "npm run build:types-ui && npm run build:lib && npm run build:raw && npm run build:jsx-runtime && npm run build:types",
     "build:lib": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm --external:druid:ui/ui --external:druid:ui/utils --external:druid:ui/component --external:@druid-ui/host",
     "build:raw": "esbuild src/raw.ts --bundle --outfile=dist/raw.js --format=esm --external:@druid-ui/host --external:druid:ui/ui --external:druid:ui/utils --external:druid:ui/component",
+    "build:jsx-runtime": "esbuild src/jsx-runtime.ts --bundle --outfile=dist/jsx-runtime.js --format=esm --external:druid:ui/ui --external:druid:ui/utils --external:druid:ui/component --external:@druid-ui/host",
     "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
     "build:types-ui": "druid-ui-gen-types druid-ui --out-dir=dist/types"
   },
