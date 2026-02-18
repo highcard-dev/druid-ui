@@ -1,0 +1,16 @@
+{
+  "name": "starter-component",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "druid-ui-build src/component/app.tsx --watch --raw",
+    "build": "druid-ui-build src/component/app.tsx",
+    "build:raw": "druid-ui-build src/component/app.tsx --raw"
+  },
+  "devDependencies": {
+    "@druid-ui/build": "*",
+    "@druid-ui/component": "*",
+    "typescript": "~5.9.3"
+  }
+}
