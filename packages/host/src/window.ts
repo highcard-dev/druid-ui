@@ -5,9 +5,6 @@ type DruidAPI = Record<string, any>;
 
 declare global {
   interface Window {
-    "druid-ui": {
-      d: (...args: any[]) => any;
-    };
     "druid-extension"?: DruidAPI;
   }
 }

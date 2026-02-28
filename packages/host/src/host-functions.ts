@@ -35,7 +35,7 @@ export function dfunc(element: string, props: Props, children: string[]) {
 }
 
 export function logfunc(msg: string) {
-  console.debug("UI LOG:", msg);
+  console.log("UI LOG:", msg);
 }
 
 export function createDomFromIdRec(

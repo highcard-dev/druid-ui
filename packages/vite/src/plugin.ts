@@ -50,7 +50,7 @@ export function ViteHMRPlugin(
     async configureServer(server) {
       server.middlewares.use(
         (req: IncomingMessage, res: ServerResponse, next) => {
-          if (req.url?.endsWith(".wasm")) {
+          if (req.url?.endsWith(".wasm") || req.url?.endsWith(".js")) {
             res.setHeader(
               "Cache-Control",
               "no-store, no-cache, must-revalidate",

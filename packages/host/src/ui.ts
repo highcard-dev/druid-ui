@@ -224,10 +224,6 @@ export class DruidUI extends HTMLElement {
       `[loadEntrypointFromJavaScriptUrl] Starting load for generation ${loadGeneration}`,
     );
 
-    window["druid-ui"] = {
-      d: dfunc,
-    };
-
     window["druid-extension"] = this.getExtensionObject();
 
     // Force no-cache to get fresh content
@@ -257,7 +253,17 @@ export class DruidUI extends HTMLElement {
 
     // Reset VNode right before rendering new module to ensure hooks fire
     // This must be done here (not in reloadComponent) to avoid race conditions
-    // with pending rerenders from previous module
+    // with pending rerenders from previous module.
+    // After the first render, snabbdom's patch() replaces mountEl in the DOM
+    // with the VNode element, leaving mountEl detached. We must restore it
+    // so the next patch(mountEl, dom) can insert the new element.
+    if (this.currentVNode?.elm?.parentNode) {
+      this.currentVNode.elm.parentNode.replaceChild(
+        this.mountEl,
+        this.currentVNode.elm as Node,
+      );
+    }
+    this.mountEl.innerHTML = "";
     this.currentVNode = null;
     console.debug(
       `[loadEntrypointFromJavaScriptUrl] Rendering generation ${loadGeneration}`,

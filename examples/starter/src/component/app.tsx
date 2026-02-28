@@ -1,10 +1,8 @@
-import { Context, Event, log, createComponent } from "@druid-ui/component";
+import { type Context, type Event, createComponent } from "@druid-ui/component";
 
 let clickCount = 0;
 
 export const component = createComponent((ctx: Context) => {
-  log(`Component initialized at path: ${ctx.path}`);
-
   return (
     <div>
       <h1>Welcome to Druid UI</h1>
@@ -15,7 +13,6 @@ export const component = createComponent((ctx: Context) => {
         <button
           onClick={(e: Event) => {
             clickCount++;
-            log(`Clicked ${clickCount} times`);
           }}
         >
           Click me

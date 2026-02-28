@@ -1,10 +1,14 @@
-// ../../packages/component/dist/raw.js
+// ../../packages/component/dist/index.js
+var { d: dfunc } = window["druid-extension"]["druid:ui/ui"];
 var { log, rerender, setHook } = window["druid-extension"]["druid:ui/ui"];
 var callbackMap = {};
 function emit(nodeid, event, e) {
   log(`Emit called for nodeid: ${nodeid}, event: ${event}`);
   const callbacks = callbackMap[nodeid];
-  callbacks?.[event]?.(e);
+  const result = callbacks?.[event]?.(e);
+  if (result instanceof Promise) {
+    result.then(() => rerender());
+  }
 }
 var registerHooks = (id, fnresult) => {
   switch (true) {
@@ -17,7 +21,7 @@ var registerHooks = (id, fnresult) => {
       break;
   }
 };
-var createDFunc = (dfunc2) => {
+var createDFunc = (dfunc22) => {
   return (tag, props, ...children) => {
     children = children.flat();
     if (typeof tag !== "string") {
@@ -54,11 +58,10 @@ var createDFunc = (dfunc2) => {
         }
       }
     }
-    const id = dfunc2(
+    const id = dfunc22(
       tag,
       ps,
-      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString()),
-      {}
+      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString())
     );
     callbackMap[id] = {
       ...callbackMap[id],
@@ -92,11 +95,9 @@ var createComponent = (j) => ({
   emit,
   asyncComplete: asyncCallback
 });
-var dfunc = window["druid-ui"]?.d || (() => {
-  throw new Error("druid.d function not defined");
-});
+var { Event } = window["druid-extension"]["druid:ui/utils"];
+var { log: log2 } = window["druid-extension"]["druid:ui/ui"];
 var d2 = createDFunc(dfunc);
-var log2 = (msg) => console.log("UI LOG:", msg);
 
 // ../../packages/plattform/dist/index.js
 var { request: requestRaw, loadFileFromDeployment: loadFileFromDeploymentRaw, saveFileToDeployment: saveFileToDeploymentRaw } = window["druid-extension"]["druid:ui/plattform"];
@@ -105,6 +106,83 @@ var loadFileFromDeployment = rawAsyncToPromise(
   loadFileFromDeploymentRaw
 );
 var saveFileToDeployment = rawAsyncToPromise(saveFileToDeploymentRaw);
+
+// ../../packages/component/dist/jsx-runtime.js
+var { d: dfunc2 } = window["druid-extension"]["druid:ui/ui"];
+var { log: log3, rerender: rerender2, setHook: setHook2 } = window["druid-extension"]["druid:ui/ui"];
+var callbackMap2 = {};
+var registerHooks2 = (id, fnresult) => {
+  switch (true) {
+    case !!fnresult.init:
+      setHook2(id, "init");
+      callbackMap2[id] = {
+        ...callbackMap2[id],
+        init: fnresult.init
+      };
+      break;
+  }
+};
+var createDFunc2 = (dfunc22) => {
+  return (tag, props, ...children) => {
+    children = children.flat();
+    if (typeof tag !== "string") {
+      if (typeof tag === "function") {
+        const fnresult = tag(props);
+        if (fnresult?.view) {
+          const id3 = fnresult.view(props);
+          registerHooks2(id3, fnresult);
+          return id3;
+        } else {
+          return tag(props);
+        }
+      }
+      const id2 = tag.view(props);
+      registerHooks2(id2, tag);
+      return id2;
+    }
+    const ps = { prop: [], on: [] };
+    const cbObj = {};
+    if (props) {
+      for (const [key, value] of Object.entries(props)) {
+        if (value instanceof Function) {
+          const eventKey = key.startsWith("on") ? key.slice(2).toLowerCase() : key;
+          cbObj[eventKey] = value;
+          ps.on.push(eventKey);
+        } else {
+          if (typeof value === "boolean") {
+            if (value) {
+              ps.prop.push({ key, value: "true" });
+            }
+            continue;
+          }
+          ps.prop.push({ key, value });
+        }
+      }
+    }
+    const id = dfunc22(
+      tag,
+      ps,
+      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString())
+    );
+    callbackMap2[id] = {
+      ...callbackMap2[id],
+      ...cbObj
+    };
+    return id;
+  };
+};
+var { Event: Event2 } = window["druid-extension"]["druid:ui/utils"];
+var { log: log22 } = window["druid-extension"]["druid:ui/ui"];
+var d22 = createDFunc2(dfunc2);
+function jsx(type, props) {
+  const { children, ...rest } = props || {};
+  if (children !== void 0) {
+    return d22(type, rest, children);
+  }
+  return d22(type, rest);
+}
+var jsxs = jsx;
+var Fragment = Symbol.for("react.fragment");
 
 // src/component/druid.tsx
 var i = 0;
@@ -132,42 +210,59 @@ var MainComponent = {
   },
   view: () => {
     log2("render main component");
-    return /* @__PURE__ */ d2("div", null, Object.entries(config).map(([property, value]) => {
-      return /* @__PURE__ */ d2(ComponentTitle, { property, value });
-    }));
+    return /* @__PURE__ */ jsx("div", { children: Object.entries(config).map(([property, value]) => {
+      return /* @__PURE__ */ jsx(ComponentTitle, { property, value });
+    }) });
   }
 };
 var ComponentTitle = {
-  view: ({ property, value }) => /* @__PURE__ */ d2("div", null, /* @__PURE__ */ d2("label", null, property, /* @__PURE__ */ d2(
-    "input",
-    {
-      type: "text",
-      value,
-      onInput: (e) => {
-        config[property] = e.value();
+  view: ({ property, value }) => /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsxs("label", { children: [
+    property,
+    /* @__PURE__ */ jsx(
+      "input",
+      {
+        type: "text",
+        value,
+        onInput: (e) => {
+          config[property] = e.value();
+        }
       }
-    }
-  )))
+    )
+  ] }) })
 };
 var component = createComponent((ctx) => {
   log2(`Init called with path: ${ctx.path}`);
   log2(JSON.stringify(config));
   if (ctx.path == "/test") {
-    return /* @__PURE__ */ d2("div", null, /* @__PURE__ */ d2("a", { href: "/" }, "go back"), "Hallo Marc");
+    return /* @__PURE__ */ jsxs("div", { children: [
+      /* @__PURE__ */ jsx("a", { href: "/", children: "go back" }),
+      "Hallo Marc"
+    ] });
   }
-  return /* @__PURE__ */ d2("div", null, /* @__PURE__ */ d2("div", null, /* @__PURE__ */ d2(MainComponent, null)), /* @__PURE__ */ d2("main", null, /* @__PURE__ */ d2(
-    "button",
-    {
-      onClick: async (e) => {
-        const data = await loadFileFromDeployment(
-          CONFIG_FILENAME
-        );
-        log2("test");
-        log2(data);
-      }
-    },
-    "Do click123"
-  ), /* @__PURE__ */ d2("hr", null), /* @__PURE__ */ d2("b", null, "Clicks: "), " ", i, i > 5 ? /* @__PURE__ */ d2("div", null, "more than 6 clicks!") : ""), /* @__PURE__ */ d2("a", { href: "/test" }, "go to test page"));
+  return /* @__PURE__ */ jsxs("div", { children: [
+    /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx(MainComponent, {}) }),
+    /* @__PURE__ */ jsxs("main", { children: [
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          onClick: async (e) => {
+            const data = await loadFileFromDeployment(
+              CONFIG_FILENAME
+            );
+            log2("test");
+            log2(data);
+          },
+          children: "Do click123"
+        }
+      ),
+      /* @__PURE__ */ jsx("hr", {}),
+      /* @__PURE__ */ jsx("b", { children: "Clicks: " }),
+      " ",
+      i,
+      i > 5 ? /* @__PURE__ */ jsx("div", { children: "more than 6 clicks!" }) : ""
+    ] }),
+    /* @__PURE__ */ jsx("a", { href: "/test", children: "go to test page" })
+  ] });
 });
 export {
   component

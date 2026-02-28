@@ -70,7 +70,10 @@ export async function buildRaw(entryFile, outfolder = "./dist") {
 
   const outfile = outfolder + "/" + outfilename;
 
-  const rawPath = dirname(require.resolve("@druid-ui/component/raw"));
+  // Alias to the dist/ directory (not a specific file) so subpath imports like
+  // @druid-ui/component/jsx-runtime also resolve correctly.
+  // This resolves to dist/ which contains index.js, jsx-runtime.js, etc.
+  const componentDir = dirname(require.resolve("@druid-ui/component"));
   await build({
     entryPoints: [entryFile],
     bundle: true,
@@ -79,7 +82,7 @@ export async function buildRaw(entryFile, outfolder = "./dist") {
     outfile: outfile,
     plugins: [druidExtensionPlugin()],
     alias: {
-      "@druid-ui/component": rawPath,
+      "@druid-ui/component": componentDir,
     },
   });
 }
