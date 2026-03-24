@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@bytecodealliance/componentize-js": "^0.19.3",
-    "@bytecodealliance/jco": "^1.16.1",
+    "@bytecodealliance/jco": "^1.17.5",
     "@bytecodealliance/preview2-shim": "^0.17.7",
     "esbuild": "^0.25.11"
   },

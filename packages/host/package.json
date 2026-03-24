@@ -21,7 +21,7 @@
     "build": "parcel build src/index.ts"
   },
   "dependencies": {
-    "@bytecodealliance/jco": "^1.16.1",
+    "@bytecodealliance/jco": "^1.17.5",
     "jsdom": "^26.1.0",
     "snabbdom": "^3.6.2"
   },
