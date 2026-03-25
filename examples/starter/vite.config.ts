@@ -12,4 +12,7 @@ export default defineConfig({
       "@druid-ui/host",
     ],
   },
+  worker: {
+    format: "es",
+  },
 });
