@@ -30,8 +30,6 @@ interface utils {
         checked: func() -> bool;
     }
 
-    record context {
-        path: string
-    }
+    type context = list<tuple<string, string>>;
 
 }

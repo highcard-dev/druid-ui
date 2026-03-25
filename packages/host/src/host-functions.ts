@@ -41,7 +41,6 @@ export function logfunc(msg: string) {
 export function createDomFromIdRec(
   id: string,
   emitEvent: (id: string, eventType: string, event: Event) => void,
-  navigate?: (href: string) => void,
 ): VNode | String {
   const node = nodes.get(id);
   //it is a bit strange to do it like that, in theory we want to better distinguish between text nodes and element nodes
@@ -69,15 +68,6 @@ export function createDomFromIdRec(
         );
       };
     }
-    const href = data.props["href"];
-    if (href && !data.on["click"]) {
-      if (navigate) {
-        data.on.click = (e) => {
-          e.preventDefault();
-          navigate(href);
-        };
-      }
-    }
   }
 
   // Set hooks (outside props check so hooks work even without props)
@@ -98,7 +88,7 @@ export function createDomFromIdRec(
   const ch: VNodeChildren = [];
   if (node.children) {
     for (const childId of node.children) {
-      const childEl = createDomFromIdRec(childId, emitEvent, navigate);
+      const childEl = createDomFromIdRec(childId, emitEvent);
       ch.push(childEl);
     }
   }

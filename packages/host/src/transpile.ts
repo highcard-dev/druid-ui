@@ -1,5 +1,3 @@
-import type { FileLoader } from "./file-loader";
-
 interface TranspileResult {
   files: Array<[string, Uint8Array]>;
 }
@@ -62,11 +60,14 @@ const transpileInWorker = async (
 };
 
 export const loadTranspile = async (
-  file: string,
-  fileLoader: FileLoader,
+  buffer: ArrayBuffer,
 ): Promise<[string, (filename: string) => Promise<WebAssembly.Module>]> => {
+  const hash = await crypto.subtle.digest("SHA-256", buffer);
+  const hashString = Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
   // Check cache first
-  const cached = getCachedEntry(file);
+  const cached = getCachedEntry(hashString);
   if (cached) {
     // Verify URLs are still valid
     try {
@@ -89,12 +90,8 @@ export const loadTranspile = async (
     }
   }
 
-  const response = await fileLoader.load(file);
-  if (!response) {
-    throw new Error(`Failed to load file: ${file}`);
-  }
   const files: Record<string, string> = {};
-  const t = await transpileInWorker(response.buffer, "test");
+  const t = await transpileInWorker(buffer, "test");
 
   for (const file of t.files) {
     const [f, content] = file as [string, Uint8Array];
@@ -126,7 +123,7 @@ export const loadTranspile = async (
     jsUrl: jsFileEntry[1],
     fileUrls: files,
   };
-  setCachedEntry(file, cacheEntry);
+  setCachedEntry(hashString, cacheEntry);
 
   return [
     jsFileEntry[1],

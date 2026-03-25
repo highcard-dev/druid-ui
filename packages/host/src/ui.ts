@@ -1,10 +1,5 @@
-import { HttpFileLoader } from "./file-loader";
-import { patch } from "./setup-snabbdom";
+import { patch } from "./snabbdom";
 import { type VNode } from "snabbdom";
-import {
-  HistoryRoutingStrategy,
-  type RoutingStrategy,
-} from "./routing-strategy";
 import { loadTranspile } from "./transpile";
 import {
   clearNodes,
@@ -21,26 +16,19 @@ export interface Props {
   on: string[]; // [eventType, fnid]
 }
 
-// Dev-time log function exposed for components importing from "druid:ui/ui".
-export function log(msg: string) {
-  // Reuse internal logfunc for consistent labeling.
-  logfunc(msg);
-}
-
 export class DruidUI extends HTMLElement {
   private shadow: ShadowRoot;
   private wrapperEl: HTMLElement;
   private mountEl: HTMLElement;
   private profile: boolean = false;
   private currentVNode: VNode | null = null;
-  private _routeStrategy: RoutingStrategy = new HistoryRoutingStrategy();
-  private loader = new HttpFileLoader();
+  private reloadGeneration: number = 0;
+  private rootComponent: any;
   private _sandbox: boolean = true;
   private _extensionObject: object = {};
   private _entrypoint?: string;
-  private rootComponent: any;
   private _connected: boolean = false;
-  private reloadGeneration: number = 0;
+  private _buffer?: ArrayBuffer;
 
   public connectedCallback() {
     this._connected = true;
@@ -55,18 +43,25 @@ export class DruidUI extends HTMLElement {
     this._connected = false;
   }
 
-  public reloadComponent() {
+  public async reloadComponent() {
     if (!this._connected) {
       console.warn("Component not connected, skipping reload.");
       return;
     }
-    const entrypoint = this._entrypoint;
-    if (!entrypoint) {
-      console.warn("No entrypoint attribute set.");
-      return;
-    }
-    if (!this.loader) {
-      console.warn("No file loader set.");
+    let buffer: ArrayBuffer;
+
+    // Fetch entrypoint and update buffer when entrypoint is set.
+    if (this._entrypoint) {
+      const res = await fetch(this._entrypoint, { cache: "no-store" });
+      if (!res.ok) {
+        console.error(`Failed to fetch entrypoint: ${this._entrypoint}`);
+        return;
+      }
+      buffer = await res.arrayBuffer();
+    } else if (this._buffer) {
+      buffer = this._buffer;
+    } else {
+      console.warn("No entrypoint or buffer attribute set.");
       return;
     }
 
@@ -80,7 +75,7 @@ export class DruidUI extends HTMLElement {
     clearNodes();
 
     if (this._sandbox) {
-      loadTranspile(entrypoint, this.loader)
+      loadTranspile(buffer)
         .then(([moduleUrl, compile]) => {
           this.loadEntrypointFromWasmUrl(moduleUrl, compile);
         })
@@ -88,15 +83,15 @@ export class DruidUI extends HTMLElement {
           console.error("Failed to load and transpile entrypoint:", e);
         });
     } else {
-      this.loadEntrypointFromJavaScriptUrl(entrypoint);
+      this.loadEntrypointFromJavaScriptUrl(buffer);
     }
   }
 
   public getWrapper(): HTMLElement {
     return this.wrapperEl;
   }
-  set fileloader(loader: HttpFileLoader) {
-    this.loader = loader;
+  set buffer(buffer: ArrayBuffer) {
+    this._buffer = buffer;
     this.reloadComponent();
   }
 
@@ -113,13 +108,8 @@ export class DruidUI extends HTMLElement {
     this.reloadComponent();
   }
 
-  set routeStrategy(strategy: RoutingStrategy) {
-    this._routeStrategy = strategy;
-    this.rerender();
-  }
-
   static get observedAttributes() {
-    return ["entrypoint", "path", "profile", "css", "style", "no-sandbox"];
+    return ["entrypoint", "path", "profile", "no-sandbox"];
   }
 
   attributeChangedCallback(
@@ -141,43 +131,6 @@ export class DruidUI extends HTMLElement {
         break;
       case "profile":
         this.profile = newValue === "true";
-        break;
-      case "style":
-        const htmlString = newValue;
-        const styleEl = document.createElement("style");
-        styleEl.textContent = htmlString.trim();
-
-        // Insert style after all link elements
-        const lastLink = Array.from(
-          this.shadow.querySelectorAll('link[rel="stylesheet"]'),
-        ).pop();
-        //clear previous style elements
-        const existingStyles = this.shadow.querySelectorAll("style");
-        existingStyles.forEach((style) => style.remove());
-
-        if (lastLink) {
-          this.shadow.insertBefore(styleEl, lastLink.nextSibling);
-        } else {
-          this.shadow.insertBefore(
-            styleEl,
-            this.shadowRoot?.firstChild || null,
-          );
-        }
-        break;
-      case "css":
-        const css = newValue.split(",");
-        //clear previous css links
-        const existingLinks = this.shadow.querySelectorAll(
-          'link[rel="stylesheet"]',
-        );
-        existingLinks.forEach((link) => link.remove());
-
-        for (const comp of css) {
-          const link = document.createElement("link");
-          link.rel = "stylesheet";
-          link.href = comp;
-          this.shadow.insertBefore(link, this.shadowRoot?.firstChild || null);
-        }
         break;
     }
   }
@@ -217,7 +170,7 @@ export class DruidUI extends HTMLElement {
     };
   }
 
-  async loadEntrypointFromJavaScriptUrl(entrypoint: string) {
+  async loadEntrypointFromJavaScriptUrl(bundleContent: ArrayBuffer) {
     // Capture the generation at the start of this load
     const loadGeneration = this.reloadGeneration;
     console.debug(
@@ -225,10 +178,6 @@ export class DruidUI extends HTMLElement {
     );
 
     window["druid-extension"] = this.getExtensionObject();
-
-    // Force no-cache to get fresh content
-    const response = await this.loader.load(entrypoint, { cache: false });
-    const bundleContent = response.buffer;
 
     // Create blob URL to avoid Vite's /public restrictions
     const blob = new Blob([bundleContent], { type: "application/javascript" });
@@ -299,9 +248,7 @@ export class DruidUI extends HTMLElement {
       renderStart = performance.now();
     }
 
-    const rootId = this.rootComponent.component.init({
-      path: this._routeStrategy.getCurrentPath(),
-    });
+    const rootId = this.rootComponent.component.init({});
 
     if (this.profile) {
       const initEnd = performance.now();
@@ -311,28 +258,21 @@ export class DruidUI extends HTMLElement {
     }
 
     this.mountEl.innerHTML = "";
-    const dom = createDomFromIdRec(
-      rootId,
-      (nodeId, eventType, e) => {
-        this.rootComponent.component.emit(nodeId, eventType, e);
-        // Capture the current generation
-        const generation = this.reloadGeneration;
-        setTimeout(() => {
-          // Only rerender if we're still in the same generation (no reload happened)
-          if (this.reloadGeneration === generation) {
-            this.rerender();
-          } else {
-            console.debug(
-              `[setTimeout] Skipping stale rerender (generation ${generation}, current: ${this.reloadGeneration})`,
-            );
-          }
-        }, 0);
-      },
-      (href: string) => {
-        this._routeStrategy.navigateTo(href);
-        this.rerender();
-      },
-    );
+    const dom = createDomFromIdRec(rootId, (nodeId, eventType, e) => {
+      this.rootComponent.component.emit(nodeId, eventType, e);
+      // Capture the current generation
+      const generation = this.reloadGeneration;
+      setTimeout(() => {
+        // Only rerender if we're still in the same generation (no reload happened)
+        if (this.reloadGeneration === generation) {
+          this.rerender();
+        } else {
+          console.debug(
+            `[setTimeout] Skipping stale rerender (generation ${generation}, current: ${this.reloadGeneration})`,
+          );
+        }
+      }, 0);
+    });
 
     if (dom instanceof String) {
       console.warn("Root DOM is a string, cannot render:", dom);
