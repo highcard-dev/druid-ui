@@ -248,7 +248,7 @@ export class DruidUI extends HTMLElement {
       renderStart = performance.now();
     }
 
-    const rootId = this.rootComponent.component.init({});
+    const rootId = this.rootComponent.component.init([]);
 
     if (this.profile) {
       const initEnd = performance.now();

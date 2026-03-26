@@ -88,7 +88,7 @@ export const createDFunc = (dfunc: typeof d) => {
     const id = dfunc(
       tag,
       ps,
-      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString()),
+      children.filter((c) => typeof c !== "boolean").map((c) => String(c)),
     );
     callbackMap[id] = {
       ...callbackMap[id],
