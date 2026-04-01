@@ -52,9 +52,18 @@ export class DruidUI extends HTMLElement {
 
     // Fetch entrypoint and update buffer when entrypoint is set.
     if (this._entrypoint) {
-      const res = await fetch(this._entrypoint, { cache: "no-store" });
+      let res: Response;
+      try {
+        res = await fetch(this._entrypoint, { cache: "no-store" });
+      } catch (e) {
+        this.showError("Failed to fetch entrypoint", e);
+        return;
+      }
       if (!res.ok) {
-        console.error(`Failed to fetch entrypoint: ${this._entrypoint}`);
+        this.showError(
+          "Failed to fetch entrypoint",
+          `${res.status} ${res.statusText} — ${this._entrypoint}`,
+        );
         return;
       }
       buffer = await res.arrayBuffer();
@@ -77,13 +86,17 @@ export class DruidUI extends HTMLElement {
     if (this._sandbox) {
       loadTranspile(buffer)
         .then(([moduleUrl, compile]) => {
-          this.loadEntrypointFromWasmUrl(moduleUrl, compile);
+          this.loadEntrypointFromWasmUrl(moduleUrl, compile).catch((e) => {
+            this.showError("Failed to load entrypoint", e);
+          });
         })
         .catch((e) => {
-          console.error("Failed to load and transpile entrypoint:", e);
+          this.showError("Failed to transpile entrypoint", e);
         });
     } else {
-      this.loadEntrypointFromJavaScriptUrl(buffer);
+      this.loadEntrypointFromJavaScriptUrl(buffer).catch((e) => {
+        this.showError("Failed to load entrypoint", e);
+      });
     }
   }
 
@@ -147,6 +160,38 @@ export class DruidUI extends HTMLElement {
 
     this.wrapperEl.appendChild(this.mountEl);
     this.shadow.appendChild(this.wrapperEl);
+  }
+
+  private showError(title: string, error: unknown) {
+    const message =
+      error instanceof Error ? error.message : String(error);
+
+    // Reset VNode so the next successful render can patch mountEl cleanly
+    if (this.currentVNode?.elm?.parentNode) {
+      this.currentVNode.elm.parentNode.replaceChild(
+        this.mountEl,
+        this.currentVNode.elm as Node,
+      );
+    }
+    this.currentVNode = null;
+
+    this.mountEl.innerHTML = "";
+    const container = document.createElement("div");
+    container.style.cssText =
+      "font-family:system-ui,sans-serif;padding:16px;border-left:4px solid #e53e3e;background:#fff5f5;color:#1a202c;border-radius:4px;margin:8px;max-width:100%;overflow:auto";
+
+    const heading = document.createElement("div");
+    heading.style.cssText = "font-weight:600;margin-bottom:8px;color:#c53030";
+    heading.textContent = title;
+
+    const details = document.createElement("pre");
+    details.style.cssText =
+      "margin:0;white-space:pre-wrap;word-break:break-word;font-size:13px;color:#742a2a";
+    details.textContent = message;
+
+    container.appendChild(heading);
+    container.appendChild(details);
+    this.mountEl.appendChild(container);
   }
 
   private getExtensionObject() {
