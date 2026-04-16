@@ -8,6 +8,8 @@
     "examples/*"
   ],
   "scripts": {
+    "copy-plattform-wit": "sh scripts/copy-plattform-wit.sh",
+    "postinstall": "npm run copy-plattform-wit",
     "build": "turbo build --filter='./packages/*'",
     "gen:types": "jco guest-types -o generated/types/guest/import wit --world-name druid-ui",
     "changeset": "changeset",

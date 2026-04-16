@@ -22,6 +22,8 @@ if (import.meta.env.DEV) {
 
 const app = document.getElementById("app");
 app?.appendChild(druidUiElement);
-
+druidUiElement.extensionObject = {
+  
+}
 // Enable Hot Module Replacement for development
 ViteHMR(druidUiElement);

@@ -6,7 +6,6 @@ import { defineConfig } from "vite";
 import { ViteHMRPlugin } from "@druid-ui/vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const plattformPkgDir = path.resolve(__dirname, "../../packages/plattform");
 
 export default defineConfig({
   plugins: [
@@ -14,7 +13,7 @@ export default defineConfig({
     wasm(),
     ViteHMRPlugin("src/component/**", "raw", {
       worldName: "druid-plattform",
-      files: [path.resolve(plattformPkgDir, "wit/druid-plattform.wit")],
+      files: [path.resolve(__dirname, "wit/druid-plattform.wit")],
     }),
   ],
   optimizeDeps: {

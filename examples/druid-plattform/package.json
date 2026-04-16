@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
-    "build": "druid-ui-build --wit=../../packages/plattform/wit/druid-plattform.wit --world-name=druid-plattform src/component/druid.tsx dist"
+    "build": "druid-ui-build --wit=wit/druid-plattform.wit --world-name=druid-plattform src/component/druid.tsx dist"
   },
   "devDependencies": {
     "@druid-ui/host": "*",

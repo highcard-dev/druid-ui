@@ -1,4 +1,4 @@
-// ../../packages/component/dist/index.js
+// node_modules/@druid-ui/component/dist/index.js
 import { d as dfunc } from "druid:ui/ui";
 import { log, rerender, setHook } from "druid:ui/ui";
 import { Event } from "druid:ui/utils";
@@ -93,41 +93,73 @@ var createComponent = (j) => ({
 });
 var d2 = createDFunc(dfunc);
 
+// node_modules/@druid-ui/component/dist/jsx-runtime.js
+function jsx(type, props) {
+  const { children, ...rest } = props || {};
+  if (children !== void 0) {
+    return d2(type, rest, children);
+  }
+  return d2(type, rest);
+}
+var jsxs = jsx;
+var Fragment = Symbol.for("react.fragment");
+
 // src/component/simple.tsx
 var i = 0;
-var ComponentTitle = ({ title, description }) => /* @__PURE__ */ d2("div", null, /* @__PURE__ */ d2("h1", null, title), /* @__PURE__ */ d2("h2", null, description));
+var ComponentTitle = ({ title, description }) => /* @__PURE__ */ jsxs("div", { children: [
+  /* @__PURE__ */ jsx("h1", { children: title }),
+  /* @__PURE__ */ jsx("h2", { children: description })
+] });
 var ComponentTitle2 = () => {
   return {
-    view: ({ title, description }) => /* @__PURE__ */ d2("div", null, /* @__PURE__ */ d2("h1", null, title), /* @__PURE__ */ d2("h2", null, description))
+    view: ({ title, description }) => /* @__PURE__ */ jsxs("div", { children: [
+      /* @__PURE__ */ jsx("h1", { children: title }),
+      /* @__PURE__ */ jsx("h2", { children: description })
+    ] })
   };
 };
 var component = createComponent((ctx) => {
   log2(`Init called with path: ${ctx.path}`);
   if (ctx.path == "/test") {
-    return /* @__PURE__ */ d2("div", null, /* @__PURE__ */ d2("a", { href: "/" }, "go back"), "Test path reached");
+    return /* @__PURE__ */ jsxs("div", { children: [
+      /* @__PURE__ */ jsx("a", { href: "/", children: "go back" }),
+      "Test path reached"
+    ] });
   }
-  return /* @__PURE__ */ d2("div", null, /* @__PURE__ */ d2(
-    ComponentTitle,
-    {
-      title: "Hello World",
-      description: "Just a simple component"
-    }
-  ), /* @__PURE__ */ d2(
-    ComponentTitle2,
-    {
-      title: "Hello World2",
-      description: "Just a simple component 2"
-    }
-  ), /* @__PURE__ */ d2("main", null, /* @__PURE__ */ d2(
-    "button",
-    {
-      onClick: (e) => {
-        i++;
-        log2(`Button clicked ${i} times at path: ${ctx.path}`);
+  return /* @__PURE__ */ jsxs("div", { children: [
+    /* @__PURE__ */ jsx(
+      ComponentTitle,
+      {
+        title: "Hello World",
+        description: "Just a simple component"
       }
-    },
-    "Do click"
-  ), /* @__PURE__ */ d2("hr", null), /* @__PURE__ */ d2("b", null, "Clicks: "), " ", i, i > 5 ? /* @__PURE__ */ d2("div", null, "more than 5 clicks!") : ""), /* @__PURE__ */ d2("a", { href: "/test" }, "go to test page"));
+    ),
+    /* @__PURE__ */ jsx(
+      ComponentTitle2,
+      {
+        title: "Hello World2",
+        description: "Just a simple component 2"
+      }
+    ),
+    /* @__PURE__ */ jsxs("main", { children: [
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          onClick: (e) => {
+            i++;
+            log2(`Button clicked ${i} times at path: ${ctx.path}`);
+          },
+          children: "Do click"
+        }
+      ),
+      /* @__PURE__ */ jsx("hr", {}),
+      /* @__PURE__ */ jsx("b", { children: "Clicks: " }),
+      " ",
+      i,
+      i > 5 ? /* @__PURE__ */ jsx("div", { children: "more than 5 clicks!" }) : ""
+    ] }),
+    /* @__PURE__ */ jsx("a", { href: "/test", children: "go to test page" })
+  ] });
 });
 export {
   component
