@@ -16,6 +16,9 @@ export default defineConfig({
       files: [path.resolve(__dirname, "wit/druid-plattform.wit")],
     }),
   ],
+  build: {
+    target: "esnext",
+  },
   optimizeDeps: {
     exclude: [
       "@bytecodealliance/jco",

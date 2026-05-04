@@ -12,6 +12,9 @@ export default defineConfig({
       files: ["src/wit/extension.wit"],
     }),
   ],
+  build: {
+    target: "esnext",
+  },
   optimizeDeps: {
     exclude: [
       "@bytecodealliance/jco",

@@ -63,7 +63,7 @@ var createDFunc = (dfunc2) => {
     const id = dfunc2(
       tag,
       ps,
-      children.filter((c) => typeof c !== "boolean").map((c) => c?.toString())
+      children.filter((c) => typeof c !== "boolean").map((c) => String(c))
     );
     callbackMap[id] = {
       ...callbackMap[id],
@@ -101,6 +101,19 @@ var d2 = createDFunc(dfunc);
 
 // src/component/extended.tsx
 import { requestGet } from "druid:ui/extension";
+
+// ../../packages/component/dist/jsx-runtime.js
+function jsx(type, props) {
+  const { children, ...rest } = props || {};
+  if (children !== void 0) {
+    return d2(type, rest, children);
+  }
+  return d2(type, rest);
+}
+var jsxs = jsx;
+var Fragment = Symbol.for("react.fragment");
+
+// src/component/extended.tsx
 var done = false;
 var disabled = false;
 var content = "";
@@ -109,33 +122,42 @@ var component = createComponent(() => {
   if (!done) {
     done = true;
   }
-  return /* @__PURE__ */ d2("div", { class: "hello" }, /* @__PURE__ */ d2("h2", null, "Hello!"), /* @__PURE__ */ d2(
-    "input",
-    {
-      type: "text",
-      value: url,
-      onKeyUp: (e) => {
-        url = e.value();
+  return /* @__PURE__ */ jsxs("div", { class: "hello", children: [
+    /* @__PURE__ */ jsx("h2", { children: "Hello!" }),
+    /* @__PURE__ */ jsx(
+      "input",
+      {
+        type: "text",
+        value: url,
+        onKeyUp: (e) => {
+          url = e.value();
+        }
       }
-    }
-  ), /* @__PURE__ */ d2(
-    "button",
-    {
-      disabled: disabled ? "true" : "",
-      onClick: (e) => {
-        disabled = true;
-        rawAsyncToPromise(requestGet)("https://api.github.com/").then((data) => {
-          log2("Fetched data:" + data);
-          content = data;
-        }).finally(() => {
-          log2("Fetch operation completed");
-          disabled = false;
-        });
-        e.preventDefault();
+    ),
+    /* @__PURE__ */ jsx(
+      "button",
+      {
+        disabled: disabled ? "true" : "",
+        onClick: (e) => {
+          disabled = true;
+          rawAsyncToPromise(requestGet)("https://api.github.com/").then((data) => {
+            log2("Fetched data:" + data);
+            content = data;
+          }).finally(() => {
+            log2("Fetch operation completed");
+            disabled = false;
+          });
+          e.preventDefault();
+        },
+        children: "Click me"
       }
-    },
-    "Click me"
-  ), !!content && /* @__PURE__ */ d2("div", null, /* @__PURE__ */ d2("hr", null), /* @__PURE__ */ d2("h2", null, "Content"), /* @__PURE__ */ d2("pre", null, content)));
+    ),
+    !!content && /* @__PURE__ */ jsxs("div", { children: [
+      /* @__PURE__ */ jsx("hr", {}),
+      /* @__PURE__ */ jsx("h2", { children: "Content" }),
+      /* @__PURE__ */ jsx("pre", { children: content })
+    ] })
+  ] });
 });
 export {
   component

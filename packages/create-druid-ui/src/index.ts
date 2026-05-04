@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
 import { downloadTemplate } from "giget";
-import { resolve } from "node:path";
+import { copyFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const args = process.argv.slice(2);
 const projectName = args.find((arg) => !arg.startsWith("-"));
@@ -19,6 +21,8 @@ if (!projectName) {
 }
 
 const projectDir = resolve(projectName);
+const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const aiGuidePath = join(packageDir, "src", "AGENTS.md");
 
 async function main() {
   console.log(`Creating "${projectName}" with template "${template}"...`);
@@ -27,6 +31,8 @@ async function main() {
     dir: projectDir,
     force: false,
   });
+
+  await copyFile(aiGuidePath, join(projectDir, "AGENTS.md"));
 
   console.log("Installing dependencies...");
 

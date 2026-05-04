@@ -7,6 +7,9 @@ import { ViteHMRPlugin } from "@druid-ui/vite";
 
 export default defineConfig({
   plugins: [topLevelAwait(), wasm(), ViteHMRPlugin("public/*.tsx", "raw")],
+  build: {
+    target: "esnext",
+  },
   optimizeDeps: {
     exclude: [
       "@bytecodealliance/jco",
