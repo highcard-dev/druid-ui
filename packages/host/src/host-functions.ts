@@ -7,7 +7,9 @@ import {
   eventFromIslandValue,
   getDruidIslandName,
   isDruidIslandTag,
+  type DruidIslandChild,
   type DruidIslandLifecycle,
+  type DruidIslandNode,
 } from "./islands";
 
 const nodes = new Map<
@@ -71,7 +73,7 @@ function toPascalCase(value: string) {
   return value.length === 0 ? value : value[0]!.toUpperCase() + value.slice(1);
 }
 
-function createIslandVNode(
+function createIslandNode(
   id: string,
   node: {
     element: string;
@@ -79,8 +81,7 @@ function createIslandVNode(
     children?: Array<string>;
   },
   emitEvent: (id: string, eventType: string, event: Event) => void,
-  options?: CreateDomOptions,
-) {
+): DruidIslandNode {
   const name = getDruidIslandName(node.element);
   const props: Record<string, unknown> = {};
   const events: Record<string, string> = {};
@@ -99,15 +100,52 @@ function createIslandVNode(
     }
 
     for (const eventType of node.props.on) {
+      if (Object.values(events).includes(eventType)) {
+        continue;
+      }
       const propName = `on${toPascalCase(eventType)}`;
       events[propName] = eventType;
     }
   }
 
-  const children = (node.children ?? []).filter((childId) => !nodes.has(childId));
+  const children: DruidIslandChild[] = (node.children ?? []).map((childId) => {
+    const childNode = nodes.get(childId);
+    if (!childNode) {
+      return childId;
+    }
+    if (!isDruidIslandTag(childNode.element)) {
+      throw new Error(
+        `Druid island "${name}" can only contain text or other islands; received <${childNode.element}>.`,
+      );
+    }
+    return createIslandNode(childId, childNode, emitEvent);
+  });
+
+  return {
+    id,
+    name,
+    props,
+    events,
+    children,
+    emit: (eventType, value) =>
+      emitEvent(id, eventType, eventFromIslandValue(value)),
+  };
+}
+
+function createIslandVNode(
+  id: string,
+  node: {
+    element: string;
+    props?: Props;
+    children?: Array<string>;
+  },
+  emitEvent: (id: string, eventType: string, event: Event) => void,
+  options?: CreateDomOptions,
+) {
+  const island = createIslandNode(id, node, emitEvent);
   const data: VNodeData = {
     attrs: {
-      "data-druid-island": name,
+      "data-druid-island": island.name,
     },
     hook: {
       insert: (vnode) => {
@@ -117,16 +155,7 @@ function createIslandVNode(
         }
         options?.islandLifecycle?.({
           type: "mount",
-          island: {
-            id,
-            name,
-            container,
-            props,
-            events,
-            children,
-            emit: (eventType, value) =>
-              emitEvent(id, eventType, eventFromIslandValue(value)),
-          },
+          island: { ...island, container },
         });
       },
       postpatch: (_oldVnode, vnode) => {
@@ -136,16 +165,7 @@ function createIslandVNode(
         }
         options?.islandLifecycle?.({
           type: "update",
-          island: {
-            id,
-            name,
-            container,
-            props,
-            events,
-            children,
-            emit: (eventType, value) =>
-              emitEvent(id, eventType, eventFromIslandValue(value)),
-          },
+          island: { ...island, container },
         });
       },
       destroy: (vnode) => {

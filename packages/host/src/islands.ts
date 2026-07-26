@@ -4,14 +4,19 @@ export const DRUID_ISLAND_TAG_PREFIX = "island:";
 export const DRUID_ISLAND_PROPS_PROP = "__druidIslandProps";
 export const DRUID_ISLAND_EVENTS_PROP = "__druidIslandEvents";
 
-export interface DruidIsland {
+export type DruidIslandChild = string | DruidIslandNode;
+
+export interface DruidIslandNode {
   id: string;
   name: string;
-  container: HTMLElement;
   props: Record<string, unknown>;
   events: Record<string, string>;
-  children: string[];
+  children: DruidIslandChild[];
   emit: (eventType: string, value?: unknown) => void;
+}
+
+export interface DruidIsland extends DruidIslandNode {
+  container: HTMLElement;
 }
 
 export type DruidIslandLifecycle =
