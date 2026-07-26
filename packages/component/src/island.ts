@@ -1,11 +1,11 @@
 import { d as dfunc } from "druid:ui/ui";
 import { createDFunc } from "./utils";
 
-const reactTagPrefix = "react:";
-const reactPropsProp = "__druidReactProps";
-const reactEventsProp = "__druidReactEvents";
+const islandTagPrefix = "island:";
+const islandPropsProp = "__druidIslandProps";
+const islandEventsProp = "__druidIslandEvents";
 
-type DruidReactComponentProps = Record<string, unknown>;
+type DruidIslandProps = Record<string, unknown>;
 
 const d = createDFunc(dfunc);
 
@@ -15,8 +15,8 @@ function eventKeyForProp(propName: string) {
     : propName.toLowerCase();
 }
 
-function toSerializableProps(props: DruidReactComponentProps) {
-  const serializableProps: DruidReactComponentProps = {};
+function toSerializableProps(props: DruidIslandProps) {
+  const serializableProps: DruidIslandProps = {};
   const eventProps: Record<string, string> = {};
   const callbackProps: Record<string, unknown> = {};
 
@@ -33,19 +33,19 @@ function toSerializableProps(props: DruidReactComponentProps) {
   return { serializableProps, eventProps, callbackProps };
 }
 
-export function react(
+export function island(
   name: string,
-  props: DruidReactComponentProps = {},
+  props: DruidIslandProps = {},
   ...children: unknown[]
 ) {
   const { serializableProps, eventProps, callbackProps } =
     toSerializableProps(props);
 
   return d(
-    `${reactTagPrefix}${name}`,
+    `${islandTagPrefix}${name}`,
     {
-      [reactPropsProp]: JSON.stringify(serializableProps),
-      [reactEventsProp]: JSON.stringify(eventProps),
+      [islandPropsProp]: JSON.stringify(serializableProps),
+      [islandEventsProp]: JSON.stringify(eventProps),
       ...callbackProps,
     },
     ...children.flat().map((child) => String(child)),

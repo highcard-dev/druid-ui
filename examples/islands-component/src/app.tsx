@@ -1,16 +1,16 @@
-import { type Context, createComponent, react } from "@druid-ui/component";
+import { type Context, createComponent, island } from "@druid-ui/component";
 
 let clicks = 0;
 
 export const component = createComponent((ctx: Context) => (
   <div>
-    <h2>Druid UI React interop</h2>
-    {react("DruidReactThemeProbe", { label: "SPA provider" })}
-    {react("Card", { className: "mt-3 max-w-md", size: "sm" }, [
+    <h2>Druid UI islands</h2>
+    {island("IslandThemeProbe", { label: "SPA provider" })}
+    {island("Card", { className: "mt-3 max-w-md", size: "sm" }, [
       "This card is rendered by the SPA React tree.",
     ])}
     <p>Current path: {ctx.path}</p>
-    {react(
+    {island(
       "Button",
       {
         variant: "default",

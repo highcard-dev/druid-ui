@@ -2,13 +2,13 @@ import type { Props } from "druid:ui/ui";
 import { h, type VNode, type VNodeChildren, type VNodeData } from "snabbdom";
 import { Event } from "./types";
 import {
-  DRUID_REACT_EVENTS_PROP,
-  DRUID_REACT_PROPS_PROP,
-  eventFromReactValue,
-  getDruidReactComponentName,
-  isDruidReactTag,
-  type DruidReactComponentLifecycle,
-} from "./react-components";
+  DRUID_ISLAND_EVENTS_PROP,
+  DRUID_ISLAND_PROPS_PROP,
+  eventFromIslandValue,
+  getDruidIslandName,
+  isDruidIslandTag,
+  type DruidIslandLifecycle,
+} from "./islands";
 
 const nodes = new Map<
   string,
@@ -47,7 +47,7 @@ export function logfunc(msg: string) {
 }
 
 export interface CreateDomOptions {
-  reactComponentLifecycle?: (lifecycle: DruidReactComponentLifecycle) => void;
+  islandLifecycle?: (lifecycle: DruidIslandLifecycle) => void;
 }
 
 function parseRecordProp(value: unknown): Record<string, unknown> {
@@ -61,7 +61,7 @@ function parseRecordProp(value: unknown): Record<string, unknown> {
       return parsed as Record<string, unknown>;
     }
   } catch {
-    console.warn("Failed to parse Druid React component props:", value);
+    console.warn("Failed to parse Druid island props:", value);
   }
 
   return {};
@@ -71,7 +71,7 @@ function toPascalCase(value: string) {
   return value.length === 0 ? value : value[0]!.toUpperCase() + value.slice(1);
 }
 
-function createReactComponentVNode(
+function createIslandVNode(
   id: string,
   node: {
     element: string;
@@ -81,18 +81,18 @@ function createReactComponentVNode(
   emitEvent: (id: string, eventType: string, event: Event) => void,
   options?: CreateDomOptions,
 ) {
-  const name = getDruidReactComponentName(node.element);
+  const name = getDruidIslandName(node.element);
   const props: Record<string, unknown> = {};
-  const eventProps: Record<string, string> = {};
+  const events: Record<string, string> = {};
 
   if (node.props) {
     for (const prop of node.props.prop) {
-      if (prop.key === DRUID_REACT_PROPS_PROP) {
+      if (prop.key === DRUID_ISLAND_PROPS_PROP) {
         Object.assign(props, parseRecordProp(prop.value));
         continue;
       }
-      if (prop.key === DRUID_REACT_EVENTS_PROP) {
-        Object.assign(eventProps, parseRecordProp(prop.value));
+      if (prop.key === DRUID_ISLAND_EVENTS_PROP) {
+        Object.assign(events, parseRecordProp(prop.value));
         continue;
       }
       props[prop.key] = prop.value;
@@ -100,14 +100,14 @@ function createReactComponentVNode(
 
     for (const eventType of node.props.on) {
       const propName = `on${toPascalCase(eventType)}`;
-      eventProps[propName] = eventType;
+      events[propName] = eventType;
     }
   }
 
   const children = (node.children ?? []).filter((childId) => !nodes.has(childId));
   const data: VNodeData = {
     attrs: {
-      "data-druid-react-component": name,
+      "data-druid-island": name,
     },
     hook: {
       insert: (vnode) => {
@@ -115,17 +115,17 @@ function createReactComponentVNode(
         if (!(container instanceof HTMLElement)) {
           return;
         }
-        options?.reactComponentLifecycle?.({
+        options?.islandLifecycle?.({
           type: "mount",
-          component: {
+          island: {
             id,
             name,
             container,
             props,
-            eventProps,
+            events,
             children,
             emit: (eventType, value) =>
-              emitEvent(id, eventType, eventFromReactValue(value)),
+              emitEvent(id, eventType, eventFromIslandValue(value)),
           },
         });
       },
@@ -134,17 +134,17 @@ function createReactComponentVNode(
         if (!(container instanceof HTMLElement)) {
           return;
         }
-        options?.reactComponentLifecycle?.({
+        options?.islandLifecycle?.({
           type: "update",
-          component: {
+          island: {
             id,
             name,
             container,
             props,
-            eventProps,
+            events,
             children,
             emit: (eventType, value) =>
-              emitEvent(id, eventType, eventFromReactValue(value)),
+              emitEvent(id, eventType, eventFromIslandValue(value)),
           },
         });
       },
@@ -153,15 +153,15 @@ function createReactComponentVNode(
         if (!(container instanceof HTMLElement)) {
           return;
         }
-        options?.reactComponentLifecycle?.({
+        options?.islandLifecycle?.({
           type: "unmount",
-          component: { id, container },
+          island: { id, container },
         });
       },
     },
   };
 
-  return h("druid-react-component", data);
+  return h("druid-island", data);
 }
 
 export function createDomFromIdRec(
@@ -176,8 +176,8 @@ export function createDomFromIdRec(
     return id;
   }
 
-  if (isDruidReactTag(node.element)) {
-    return createReactComponentVNode(id, node, emitEvent, options);
+  if (isDruidIslandTag(node.element)) {
+    return createIslandVNode(id, node, emitEvent, options);
   }
 
   const data: VNodeData = {};

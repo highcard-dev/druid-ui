@@ -1,42 +1,42 @@
 import { Event } from "./types";
 
-export const DRUID_REACT_TAG_PREFIX = "react:";
-export const DRUID_REACT_PROPS_PROP = "__druidReactProps";
-export const DRUID_REACT_EVENTS_PROP = "__druidReactEvents";
+export const DRUID_ISLAND_TAG_PREFIX = "island:";
+export const DRUID_ISLAND_PROPS_PROP = "__druidIslandProps";
+export const DRUID_ISLAND_EVENTS_PROP = "__druidIslandEvents";
 
-export interface DruidReactComponentInstance {
+export interface DruidIsland {
   id: string;
   name: string;
   container: HTMLElement;
   props: Record<string, unknown>;
-  eventProps: Record<string, string>;
+  events: Record<string, string>;
   children: string[];
   emit: (eventType: string, value?: unknown) => void;
 }
 
-export type DruidReactComponentLifecycle =
+export type DruidIslandLifecycle =
   | {
       type: "mount" | "update";
-      component: DruidReactComponentInstance;
+      island: DruidIsland;
     }
   | {
       type: "unmount";
-      component: Pick<DruidReactComponentInstance, "id" | "container">;
+      island: Pick<DruidIsland, "id" | "container">;
     };
 
-export type DruidReactComponentRenderer = (
-  lifecycle: DruidReactComponentLifecycle,
+export type DruidIslandRenderer = (
+  lifecycle: DruidIslandLifecycle,
 ) => void;
 
-export function isDruidReactTag(element: string) {
-  return element.startsWith(DRUID_REACT_TAG_PREFIX);
+export function isDruidIslandTag(element: string) {
+  return element.startsWith(DRUID_ISLAND_TAG_PREFIX);
 }
 
-export function getDruidReactComponentName(element: string) {
-  return element.slice(DRUID_REACT_TAG_PREFIX.length);
+export function getDruidIslandName(element: string) {
+  return element.slice(DRUID_ISLAND_TAG_PREFIX.length);
 }
 
-export function eventFromReactValue(value: unknown) {
+export function eventFromIslandValue(value: unknown) {
   if (value && typeof value === "object") {
     const maybeEvent = value as {
       currentTarget?: { value?: unknown; checked?: unknown };

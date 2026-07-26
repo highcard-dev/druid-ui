@@ -11,10 +11,10 @@ import {
 import { Event } from "./types";
 import { setCb } from "./utils";
 import {
-  type DruidReactComponentInstance,
-  type DruidReactComponentLifecycle,
-  type DruidReactComponentRenderer,
-} from "./react-components";
+  type DruidIsland,
+  type DruidIslandLifecycle,
+  type DruidIslandRenderer,
+} from "./islands";
 
 export interface Props {
   prop: { key: string; value: any }[];
@@ -34,10 +34,10 @@ export class DruidUI extends HTMLElement {
   private _entrypoint?: string;
   private _connected: boolean = false;
   private _buffer?: ArrayBuffer;
-  private _reactComponentRenderer: DruidReactComponentRenderer | undefined;
-  private reactComponentInstances = new Map<
+  private _islandRenderer: DruidIslandRenderer | undefined;
+  private islandInstances = new Map<
     HTMLElement,
-    Pick<DruidReactComponentInstance, "id" | "container">
+    Pick<DruidIsland, "id" | "container">
   >();
 
   public connectedCallback() {
@@ -51,7 +51,7 @@ export class DruidUI extends HTMLElement {
 
   public disconnectedCallback() {
     this._connected = false;
-    this.unmountReactComponents();
+    this.unmountIslands();
   }
 
   public async reloadComponent() {
@@ -93,7 +93,7 @@ export class DruidUI extends HTMLElement {
 
     // Clear nodes map to ensure fresh state
     clearNodes();
-    this.unmountReactComponents();
+    this.unmountIslands();
 
     if (this._sandbox) {
       loadTranspile(buffer)
@@ -123,8 +123,8 @@ export class DruidUI extends HTMLElement {
   set extensionObject(obj: object) {
     this._extensionObject = obj;
   }
-  set reactComponentRenderer(renderer: DruidReactComponentRenderer | undefined) {
-    this._reactComponentRenderer = renderer;
+  set islandRenderer(renderer: DruidIslandRenderer | undefined) {
+    this._islandRenderer = renderer;
   }
   set entrypoint(entrypoint: string) {
     this._entrypoint = entrypoint;
@@ -209,27 +209,27 @@ export class DruidUI extends HTMLElement {
     this.mountEl.appendChild(container);
   }
 
-  private reactComponentLifecycle(lifecycle: DruidReactComponentLifecycle) {
+  private islandLifecycle(lifecycle: DruidIslandLifecycle) {
     if (lifecycle.type === "unmount") {
-      this.reactComponentInstances.delete(lifecycle.component.container);
+      this.islandInstances.delete(lifecycle.island.container);
     } else {
-      this.reactComponentInstances.set(lifecycle.component.container, {
-        id: lifecycle.component.id,
-        container: lifecycle.component.container,
+      this.islandInstances.set(lifecycle.island.container, {
+        id: lifecycle.island.id,
+        container: lifecycle.island.container,
       });
     }
 
-    this._reactComponentRenderer?.(lifecycle);
+    this._islandRenderer?.(lifecycle);
   }
 
-  private unmountReactComponents() {
-    for (const component of this.reactComponentInstances.values()) {
-      this._reactComponentRenderer?.({
+  private unmountIslands() {
+    for (const island of this.islandInstances.values()) {
+      this._islandRenderer?.({
         type: "unmount",
-        component,
+        island,
       });
     }
-    this.reactComponentInstances.clear();
+    this.islandInstances.clear();
   }
 
   private getExtensionObject() {
@@ -359,8 +359,7 @@ export class DruidUI extends HTMLElement {
         }, 0);
       },
       {
-        reactComponentLifecycle: (lifecycle) =>
-          this.reactComponentLifecycle(lifecycle),
+        islandLifecycle: (lifecycle) => this.islandLifecycle(lifecycle),
       },
     );
 
