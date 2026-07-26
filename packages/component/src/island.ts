@@ -9,37 +9,23 @@ type DruidIslandProps = Record<string, unknown>;
 
 const d = createDFunc(dfunc);
 
-function eventKeyForProp(propName: string) {
-  return propName.startsWith("on")
-    ? propName.slice(2).toLowerCase()
-    : propName.toLowerCase();
-}
-
-function toSerializableProps(props: DruidIslandProps) {
+export function island(
+  name: string,
+  props: DruidIslandProps = {},
+  ...children: unknown[]
+) {
   const serializableProps: DruidIslandProps = {};
   const eventProps: Record<string, string> = {};
   const callbackProps: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(props)) {
     if (typeof value === "function") {
-      eventProps[key] = eventKeyForProp(key);
+      eventProps[key] = (key.startsWith("on") ? key.slice(2) : key).toLowerCase();
       callbackProps[key] = value;
-      continue;
+    } else {
+      serializableProps[key] = value;
     }
-
-    serializableProps[key] = value;
   }
-
-  return { serializableProps, eventProps, callbackProps };
-}
-
-export function island(
-  name: string,
-  props: DruidIslandProps = {},
-  ...children: unknown[]
-) {
-  const { serializableProps, eventProps, callbackProps } =
-    toSerializableProps(props);
 
   return d(
     `${islandTagPrefix}${name}`,

@@ -42,28 +42,19 @@ export function getDruidIslandName(element: string) {
 }
 
 export function eventFromIslandValue(value: unknown) {
-  if (value && typeof value === "object") {
-    const maybeEvent = value as {
-      currentTarget?: { value?: unknown; checked?: unknown };
-      target?: { value?: unknown; checked?: unknown };
-    };
-    const target = maybeEvent.currentTarget ?? maybeEvent.target;
-    if (target) {
-      return new Event(String(target.value ?? ""), target.checked === true);
-    }
-  }
+  const target =
+    value && typeof value === "object"
+      ? (value as {
+          currentTarget?: { value?: unknown; checked?: unknown };
+          target?: { value?: unknown; checked?: unknown };
+        }).currentTarget ??
+        (value as { target?: { value?: unknown; checked?: unknown } }).target
+      : undefined;
 
-  if (typeof value === "boolean") {
-    return new Event(String(value), value);
-  }
-
-  if (typeof value === "string" || typeof value === "number") {
-    return new Event(String(value), false);
-  }
-
-  if (value === undefined || value === null) {
-    return new Event();
-  }
-
-  return new Event(JSON.stringify(value), false);
+  return target
+    ? new Event(String(target.value ?? ""), target.checked === true)
+    : new Event(
+        value == null ? "" : typeof value === "object" ? JSON.stringify(value) : String(value),
+        value === true,
+      );
 }
