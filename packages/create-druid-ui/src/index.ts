@@ -15,7 +15,7 @@ const template = templateFlag !== -1 ? args[templateFlag + 1] : "starter";
 if (!projectName) {
   console.log("Usage: create-druid-ui <project-name> [-t template]");
   console.log(
-    "Templates: starter (default), starter-component, simple, simple-extended",
+    "Templates: starter (default), starter-component, starter-component-plattform, react-interop-component, simple, simple-extended",
   );
   process.exit(1);
 }

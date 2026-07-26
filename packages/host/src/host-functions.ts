@@ -1,6 +1,14 @@
 import type { Props } from "druid:ui/ui";
 import { h, type VNode, type VNodeChildren, type VNodeData } from "snabbdom";
 import { Event } from "./types";
+import {
+  DRUID_REACT_EVENTS_PROP,
+  DRUID_REACT_PROPS_PROP,
+  eventFromReactValue,
+  getDruidReactComponentName,
+  isDruidReactTag,
+  type DruidReactComponentLifecycle,
+} from "./react-components";
 
 const nodes = new Map<
   string,
@@ -38,15 +46,138 @@ export function logfunc(msg: string) {
   console.log("UI LOG:", msg);
 }
 
+export interface CreateDomOptions {
+  reactComponentLifecycle?: (lifecycle: DruidReactComponentLifecycle) => void;
+}
+
+function parseRecordProp(value: unknown): Record<string, unknown> {
+  if (typeof value !== "string" || value.length === 0) {
+    return {};
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    console.warn("Failed to parse Druid React component props:", value);
+  }
+
+  return {};
+}
+
+function toPascalCase(value: string) {
+  return value.length === 0 ? value : value[0]!.toUpperCase() + value.slice(1);
+}
+
+function createReactComponentVNode(
+  id: string,
+  node: {
+    element: string;
+    props?: Props;
+    children?: Array<string>;
+  },
+  emitEvent: (id: string, eventType: string, event: Event) => void,
+  options?: CreateDomOptions,
+) {
+  const name = getDruidReactComponentName(node.element);
+  const props: Record<string, unknown> = {};
+  const eventProps: Record<string, string> = {};
+
+  if (node.props) {
+    for (const prop of node.props.prop) {
+      if (prop.key === DRUID_REACT_PROPS_PROP) {
+        Object.assign(props, parseRecordProp(prop.value));
+        continue;
+      }
+      if (prop.key === DRUID_REACT_EVENTS_PROP) {
+        Object.assign(eventProps, parseRecordProp(prop.value));
+        continue;
+      }
+      props[prop.key] = prop.value;
+    }
+
+    for (const eventType of node.props.on) {
+      const propName = `on${toPascalCase(eventType)}`;
+      eventProps[propName] = eventType;
+    }
+  }
+
+  const children = (node.children ?? []).filter((childId) => !nodes.has(childId));
+  const data: VNodeData = {
+    attrs: {
+      "data-druid-react-component": name,
+    },
+    hook: {
+      insert: (vnode) => {
+        const container = vnode.elm;
+        if (!(container instanceof HTMLElement)) {
+          return;
+        }
+        options?.reactComponentLifecycle?.({
+          type: "mount",
+          component: {
+            id,
+            name,
+            container,
+            props,
+            eventProps,
+            children,
+            emit: (eventType, value) =>
+              emitEvent(id, eventType, eventFromReactValue(value)),
+          },
+        });
+      },
+      postpatch: (_oldVnode, vnode) => {
+        const container = vnode.elm;
+        if (!(container instanceof HTMLElement)) {
+          return;
+        }
+        options?.reactComponentLifecycle?.({
+          type: "update",
+          component: {
+            id,
+            name,
+            container,
+            props,
+            eventProps,
+            children,
+            emit: (eventType, value) =>
+              emitEvent(id, eventType, eventFromReactValue(value)),
+          },
+        });
+      },
+      destroy: (vnode) => {
+        const container = vnode.elm;
+        if (!(container instanceof HTMLElement)) {
+          return;
+        }
+        options?.reactComponentLifecycle?.({
+          type: "unmount",
+          component: { id, container },
+        });
+      },
+    },
+  };
+
+  return h("druid-react-component", data);
+}
+
 export function createDomFromIdRec(
   id: string,
   emitEvent: (id: string, eventType: string, event: Event) => void,
+  options?: CreateDomOptions,
 ): VNode | String {
   const node = nodes.get(id);
   //it is a bit strange to do it like that, in theory we want to better distinguish between text nodes and element nodes
   if (!node) {
     console.debug(`[createDomFromIdRec] Text node: "${id}"`);
     return id;
+  }
+
+  if (isDruidReactTag(node.element)) {
+    return createReactComponentVNode(id, node, emitEvent, options);
   }
 
   const data: VNodeData = {};
@@ -88,7 +219,7 @@ export function createDomFromIdRec(
   const ch: VNodeChildren = [];
   if (node.children) {
     for (const childId of node.children) {
-      const childEl = createDomFromIdRec(childId, emitEvent);
+      const childEl = createDomFromIdRec(childId, emitEvent, options);
       ch.push(childEl);
     }
   }

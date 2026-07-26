@@ -10,6 +10,11 @@ import {
 } from "./host-functions";
 import { Event } from "./types";
 import { setCb } from "./utils";
+import {
+  type DruidReactComponentInstance,
+  type DruidReactComponentLifecycle,
+  type DruidReactComponentRenderer,
+} from "./react-components";
 
 export interface Props {
   prop: { key: string; value: any }[];
@@ -29,6 +34,11 @@ export class DruidUI extends HTMLElement {
   private _entrypoint?: string;
   private _connected: boolean = false;
   private _buffer?: ArrayBuffer;
+  private _reactComponentRenderer: DruidReactComponentRenderer | undefined;
+  private reactComponentInstances = new Map<
+    HTMLElement,
+    Pick<DruidReactComponentInstance, "id" | "container">
+  >();
 
   public connectedCallback() {
     this._connected = true;
@@ -41,6 +51,7 @@ export class DruidUI extends HTMLElement {
 
   public disconnectedCallback() {
     this._connected = false;
+    this.unmountReactComponents();
   }
 
   public async reloadComponent() {
@@ -82,6 +93,7 @@ export class DruidUI extends HTMLElement {
 
     // Clear nodes map to ensure fresh state
     clearNodes();
+    this.unmountReactComponents();
 
     if (this._sandbox) {
       loadTranspile(buffer)
@@ -110,6 +122,9 @@ export class DruidUI extends HTMLElement {
 
   set extensionObject(obj: object) {
     this._extensionObject = obj;
+  }
+  set reactComponentRenderer(renderer: DruidReactComponentRenderer | undefined) {
+    this._reactComponentRenderer = renderer;
   }
   set entrypoint(entrypoint: string) {
     this._entrypoint = entrypoint;
@@ -192,6 +207,29 @@ export class DruidUI extends HTMLElement {
     container.appendChild(heading);
     container.appendChild(details);
     this.mountEl.appendChild(container);
+  }
+
+  private reactComponentLifecycle(lifecycle: DruidReactComponentLifecycle) {
+    if (lifecycle.type === "unmount") {
+      this.reactComponentInstances.delete(lifecycle.component.container);
+    } else {
+      this.reactComponentInstances.set(lifecycle.component.container, {
+        id: lifecycle.component.id,
+        container: lifecycle.component.container,
+      });
+    }
+
+    this._reactComponentRenderer?.(lifecycle);
+  }
+
+  private unmountReactComponents() {
+    for (const component of this.reactComponentInstances.values()) {
+      this._reactComponentRenderer?.({
+        type: "unmount",
+        component,
+      });
+    }
+    this.reactComponentInstances.clear();
   }
 
   private getExtensionObject() {
@@ -303,21 +341,28 @@ export class DruidUI extends HTMLElement {
     }
 
     this.mountEl.innerHTML = "";
-    const dom = createDomFromIdRec(rootId, (nodeId, eventType, e) => {
-      this.rootComponent.component.emit(nodeId, eventType, e);
-      // Capture the current generation
-      const generation = this.reloadGeneration;
-      setTimeout(() => {
-        // Only rerender if we're still in the same generation (no reload happened)
-        if (this.reloadGeneration === generation) {
-          this.rerender();
-        } else {
-          console.debug(
-            `[setTimeout] Skipping stale rerender (generation ${generation}, current: ${this.reloadGeneration})`,
-          );
-        }
-      }, 0);
-    });
+    const dom = createDomFromIdRec(
+      rootId,
+      (nodeId, eventType, e) => {
+        this.rootComponent.component.emit(nodeId, eventType, e);
+        // Capture the current generation
+        const generation = this.reloadGeneration;
+        setTimeout(() => {
+          // Only rerender if we're still in the same generation (no reload happened)
+          if (this.reloadGeneration === generation) {
+            this.rerender();
+          } else {
+            console.debug(
+              `[setTimeout] Skipping stale rerender (generation ${generation}, current: ${this.reloadGeneration})`,
+            );
+          }
+        }, 0);
+      },
+      {
+        reactComponentLifecycle: (lifecycle) =>
+          this.reactComponentLifecycle(lifecycle),
+      },
+    );
 
     if (dom instanceof String) {
       console.warn("Root DOM is a string, cannot render:", dom);
