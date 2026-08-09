@@ -1,5 +1,5 @@
-import type { Props } from "druid:ui/ui";
 import { h, type VNode, type VNodeChildren, type VNodeData } from "snabbdom";
+import type { Props } from "./ui";
 import { Event } from "./types";
 
 const nodes = new Map<
