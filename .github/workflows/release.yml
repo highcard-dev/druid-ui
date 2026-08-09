@@ -31,7 +31,6 @@ jobs:
               run: |
                   VERSION=${GITHUB_REF_NAME#v}
                   echo "Publishing version: $VERSION"
-                  npx changeset version --snapshot $VERSION 2>/dev/null || true
                   # Update all package versions to match the tag
                   for pkg in packages/*/package.json; do
                     jq --arg v "$VERSION" '.version = $v' "$pkg" > tmp.json && mv tmp.json "$pkg"
