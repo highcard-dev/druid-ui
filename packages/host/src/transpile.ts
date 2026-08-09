@@ -8,6 +8,7 @@ interface CacheEntry {
 }
 
 const CACHE_KEY_PREFIX = "transpile_cache_";
+const WORKER_TIMEOUT_MS = 15_000;
 
 // Helper functions for localStorage caching
 const getCachedEntry = (file: string): CacheEntry | null => {
@@ -40,22 +41,39 @@ const transpileInWorker = async (
       { type: "module" },
     );
 
-    worker.onmessage = (event: MessageEvent) => {
+    let settled = false;
+    const finish = (callback: () => void) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeout);
       worker.terminate();
+      callback();
+    };
+    const timeout = setTimeout(() => {
+      finish(() => reject(new Error("Druid UI transpile worker timed out")));
+    }, WORKER_TIMEOUT_MS);
+
+    worker.onmessage = (event: MessageEvent) => {
       if (event.data.success) {
-        resolve(event.data.data);
+        finish(() => resolve(event.data.data));
       } else {
-        reject(new Error(event.data.error));
+        finish(() => reject(new Error(event.data.error)));
       }
     };
 
     worker.onerror = (error) => {
-      worker.terminate();
-      reject(error);
+      finish(() => reject(error));
     };
 
-    // Transfer the buffer ownership to the worker (zero-copy)
-    worker.postMessage({ buffer, name }, [buffer]);
+    // Keep the caller's buffer usable after posting to the worker.
+    const workerBuffer = buffer.slice(0);
+    try {
+      worker.postMessage({ buffer: workerBuffer, name }, [workerBuffer]);
+    } catch (error) {
+      finish(() => reject(error));
+    }
   });
 };
 
