@@ -6,3 +6,4 @@ export { log } from "druid:ui/ui";
 
 export const d = createDFunc(dfunc);
 export { createComponent, rawAsyncToPromise } from "./utils";
+export { island } from "./island";

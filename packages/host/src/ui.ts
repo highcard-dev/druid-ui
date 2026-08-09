@@ -10,6 +10,11 @@ import {
 } from "./host-functions";
 import { Event } from "./types";
 import { setCb } from "./utils";
+import {
+  type DruidIsland,
+  type DruidIslandLifecycle,
+  type DruidIslandRenderer,
+} from "./islands";
 
 export interface Props {
   prop: { key: string; value: any }[];
@@ -29,6 +34,11 @@ export class DruidUI extends HTMLElement {
   private _entrypoint?: string;
   private _connected: boolean = false;
   private _buffer?: ArrayBuffer;
+  private _islandRenderer: DruidIslandRenderer | undefined;
+  private islandInstances = new Map<
+    HTMLElement,
+    Pick<DruidIsland, "id" | "container">
+  >();
 
   public connectedCallback() {
     this._connected = true;
@@ -41,6 +51,7 @@ export class DruidUI extends HTMLElement {
 
   public disconnectedCallback() {
     this._connected = false;
+    this.unmountIslands();
   }
 
   public async reloadComponent() {
@@ -82,6 +93,7 @@ export class DruidUI extends HTMLElement {
 
     // Clear nodes map to ensure fresh state
     clearNodes();
+    this.unmountIslands();
 
     if (this._sandbox) {
       loadTranspile(buffer)
@@ -110,6 +122,9 @@ export class DruidUI extends HTMLElement {
 
   set extensionObject(obj: object) {
     this._extensionObject = obj;
+  }
+  set islandRenderer(renderer: DruidIslandRenderer | undefined) {
+    this._islandRenderer = renderer;
   }
   set entrypoint(entrypoint: string) {
     this._entrypoint = entrypoint;
@@ -192,6 +207,29 @@ export class DruidUI extends HTMLElement {
     container.appendChild(heading);
     container.appendChild(details);
     this.mountEl.appendChild(container);
+  }
+
+  private islandLifecycle(lifecycle: DruidIslandLifecycle) {
+    if (lifecycle.type === "unmount") {
+      this.islandInstances.delete(lifecycle.island.container);
+    } else {
+      this.islandInstances.set(lifecycle.island.container, {
+        id: lifecycle.island.id,
+        container: lifecycle.island.container,
+      });
+    }
+
+    this._islandRenderer?.(lifecycle);
+  }
+
+  private unmountIslands() {
+    for (const island of this.islandInstances.values()) {
+      this._islandRenderer?.({
+        type: "unmount",
+        island,
+      });
+    }
+    this.islandInstances.clear();
   }
 
   private getExtensionObject() {
@@ -303,21 +341,27 @@ export class DruidUI extends HTMLElement {
     }
 
     this.mountEl.innerHTML = "";
-    const dom = createDomFromIdRec(rootId, (nodeId, eventType, e) => {
-      this.rootComponent.component.emit(nodeId, eventType, e);
-      // Capture the current generation
-      const generation = this.reloadGeneration;
-      setTimeout(() => {
-        // Only rerender if we're still in the same generation (no reload happened)
-        if (this.reloadGeneration === generation) {
-          this.rerender();
-        } else {
-          console.debug(
-            `[setTimeout] Skipping stale rerender (generation ${generation}, current: ${this.reloadGeneration})`,
-          );
-        }
-      }, 0);
-    });
+    const dom = createDomFromIdRec(
+      rootId,
+      (nodeId, eventType, e) => {
+        this.rootComponent.component.emit(nodeId, eventType, e);
+        // Capture the current generation
+        const generation = this.reloadGeneration;
+        setTimeout(() => {
+          // Only rerender if we're still in the same generation (no reload happened)
+          if (this.reloadGeneration === generation) {
+            this.rerender();
+          } else {
+            console.debug(
+              `[setTimeout] Skipping stale rerender (generation ${generation}, current: ${this.reloadGeneration})`,
+            );
+          }
+        }, 0);
+      },
+      {
+        islandLifecycle: (lifecycle) => this.islandLifecycle(lifecycle),
+      },
+    );
 
     if (dom instanceof String) {
       console.warn("Root DOM is a string, cannot render:", dom);

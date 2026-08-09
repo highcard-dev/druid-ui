@@ -1,6 +1,16 @@
 import type { Props } from "druid:ui/ui";
 import { h, type VNode, type VNodeChildren, type VNodeData } from "snabbdom";
 import { Event } from "./types";
+import {
+  DRUID_ISLAND_EVENTS_PROP,
+  DRUID_ISLAND_PROPS_PROP,
+  eventFromIslandValue,
+  getDruidIslandName,
+  isDruidIslandTag,
+  type DruidIslandChild,
+  type DruidIslandLifecycle,
+  type DruidIslandNode,
+} from "./islands";
 
 const nodes = new Map<
   string,
@@ -38,15 +48,156 @@ export function logfunc(msg: string) {
   console.log("UI LOG:", msg);
 }
 
+export interface CreateDomOptions {
+  islandLifecycle?: (lifecycle: DruidIslandLifecycle) => void;
+}
+
+function parseRecordProp(value: unknown): Record<string, unknown> {
+  if (typeof value !== "string" || value.length === 0) {
+    return {};
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    console.warn("Failed to parse Druid island props:", value);
+  }
+
+  return {};
+}
+
+function toPascalCase(value: string) {
+  return value.length === 0 ? value : value[0]!.toUpperCase() + value.slice(1);
+}
+
+function createIslandNode(
+  id: string,
+  node: {
+    element: string;
+    props?: Props;
+    children?: Array<string>;
+  },
+  emitEvent: (id: string, eventType: string, event: Event) => void,
+): DruidIslandNode {
+  const name = getDruidIslandName(node.element);
+  const props: Record<string, unknown> = {};
+  const events: Record<string, string> = {};
+
+  if (node.props) {
+    for (const prop of node.props.prop) {
+      if (prop.key === DRUID_ISLAND_PROPS_PROP) {
+        Object.assign(props, parseRecordProp(prop.value));
+        continue;
+      }
+      if (prop.key === DRUID_ISLAND_EVENTS_PROP) {
+        Object.assign(events, parseRecordProp(prop.value));
+        continue;
+      }
+      props[prop.key] = prop.value;
+    }
+
+    for (const eventType of node.props.on) {
+      if (Object.values(events).includes(eventType)) {
+        continue;
+      }
+      const propName = `on${toPascalCase(eventType)}`;
+      events[propName] = eventType;
+    }
+  }
+
+  const children: DruidIslandChild[] = (node.children ?? []).map((childId) => {
+    const childNode = nodes.get(childId);
+    if (!childNode) {
+      return childId;
+    }
+    if (!isDruidIslandTag(childNode.element)) {
+      throw new Error(
+        `Druid island "${name}" can only contain text or other islands; received <${childNode.element}>.`,
+      );
+    }
+    return createIslandNode(childId, childNode, emitEvent);
+  });
+
+  return {
+    id,
+    name,
+    props,
+    events,
+    children,
+    emit: (eventType, value) =>
+      emitEvent(id, eventType, eventFromIslandValue(value)),
+  };
+}
+
+function createIslandVNode(
+  id: string,
+  node: {
+    element: string;
+    props?: Props;
+    children?: Array<string>;
+  },
+  emitEvent: (id: string, eventType: string, event: Event) => void,
+  options?: CreateDomOptions,
+) {
+  const island = createIslandNode(id, node, emitEvent);
+  const data: VNodeData = {
+    attrs: {
+      "data-druid-island": island.name,
+    },
+    hook: {
+      insert: (vnode) => {
+        const container = vnode.elm;
+        if (!(container instanceof HTMLElement)) {
+          return;
+        }
+        options?.islandLifecycle?.({
+          type: "mount",
+          island: { ...island, container },
+        });
+      },
+      postpatch: (_oldVnode, vnode) => {
+        const container = vnode.elm;
+        if (!(container instanceof HTMLElement)) {
+          return;
+        }
+        options?.islandLifecycle?.({
+          type: "update",
+          island: { ...island, container },
+        });
+      },
+      destroy: (vnode) => {
+        const container = vnode.elm;
+        if (!(container instanceof HTMLElement)) {
+          return;
+        }
+        options?.islandLifecycle?.({
+          type: "unmount",
+          island: { id, container },
+        });
+      },
+    },
+  };
+
+  return h("druid-island", data);
+}
+
 export function createDomFromIdRec(
   id: string,
   emitEvent: (id: string, eventType: string, event: Event) => void,
+  options?: CreateDomOptions,
 ): VNode | String {
   const node = nodes.get(id);
   //it is a bit strange to do it like that, in theory we want to better distinguish between text nodes and element nodes
   if (!node) {
     console.debug(`[createDomFromIdRec] Text node: "${id}"`);
     return id;
+  }
+
+  if (isDruidIslandTag(node.element)) {
+    return createIslandVNode(id, node, emitEvent, options);
   }
 
   const data: VNodeData = {};
@@ -88,7 +239,7 @@ export function createDomFromIdRec(
   const ch: VNodeChildren = [];
   if (node.children) {
     for (const childId of node.children) {
-      const childEl = createDomFromIdRec(childId, emitEvent);
+      const childEl = createDomFromIdRec(childId, emitEvent, options);
       ch.push(childEl);
     }
   }

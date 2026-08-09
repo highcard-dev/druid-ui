@@ -1,5 +1,7 @@
+import { transpile } from "@bytecodealliance/jco";
+
 interface TranspileResult {
-  files: Array<[string, Uint8Array]>;
+  files: Array<[string, Uint8Array]> | Record<string, Uint8Array>;
 }
 
 interface CacheEntry {
@@ -54,10 +56,41 @@ const transpileInWorker = async (
       reject(error);
     };
 
-    // Transfer the buffer ownership to the worker (zero-copy)
-    worker.postMessage({ buffer, name }, [buffer]);
+    // Transfer a copy so the caller can fall back if the worker fails to load.
+    const workerBuffer = buffer.slice(0);
+    worker.postMessage({ buffer: workerBuffer, name }, [workerBuffer]);
   });
 };
+
+const transpileInMainThread = async (
+  buffer: ArrayBuffer,
+  name: string,
+): Promise<TranspileResult> => {
+  try {
+    return (await transpile(buffer, {
+      name,
+      instantiation: "async",
+    })) as TranspileResult;
+  } catch (e) {
+    if (
+      e instanceof Error &&
+      e.message.includes("invalid variant tag value") &&
+      e.message.includes("InstantiationMode")
+    ) {
+      return (await transpile(buffer, {
+        name,
+        instantiation: { tag: "async" },
+      })) as TranspileResult;
+    }
+    throw e;
+  }
+};
+
+function getTranspiledFileEntries(
+  files: TranspileResult["files"],
+): Array<[string, Uint8Array]> {
+  return Array.isArray(files) ? files : Object.entries(files);
+}
 
 export const loadTranspile = async (
   buffer: ArrayBuffer,
@@ -80,6 +113,11 @@ export const loadTranspile = async (
             throw new Error(`File ${filename} not found in transpiled output.`);
           }
           const wasmResponse = await fetch(url);
+          if (!wasmResponse.ok) {
+            throw new Error(
+              `Failed to fetch cached core module ${filename}: ${wasmResponse.status} ${wasmResponse.statusText}`,
+            );
+          }
           const wasmBuffer = await wasmResponse.arrayBuffer();
           return await WebAssembly.compile(wasmBuffer);
         },
@@ -91,9 +129,15 @@ export const loadTranspile = async (
   }
 
   const files: Record<string, string> = {};
-  const t = await transpileInWorker(buffer, "test");
+  let t: TranspileResult;
+  try {
+    t = await transpileInWorker(buffer, "test");
+  } catch (e) {
+    console.warn("Druid UI transpile worker failed, falling back to main thread", e);
+    t = await transpileInMainThread(buffer, "test");
+  }
 
-  for (const file of t.files) {
+  for (const file of getTranspiledFileEntries(t.files)) {
     const [f, content] = file as [string, Uint8Array];
 
     let blob: Blob | null = null;
@@ -133,6 +177,11 @@ export const loadTranspile = async (
         throw new Error(`File ${filename} not found in transpiled output.`);
       }
       const wasmResponse = await fetch(url);
+      if (!wasmResponse.ok) {
+        throw new Error(
+          `Failed to fetch transpiled core module ${filename}: ${wasmResponse.status} ${wasmResponse.statusText}`,
+        );
+      }
       const wasmBuffer = await wasmResponse.arrayBuffer();
       return await WebAssembly.compile(wasmBuffer);
     },
