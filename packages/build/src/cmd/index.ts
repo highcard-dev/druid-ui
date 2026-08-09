@@ -57,6 +57,7 @@ async function doBuild() {
     console.log("Build complete.");
   } catch (error) {
     console.error("Build failed:", error);
+    process.exitCode = 1;
   }
 }
 
