@@ -6,10 +6,14 @@ import serverProperties from "../fixtures/server.properties?raw";
 const query = new URLSearchParams(window.location.search);
 const fixtureManifest = structuredClone(manifest);
 if (query.get("rawOnly") === "1") fixtureManifest.files[0]!.sections = [];
+const serverPropertiesPath =
+  query.get("templateOnly") === "1"
+    ? "server.properties.scroll_template"
+    : "server.properties";
 
 const files = new Map<string, string>([
   ["private/config-editor.manifest.json", JSON.stringify(fixtureManifest)],
-  ["server.properties", serverProperties],
+  [serverPropertiesPath, serverProperties],
 ]);
 
 const druidUiElement = new DruidUI();

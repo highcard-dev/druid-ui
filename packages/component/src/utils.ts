@@ -2,6 +2,7 @@ import type { Prop, Props } from "druid:ui/ui";
 import { log, rerender, d, setHook } from "druid:ui/ui";
 import type { Event } from "@druid-ui/host";
 import type { Context } from "druid:ui/component";
+import { createAsyncBridge } from "./async";
 import { lowerPropertyValue } from "./props";
 
 export const callbackMap: Record<string, Record<string, Function>> = {};
@@ -104,37 +105,13 @@ export const createDFunc = (dfunc: typeof d) => {
   };
 };
 
-// Module-level map that tracks pending async operations initiated through wrappers
-const pendingOperations = new Map<
-  string,
-  { resolve: (value: any) => void; reject: (error: any) => void }
->();
+const asyncBridge = createAsyncBridge(
+  () => rerender(),
+  (message) => log(message),
+);
 
-export const asyncCallback = (
-  id: string,
-  result: { tag: "ok" | "err"; val: any },
-) => {
-  log(`Async callback received for id: ${id} with result: ${result.tag}`);
-  const pending = pendingOperations.get(id);
-  if (pending) {
-    if (result.tag === "ok") {
-      pending.resolve(result.val);
-    } else {
-      pending.reject(new Error(result.val));
-    }
-    pendingOperations.delete(id);
-    rerender();
-  }
-};
-
-export const rawAsyncToPromise =
-  <T>(fn: (...args: any[]) => any) =>
-  (...args: any[]) => {
-    return new Promise<T>((resolve, reject) => {
-      const asyncId = fn(...args);
-      pendingOperations.set(asyncId, { resolve, reject });
-    });
-  };
+export const asyncCallback = asyncBridge.complete;
+export const rawAsyncToPromise = asyncBridge.wrap;
 
 export const createComponent = (j: (ctx: Context) => string | JSX.Element) => ({
   init: (ctx: Context) => j(ctx),

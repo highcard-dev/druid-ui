@@ -7,7 +7,11 @@ export { createAdapterRegistry } from "./adapters/registry.js";
 export { coerceFieldValue, validateField } from "./validation.js";
 export { ConfigEditorStore, MASKED_SECRET } from "./store.js";
 export { fingerprint } from "./fingerprint.js";
-export { loadEditor, saveSelectedFile } from "./gateway.js";
+export {
+  loadEditor,
+  saveSelectedFile,
+  withMissingFileFallback,
+} from "./gateway.js";
 export { createConfigEditorComponent, EditorApp } from "./components/EditorApp.js";
 export { FileRail } from "./components/FileRail.js";
 export { FieldControl } from "./components/FieldControl.js";

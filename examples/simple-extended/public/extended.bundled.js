@@ -3,6 +3,40 @@ import { d as dfunc } from "druid:ui/ui";
 import { log, rerender, setHook } from "druid:ui/ui";
 import { Event } from "druid:ui/utils";
 import { log as log2, rerender as rerender2 } from "druid:ui/ui";
+var createAsyncBridge = (onSettled = () => void 0, trace = () => void 0) => {
+  const pending = /* @__PURE__ */ new Map();
+  const early = /* @__PURE__ */ new Map();
+  const settle = (operation, result) => {
+    if (result.tag === "ok") operation.resolve(result.val);
+    else operation.reject(new Error(String(result.val)));
+    onSettled();
+  };
+  const complete = (id, result) => {
+    trace(`Async callback received for id: ${id} with result: ${result.tag}`);
+    const operation = pending.get(id);
+    if (!operation) {
+      early.set(id, result);
+      return;
+    }
+    pending.delete(id);
+    settle(operation, result);
+  };
+  const wrap = (fn) => (...args) => new Promise((resolve, reject) => {
+    const id = fn(...args);
+    const operation = {
+      resolve: (value) => resolve(value),
+      reject
+    };
+    const earlyResult = early.get(id);
+    if (earlyResult) {
+      early.delete(id);
+      settle(operation, earlyResult);
+      return;
+    }
+    pending.set(id, operation);
+  });
+  return { complete, wrap };
+};
 var lowerPropertyValue = (value) => value === void 0 || value === null ? void 0 : String(value);
 var callbackMap = {};
 function emit(nodeid, event, e) {
@@ -73,26 +107,12 @@ var createDFunc = (dfunc2) => {
     return id;
   };
 };
-var pendingOperations = /* @__PURE__ */ new Map();
-var asyncCallback = (id, result) => {
-  log(`Async callback received for id: ${id} with result: ${result.tag}`);
-  const pending = pendingOperations.get(id);
-  if (pending) {
-    if (result.tag === "ok") {
-      pending.resolve(result.val);
-    } else {
-      pending.reject(new Error(result.val));
-    }
-    pendingOperations.delete(id);
-    rerender();
-  }
-};
-var rawAsyncToPromise = (fn) => (...args) => {
-  return new Promise((resolve, reject) => {
-    const asyncId = fn(...args);
-    pendingOperations.set(asyncId, { resolve, reject });
-  });
-};
+var asyncBridge = createAsyncBridge(
+  () => rerender(),
+  (message) => log(message)
+);
+var asyncCallback = asyncBridge.complete;
+var rawAsyncToPromise = asyncBridge.wrap;
 var createComponent = (j) => ({
   init: (ctx) => j(ctx),
   emit,

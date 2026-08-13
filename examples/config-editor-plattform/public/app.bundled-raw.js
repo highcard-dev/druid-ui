@@ -1310,6 +1310,37 @@ var sha256 = (source) => {
 var fingerprint = async (source) => sha256(source);
 
 // ../../packages/config-editor/src/gateway.ts
+var isMissingFileError = (error) => {
+  const message = error instanceof Error ? error.message : String(error);
+  return /(?:\b404\b|not[ -]?found|missing)/i.test(message);
+};
+var withMissingFileFallback = (gateway2, suffix = ".scroll_template") => {
+  const resolvedPaths = /* @__PURE__ */ new Map();
+  return {
+    async load(path) {
+      const resolved = resolvedPaths.get(path);
+      if (resolved) return await gateway2.load(resolved);
+      try {
+        const content = await gateway2.load(path);
+        resolvedPaths.set(path, path);
+        return content;
+      } catch (error) {
+        if (!isMissingFileError(error)) throw error;
+        const fallback = `${path}${suffix}`;
+        const content = await gateway2.load(fallback);
+        resolvedPaths.set(path, fallback);
+        return content;
+      }
+    },
+    async save(path, content, expectedFingerprint) {
+      return await gateway2.save(
+        resolvedPaths.get(path) ?? path,
+        content,
+        expectedFingerprint
+      );
+    }
+  };
+};
 var schemaForPath = (manifest, path) => {
   const schema = path ? manifest.files.find((candidate) => candidate.path === path) : manifest.files[0];
   if (!schema) throw new TypeError(path ? `Manifest has no file "${path}".` : "Manifest has no files.");
@@ -1352,6 +1383,40 @@ var import_ui = __toESM(require_ui(), 1);
 var import_ui2 = __toESM(require_ui(), 1);
 var import_utils = __toESM(require_utils(), 1);
 var import_ui3 = __toESM(require_ui(), 1);
+var createAsyncBridge = (onSettled = () => void 0, trace = () => void 0) => {
+  const pending = /* @__PURE__ */ new Map();
+  const early = /* @__PURE__ */ new Map();
+  const settle = (operation, result) => {
+    if (result.tag === "ok") operation.resolve(result.val);
+    else operation.reject(new Error(String(result.val)));
+    onSettled();
+  };
+  const complete = (id, result) => {
+    trace(`Async callback received for id: ${id} with result: ${result.tag}`);
+    const operation = pending.get(id);
+    if (!operation) {
+      early.set(id, result);
+      return;
+    }
+    pending.delete(id);
+    settle(operation, result);
+  };
+  const wrap = (fn) => (...args) => new Promise((resolve, reject) => {
+    const id = fn(...args);
+    const operation = {
+      resolve: (value) => resolve(value),
+      reject
+    };
+    const earlyResult = early.get(id);
+    if (earlyResult) {
+      early.delete(id);
+      settle(operation, earlyResult);
+      return;
+    }
+    pending.set(id, operation);
+  });
+  return { complete, wrap };
+};
 var lowerPropertyValue = (value) => value === void 0 || value === null ? void 0 : String(value);
 var callbackMap = {};
 function emit(nodeid, event, e) {
@@ -1422,26 +1487,12 @@ var createDFunc = (dfunc2) => {
     return id;
   };
 };
-var pendingOperations = /* @__PURE__ */ new Map();
-var asyncCallback = (id, result) => {
-  (0, import_ui2.log)(`Async callback received for id: ${id} with result: ${result.tag}`);
-  const pending = pendingOperations.get(id);
-  if (pending) {
-    if (result.tag === "ok") {
-      pending.resolve(result.val);
-    } else {
-      pending.reject(new Error(result.val));
-    }
-    pendingOperations.delete(id);
-    (0, import_ui2.rerender)();
-  }
-};
-var rawAsyncToPromise = (fn) => (...args) => {
-  return new Promise((resolve, reject) => {
-    const asyncId = fn(...args);
-    pendingOperations.set(asyncId, { resolve, reject });
-  });
-};
+var asyncBridge = createAsyncBridge(
+  () => (0, import_ui2.rerender)(),
+  (message) => (0, import_ui2.log)(message)
+);
+var asyncCallback = asyncBridge.complete;
+var rawAsyncToPromise = asyncBridge.wrap;
 var createComponent = (j) => ({
   init: (ctx) => j(ctx),
   emit,
@@ -1896,7 +1947,7 @@ var loadFileFromDeployment = rawAsyncToPromise(
 var saveFileToDeployment = rawAsyncToPromise(import_plattform.saveFileToDeployment);
 
 // src/app.tsx
-var gateway = {
+var gateway = withMissingFileFallback({
   async load(path) {
     return await loadFileFromDeployment(path);
   },
@@ -1909,7 +1960,7 @@ var gateway = {
     await saveFileToDeployment(path, content);
     return { status: "saved", fingerprint: await fingerprint(content) };
   }
-};
+});
 var component = createConfigEditorComponent({
   manifestPath: "private/config-editor.manifest.json",
   gateway

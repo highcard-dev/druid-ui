@@ -16,6 +16,44 @@ export interface FileGateway {
   ): Promise<SaveResult>;
 }
 
+const isMissingFileError = (error: unknown): boolean => {
+  const message = error instanceof Error ? error.message : String(error);
+  return /(?:\b404\b|not[ -]?found|missing)/i.test(message);
+};
+
+export const withMissingFileFallback = (
+  gateway: FileGateway,
+  suffix = ".scroll_template",
+): FileGateway => {
+  const resolvedPaths = new Map<string, string>();
+
+  return {
+    async load(path) {
+      const resolved = resolvedPaths.get(path);
+      if (resolved) return await gateway.load(resolved);
+
+      try {
+        const content = await gateway.load(path);
+        resolvedPaths.set(path, path);
+        return content;
+      } catch (error) {
+        if (!isMissingFileError(error)) throw error;
+        const fallback = `${path}${suffix}`;
+        const content = await gateway.load(fallback);
+        resolvedPaths.set(path, fallback);
+        return content;
+      }
+    },
+    async save(path, content, expectedFingerprint) {
+      return await gateway.save(
+        resolvedPaths.get(path) ?? path,
+        content,
+        expectedFingerprint,
+      );
+    },
+  };
+};
+
 const schemaForPath = (
   manifest: ConfigEditorManifest,
   path: string | undefined,

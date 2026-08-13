@@ -3,6 +3,7 @@ import { fingerprint } from "./fingerprint.js";
 import {
   loadEditor,
   saveSelectedFile,
+  withMissingFileFallback,
   type FileGateway,
   type SaveResult,
 } from "./gateway.js";
@@ -97,5 +98,53 @@ describe("saveSelectedFile", () => {
     await expect(saveSelectedFile(store, brokenGateway)).rejects.toThrow(
       /verification failed/,
     );
+  });
+});
+
+describe("withMissingFileFallback", () => {
+  it("edits a scroll template before the active configuration exists", async () => {
+    const memory = memoryGateway({
+      "data/server.properties.scroll_template": "max-players=20\n",
+    });
+    const gateway = withMissingFileFallback(memory);
+    const store = await loadEditor(gateway, manifestFor("data/server.properties"));
+
+    store.setDisplayValue("max-players", "42");
+    await expect(saveSelectedFile(store, gateway)).resolves.toEqual(
+      expect.objectContaining({ status: "saved" }),
+    );
+
+    expect(memory.current("data/server.properties")).toBeUndefined();
+    expect(memory.current("data/server.properties.scroll_template")).toBe(
+      "max-players=42\n",
+    );
+  });
+
+  it("prefers an active configuration over its template", async () => {
+    const memory = memoryGateway({
+      "data/server.properties": "max-players=30\n",
+      "data/server.properties.scroll_template": "max-players=20\n",
+    });
+    const store = await loadEditor(
+      withMissingFileFallback(memory),
+      manifestFor("data/server.properties"),
+    );
+
+    expect(store.snapshot().fields["max-players"]?.displayValue).toBe("30");
+  });
+
+  it("does not hide non-missing-file load failures", async () => {
+    const gateway: FileGateway = {
+      async load() {
+        throw new Error("permission denied");
+      },
+      async save() {
+        throw new Error("unexpected save");
+      },
+    };
+
+    await expect(
+      withMissingFileFallback(gateway).load("data/server.properties"),
+    ).rejects.toThrow("permission denied");
   });
 });
