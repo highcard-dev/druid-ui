@@ -65,6 +65,8 @@ export const EditorApp = ({
             type="button"
             class="tab"
             role="tab"
+            disabled={store.schema.sections.length === 0}
+            aria-disabled={store.schema.sections.length === 0 ? "true" : "false"}
             aria-selected={mode === "form" ? "true" : "false"}
             onClick={() => onMode("form")}
           >
@@ -134,6 +136,7 @@ export const createConfigEditorComponent = ({
       store = await loadEditor(gateway, manifest, path);
       stores.set(path, store);
     }
+    mode = store.schema.sections.length === 0 ? "raw" : "form";
     status = "";
     rerender();
   };

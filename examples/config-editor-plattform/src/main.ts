@@ -3,8 +3,12 @@ import { ViteHMR } from "@druid-ui/vite/client";
 import manifest from "../fixtures/config-editor.manifest.json";
 import serverProperties from "../fixtures/server.properties?raw";
 
+const query = new URLSearchParams(window.location.search);
+const fixtureManifest = structuredClone(manifest);
+if (query.get("rawOnly") === "1") fixtureManifest.files[0]!.sections = [];
+
 const files = new Map<string, string>([
-  ["private/config-editor.manifest.json", JSON.stringify(manifest)],
+  ["private/config-editor.manifest.json", JSON.stringify(fixtureManifest)],
   ["server.properties", serverProperties],
 ]);
 
@@ -24,7 +28,7 @@ druidUiElement.extensionObject = {
   },
 };
 
-const mode = new URLSearchParams(window.location.search).get("mode");
+const mode = query.get("mode");
 const sandbox = mode === "wasm";
 druidUiElement.setAttribute(
   "entrypoint",

@@ -1,7 +1,6 @@
 /// <reference types="@druid-ui/component/types" />
 /// <reference types="@druid-ui/component/jsx" />
-/** @jsx d */
-import { Context, d, Event, log, createComponent } from "@druid-ui/component";
+import { Context, Event, log, createComponent } from "@druid-ui/component";
 import {
   request,
   loadFileFromDeployment,

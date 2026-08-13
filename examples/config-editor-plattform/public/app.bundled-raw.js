@@ -226,7 +226,6 @@ var validateFile = (value, location) => {
   const sections = arrayValue(file["sections"], `${location}.sections`).map(
     (section, index) => validateSection(section, `${location}.sections[${index}]`)
   );
-  if (sections.length === 0) fail(`${location}.sections must not be empty.`);
   const sectionIds = /* @__PURE__ */ new Set();
   const fieldKeys = /* @__PURE__ */ new Set();
   for (const section of sections) {
@@ -1758,6 +1757,8 @@ var EditorApp = ({
             type: "button",
             class: "tab",
             role: "tab",
+            disabled: store.schema.sections.length === 0,
+            "aria-disabled": store.schema.sections.length === 0 ? "true" : "false",
             "aria-selected": mode === "form" ? "true" : "false",
             onClick: () => onMode("form"),
             children: copy.formTab
@@ -1811,6 +1812,7 @@ var createConfigEditorComponent = ({
       store = await loadEditor(gateway2, manifest, path);
       stores.set(path, store);
     }
+    mode = store.schema.sections.length === 0 ? "raw" : "form";
     status = "";
     (0, import_ui3.rerender)();
   };

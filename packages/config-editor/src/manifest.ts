@@ -230,7 +230,6 @@ const validateFile = (value: unknown, location: string): FileSchema => {
   const sections = arrayValue(file["sections"], `${location}.sections`).map(
     (section, index) => validateSection(section, `${location}.sections[${index}]`),
   );
-  if (sections.length === 0) fail(`${location}.sections must not be empty.`);
 
   const sectionIds = new Set<string>();
   const fieldKeys = new Set<string>();

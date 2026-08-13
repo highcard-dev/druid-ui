@@ -68,6 +68,15 @@ describe("validateManifest", () => {
     );
   });
 
+  it("accepts a file with no typed fields for a lossless raw-only editor", () => {
+    const manifest = validManifest();
+    manifest.files[0]!.sections = [];
+
+    const result = validateManifest(manifest);
+
+    expect(result.files[0]!.sections).toEqual([]);
+  });
+
   it("rejects inconsistent enum and numeric constraints", () => {
     const manifest = validManifest();
     const field = manifest.files[0]!.sections[0]!.fields[0]!;

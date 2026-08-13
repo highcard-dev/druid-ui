@@ -2,7 +2,8 @@
 import { d as dfunc } from "druid:ui/ui";
 import { log, rerender, setHook } from "druid:ui/ui";
 import { Event } from "druid:ui/utils";
-import { log as log2 } from "druid:ui/ui";
+import { log as log2, rerender as rerender2 } from "druid:ui/ui";
+var lowerPropertyValue = (value) => value === void 0 || value === null ? void 0 : String(value);
 var callbackMap = {};
 function emit(nodeid, event, e) {
   log(`Emit called for nodeid: ${nodeid}, event: ${event}`);
@@ -50,13 +51,13 @@ var createDFunc = (dfunc2) => {
           cbObj[eventKey] = value;
           ps.on.push(eventKey);
         } else {
+          const loweredValue = lowerPropertyValue(value);
+          if (loweredValue === void 0) continue;
           if (typeof value === "boolean") {
-            if (value) {
-              ps.prop.push({ key, value: "true" });
-            }
+            ps.prop.push({ key, value: loweredValue });
             continue;
           }
-          ps.prop.push({ key, value });
+          ps.prop.push({ key, value: loweredValue });
         }
       }
     }
