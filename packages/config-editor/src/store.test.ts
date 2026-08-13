@@ -109,4 +109,30 @@ describe("ConfigEditorStore", () => {
     expect(Object.isFrozen(snapshot)).toBe(true);
     expect(Object.isFrozen(snapshot.fields)).toBe(true);
   });
+
+  it("redacts secrets in raw display while preserving them through raw edits", () => {
+    const store = loadedStore(
+      "motd=hello\nrcon.password=actual-secret\nfuture=preserved\n",
+      fileSchema([
+        baseField({ key: "motd", type: "string", min: undefined, max: undefined }),
+        baseField({
+          key: "rcon.password",
+          type: "secret",
+          min: undefined,
+          max: undefined,
+          sensitive: true,
+        }),
+      ]),
+    );
+
+    const display = store.serializeForDisplay();
+    expect(display).toContain(`rcon.password=${MASKED_SECRET}`);
+    expect(display).not.toContain("actual-secret");
+
+    store.replaceWorkingSource(display.replace("motd=hello", "motd=updated"));
+
+    expect(store.serializeSelectedFile()).toContain("motd=updated");
+    expect(store.serializeSelectedFile()).toContain("rcon.password=actual-secret");
+    expect(store.serializeSelectedFile()).toContain("future=preserved");
+  });
 });

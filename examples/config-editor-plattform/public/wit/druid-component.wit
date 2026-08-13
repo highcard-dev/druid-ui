@@ -1,0 +1,16 @@
+package druid:ui;
+
+
+interface component {
+    use utils.{event, context};
+
+    init: func(ctx: context) -> string;
+    emit: func(nodeid: string, event: string, e: event);
+    async-complete: func(id: string, value: result<string>);
+}
+
+
+world druid-ui {
+    import ui;
+    export component;
+}

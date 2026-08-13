@@ -12,6 +12,16 @@ const nodes = new Map<
   }
 >();
 
+const BOOLEAN_DOM_PROPERTIES = new Set([
+  "checked",
+  "disabled",
+  "multiple",
+  "open",
+  "readOnly",
+  "required",
+  "selected",
+]);
+
 export function clearNodes() {
   console.debug(`[clearNodes] Clearing ${nodes.size} nodes`);
   nodes.clear();
@@ -54,8 +64,23 @@ export function createDomFromIdRec(
   // Set properties
   if (node.props) {
     data.props = {};
+    data.attrs = {};
     for (const prop of node.props.prop) {
-      data.props[prop.key] = prop.value;
+      if (
+        prop.key === "class" ||
+        prop.key === "for" ||
+        prop.key === "role" ||
+        prop.key.startsWith("aria-") ||
+        prop.key.startsWith("data-")
+      ) {
+        data.attrs[prop.key] = prop.value;
+      } else {
+        data.props[prop.key] =
+          BOOLEAN_DOM_PROPERTIES.has(prop.key) &&
+          (prop.value === "true" || prop.value === "false")
+            ? prop.value === "true"
+            : prop.value;
+      }
     }
     data.on = {};
     for (const eventType of node.props.on) {

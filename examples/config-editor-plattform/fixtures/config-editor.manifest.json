@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "server": {
+    "family": "minecraft",
+    "displayName": "Minecraft Server",
+    "appVersion": "1.21.7"
+  },
+  "files": [
+    {
+      "path": "server.properties",
+      "format": "java-properties",
+      "label": "server.properties",
+      "description": "Minecraft dedicated-server settings.",
+      "sections": [
+        {
+          "id": "server",
+          "label": "Server identity",
+          "fields": [
+            {
+              "key": "motd",
+              "label": "Message of the day",
+              "description": "Text shown in the multiplayer server list.",
+              "documentation": "https://minecraft.wiki/w/Server.properties",
+              "type": "string"
+            },
+            {
+              "key": "max-players",
+              "label": "Max players",
+              "description": "Maximum number of simultaneous players.",
+              "documentation": "https://minecraft.wiki/w/Server.properties",
+              "type": "integer",
+              "min": 1,
+              "max": 1000,
+              "restartRequired": true
+            },
+            {
+              "key": "online-mode",
+              "label": "Online mode",
+              "description": "Verify connecting players with Minecraft account services.",
+              "documentation": "https://minecraft.wiki/w/Server.properties",
+              "type": "boolean",
+              "restartRequired": true
+            },
+            {
+              "key": "difficulty",
+              "label": "Difficulty",
+              "description": "Default world difficulty.",
+              "documentation": "https://minecraft.wiki/w/Server.properties",
+              "type": "enum",
+              "values": ["peaceful", "easy", "normal", "hard"],
+              "restartRequired": true
+            }
+          ]
+        },
+        {
+          "id": "remote",
+          "label": "Remote administration",
+          "fields": [
+            {
+              "key": "rcon.password",
+              "label": "RCON password",
+              "description": "Password used by remote administration clients.",
+              "documentation": "https://minecraft.wiki/w/Server.properties",
+              "type": "secret",
+              "sensitive": true,
+              "restartRequired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

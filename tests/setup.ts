@@ -2,5 +2,5 @@ import "@testing-library/jest-dom/vitest";
 import { afterEach } from "vitest";
 
 afterEach(() => {
-  document.body.replaceChildren();
+  if (typeof document !== "undefined") document.body.replaceChildren();
 });

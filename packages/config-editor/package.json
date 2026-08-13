@@ -21,8 +21,11 @@
   ],
   "scripts": {
     "build": "npm run build:lib && npm run build:types",
-    "build:lib": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm --platform=neutral",
+    "build:lib": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm --platform=neutral --external:@druid-ui/component --external:druid:ui/*",
     "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
     "test": "vitest run src"
+  },
+  "dependencies": {
+    "@druid-ui/component": "*"
   }
 }

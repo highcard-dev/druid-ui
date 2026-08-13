@@ -8,6 +8,15 @@ export { coerceFieldValue, validateField } from "./validation.js";
 export { ConfigEditorStore, MASKED_SECRET } from "./store.js";
 export { fingerprint } from "./fingerprint.js";
 export { loadEditor, saveSelectedFile } from "./gateway.js";
+export { createConfigEditorComponent, EditorApp } from "./components/EditorApp.js";
+export { FileRail } from "./components/FileRail.js";
+export { FieldControl } from "./components/FieldControl.js";
+export { FormEditor } from "./components/FormEditor.js";
+export { RawEditor } from "./components/RawEditor.js";
+export { Inspector } from "./components/Inspector.js";
+export { ActionBar } from "./components/ActionBar.js";
+export { EDITOR_STYLES } from "./styles.js";
+export { copy } from "./copy.js";
 export type {
   ConfigEditorManifest,
   ConfigFormat,
@@ -37,3 +46,9 @@ export type {
   FieldSnapshot,
 } from "./store.js";
 export type { FileGateway, SaveResult } from "./gateway.js";
+export type {
+  ConfigEditorComponentOptions,
+  ConfigEditorComponent,
+  EditorAppProps,
+  EditorMode,
+} from "./components/EditorApp.js";

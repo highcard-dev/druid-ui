@@ -202,6 +202,16 @@ export class ConfigEditorStore {
     return this.adapter.serialize(this.workingDocument);
   }
 
+  serializeForDisplay(): string {
+    let displayDocument = this.workingDocument;
+    for (const field of allFields(this.schema)) {
+      if (!(field.sensitive || field.type === "secret")) continue;
+      if (this.adapter.get(displayDocument, field.key) === undefined) continue;
+      displayDocument = this.adapter.set(displayDocument, field.key, MASKED_SECRET);
+    }
+    return this.adapter.serialize(displayDocument);
+  }
+
   validateSerializedSource(source: string): ValidationIssue[] {
     const document = this.adapter.parse(source);
     const issues = this.adapter.validate(document, this.schema);
@@ -216,7 +226,16 @@ export class ConfigEditorStore {
   }
 
   replaceWorkingSource(source: string): void {
-    this.workingDocument = this.adapter.parse(source);
+    let document = this.adapter.parse(source);
+    for (const field of allFields(this.schema)) {
+      if (!(field.sensitive || field.type === "secret")) continue;
+      if (this.adapter.get(document, field.key) !== MASKED_SECRET) continue;
+      const currentSecret = this.adapter.get(this.workingDocument, field.key);
+      if (currentSecret !== undefined) {
+        document = this.adapter.set(document, field.key, currentSecret);
+      }
+    }
+    this.workingDocument = document;
     this.fields = this.readFields(this.originalDocument, this.workingDocument);
   }
 

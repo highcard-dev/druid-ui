@@ -2,6 +2,7 @@ import type { Prop, Props } from "druid:ui/ui";
 import { log, rerender, d, setHook } from "druid:ui/ui";
 import type { Event } from "@druid-ui/host";
 import type { Context } from "druid:ui/component";
+import { lowerPropertyValue } from "./props";
 
 export const callbackMap: Record<string, Record<string, Function>> = {};
 
@@ -74,14 +75,19 @@ export const createDFunc = (dfunc: typeof d) => {
 
           ps.on.push(eventKey);
         } else {
+          const loweredValue = lowerPropertyValue(value);
+          if (loweredValue === undefined) continue;
+          // Boolean DOM properties must be present on every render. Omitting
+          // `false` leaves a previously true property (for example disabled or
+          // checked) stuck when snabbdom patches the existing element.
           if (typeof value === "boolean") {
-            //e.g. disabled, checked does not have a "false"
-            if (value) {
-              ps.prop.push({ key, value: "true" });
-            }
+            ps.prop.push({ key, value: loweredValue });
             continue;
           }
-          ps.prop.push({ key, value });
+          // The component WIT contract transports property values as strings.
+          // Raw JavaScript tolerated numbers here, but componentized WASM traps
+          // while lowering a non-string value across the canonical ABI.
+          ps.prop.push({ key, value: loweredValue });
         }
       }
     }
