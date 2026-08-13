@@ -15,6 +15,7 @@ const CONFIG_FORMATS = new Set<ConfigFormat>([
   "unreal-ini",
   "key-value",
   "json",
+  "xml-properties",
   "raw",
 ]);
 

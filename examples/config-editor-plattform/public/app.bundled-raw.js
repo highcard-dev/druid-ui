@@ -52,6 +52,7 @@ var CONFIG_FORMATS = /* @__PURE__ */ new Set([
   "unreal-ini",
   "key-value",
   "json",
+  "xml-properties",
   "raw"
 ]);
 var FIELD_TYPES = /* @__PURE__ */ new Set([
@@ -491,13 +492,48 @@ var appendEntry = (document, key, value) => {
 };
 var javaPropertiesAdapter = {
   parse: parseJavaProperties,
+  entries(document) {
+    const entries = /* @__PURE__ */ new Map();
+    for (const entry of document.entries) entries.set(entry.key, entry.value);
+    return [...entries].map(([key, value]) => ({ key, value }));
+  },
   get(document, key) {
     return effectiveEntry(document, key)?.value;
+  },
+  getAll(document, key) {
+    return document.entries.filter((entry) => entry.key === key).map((entry) => entry.value);
+  },
+  getAllRaw(document, key) {
+    return document.entries.filter((entry) => entry.key === key).map((entry) => document.source.slice(entry.valueSpan.start, entry.valueSpan.end));
   },
   set(document, key, value) {
     const entry = effectiveEntry(document, key);
     if (!entry) return parseJavaProperties(appendEntry(document, key, value));
     const source = document.source.slice(0, entry.valueSpan.start) + escapeValue(value) + document.source.slice(entry.valueSpan.end);
+    return parseJavaProperties(source);
+  },
+  setAll(document, key, values) {
+    const entries = document.entries.filter((entry) => entry.key === key);
+    if (entries.length !== values.length) {
+      throw new Error(`Expected ${entries.length} values for Java property "${key}".`);
+    }
+    let source = document.source;
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      const entry = entries[index];
+      source = source.slice(0, entry.valueSpan.start) + escapeValue(values[index]) + source.slice(entry.valueSpan.end);
+    }
+    return parseJavaProperties(source);
+  },
+  setAllRaw(document, key, values) {
+    const entries = document.entries.filter((entry) => entry.key === key);
+    if (entries.length !== values.length) {
+      throw new Error(`Expected ${entries.length} raw values for Java property "${key}".`);
+    }
+    let source = document.source;
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      const entry = entries[index];
+      source = source.slice(0, entry.valueSpan.start) + values[index] + source.slice(entry.valueSpan.end);
+    }
     return parseJavaProperties(source);
   },
   validate(document, schema) {
@@ -511,15 +547,34 @@ var javaPropertiesAdapter = {
 
 // ../../packages/config-editor/src/adapters/ini.ts
 var inlineCommentAt = (value) => {
+  let quote;
   for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    if (quote) {
+      if (quote === "'" && value.startsWith("'\\''", index)) {
+        index += 3;
+        continue;
+      }
+      if (character === quote && value[index - 1] !== "\\") quote = void 0;
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
     const precededBySpace = index > 0 && /\s/.test(value[index - 1]);
     if (!precededBySpace) continue;
-    if (value[index] === ";" || value[index] === "#") return index;
-    if (value[index] === "/" && value[index + 1] === "/") return index;
+    if (character === ";" || character === "#") return index;
+    if (character === "/" && value[index + 1] === "/") return index;
   }
   return value.length;
 };
-var parseEntryLine = (raw, start, section, line) => {
+var decodeQuotedValue = (value, quote) => {
+  if (quote === '"') return value.replace(/\\(["\\])/g, "$1");
+  if (quote === "'") return value.replace(/'\\''/g, "'");
+  return value;
+};
+var parseEntryLine = (raw, start, section, line, format) => {
   let keyStart = 0;
   while (keyStart < raw.length && /[ \t]/.test(raw[keyStart])) keyStart += 1;
   if (keyStart === raw.length) return void 0;
@@ -535,13 +590,96 @@ var parseEntryLine = (raw, start, section, line) => {
   const comment = inlineCommentAt(raw.slice(valueStart));
   let valueEnd = valueStart + comment;
   while (valueEnd > valueStart && /[ \t]/.test(raw[valueEnd - 1])) valueEnd -= 1;
+  if (format === "key-value" && raw[valueEnd - 1] === ";") {
+    valueEnd -= 1;
+    while (valueEnd > valueStart && /[ \t]/.test(raw[valueEnd - 1])) valueEnd -= 1;
+  }
+  const quote = raw[valueStart];
+  let valueQuote;
+  if ((quote === '"' || quote === "'") && valueEnd > valueStart && raw[valueEnd - 1] === quote) {
+    valueQuote = quote;
+    valueStart += 1;
+    valueEnd -= 1;
+  }
   const localKey = raw.slice(keyStart, keyEnd).trim();
   return {
     key: section ? `${section}.${localKey}` : localKey,
-    value: raw.slice(valueStart, valueEnd),
+    value: decodeQuotedValue(raw.slice(valueStart, valueEnd), valueQuote),
     valueSpan: { start: start + valueStart, end: start + valueEnd },
-    line
+    line,
+    ...valueQuote ? { quote: valueQuote } : {}
   };
+};
+var tupleEntries = (entry) => {
+  if (!entry.value.startsWith("(") || !entry.value.endsWith(")")) return [];
+  const inner = entry.value.slice(1, -1);
+  const segments = [];
+  let segmentStart = 0;
+  let depth = 0;
+  let quote;
+  for (let index = 0; index <= inner.length; index += 1) {
+    const character = inner[index];
+    if (quote) {
+      if (character === quote && inner[index - 1] !== "\\") quote = void 0;
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+    if (character === "(" || character === "[" || character === "{") depth += 1;
+    else if (character === ")" || character === "]" || character === "}") depth -= 1;
+    if (character === "," && depth === 0 || index === inner.length) {
+      segments.push({ start: segmentStart, end: index });
+      segmentStart = index + 1;
+    }
+  }
+  const result = [];
+  for (const segment of segments) {
+    const raw = inner.slice(segment.start, segment.end);
+    let equals = -1;
+    depth = 0;
+    quote = void 0;
+    for (let index = 0; index < raw.length; index += 1) {
+      const character = raw[index];
+      if (quote) {
+        if (character === quote && raw[index - 1] !== "\\") quote = void 0;
+        continue;
+      }
+      if (character === '"' || character === "'") quote = character;
+      else if (character === "(" || character === "[" || character === "{") depth += 1;
+      else if (character === ")" || character === "]" || character === "}") depth -= 1;
+      else if (character === "=" && depth === 0) {
+        equals = index;
+        break;
+      }
+    }
+    if (equals < 1) continue;
+    const key = raw.slice(0, equals).trim();
+    let localStart = equals + 1;
+    while (localStart < raw.length && /\s/.test(raw[localStart])) localStart += 1;
+    let localEnd = raw.length;
+    while (localEnd > localStart && /\s/.test(raw[localEnd - 1])) localEnd -= 1;
+    const valueQuote = raw[localStart];
+    let preservedQuote;
+    if ((valueQuote === '"' || valueQuote === "'") && localEnd > localStart && raw[localEnd - 1] === valueQuote) {
+      preservedQuote = valueQuote;
+      localStart += 1;
+      localEnd -= 1;
+    }
+    const absoluteStart = entry.valueSpan.start + 1 + segment.start + localStart;
+    result.push({
+      key: `${entry.key}.${key}`,
+      value: decodeQuotedValue(raw.slice(localStart, localEnd), preservedQuote),
+      valueSpan: {
+        start: absoluteStart,
+        end: absoluteStart + localEnd - localStart
+      },
+      line: entry.line,
+      ...preservedQuote ? { quote: preservedQuote } : {}
+    });
+  }
+  return result;
 };
 var parseIni = (source, format) => {
   const lines = splitSourceLines(source);
@@ -567,9 +705,16 @@ var parseIni = (source, format) => {
       nodes.push({ ...line, kind: "section" });
       continue;
     }
-    const entry = parseEntryLine(line.raw, line.start, section, index);
+    const entry = parseEntryLine(line.raw, line.start, section, index, format);
     if (entry) {
       entries.push(entry);
+      if (format === "unreal-ini") {
+        const children = tupleEntries(entry);
+        if (children.length > 0) {
+          entry.container = true;
+          entries.push(...children);
+        }
+      }
       nodes.push({
         ...line,
         kind: "entry",
@@ -597,10 +742,15 @@ var effectiveEntry2 = (document, key) => {
   }
   return void 0;
 };
-var formatValue = (value) => (value === null ? "" : String(value)).replace(
-  /[\r\n]/g,
-  (character) => character === "\r" ? "\\r" : "\\n"
-);
+var formatValue = (value, quote) => {
+  let formatted = (value === null ? "" : String(value)).replace(
+    /[\r\n]/g,
+    (character) => character === "\r" ? "\\r" : "\\n"
+  );
+  if (quote === '"') formatted = formatted.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  else if (quote === "'") formatted = formatted.replace(/'/g, "'\\''");
+  return formatted;
+};
 var appendIniEntry = (document, key, value) => {
   const split = document.format === "key-value" ? -1 : key.lastIndexOf(".");
   const section = split < 0 ? void 0 : key.slice(0, split);
@@ -618,16 +768,57 @@ var createIniAdapter = (format) => ({
   parse(source) {
     return parseIni(source, format);
   },
+  entries(document) {
+    const entries = /* @__PURE__ */ new Map();
+    for (const entry of document.entries) {
+      if (!entry.container) entries.set(entry.key, entry.value);
+    }
+    return [...entries].map(([key, value]) => ({ key, value }));
+  },
   get(document, key) {
     return effectiveEntry2(document, key)?.value;
+  },
+  getAll(document, key) {
+    return document.entries.filter((entry) => !entry.container && entry.key === key).map((entry) => entry.value);
+  },
+  getAllRaw(document, key) {
+    return document.entries.filter((entry) => !entry.container && entry.key === key).map((entry) => document.source.slice(entry.valueSpan.start, entry.valueSpan.end));
   },
   set(document, key, value) {
     const entry = effectiveEntry2(document, key);
     if (!entry) return parseIni(appendIniEntry(document, key, value), format);
     return parseIni(
-      document.source.slice(0, entry.valueSpan.start) + formatValue(value) + document.source.slice(entry.valueSpan.end),
+      document.source.slice(0, entry.valueSpan.start) + formatValue(value, entry.quote) + document.source.slice(entry.valueSpan.end),
       format
     );
+  },
+  setAll(document, key, values) {
+    const entries = document.entries.filter(
+      (entry) => !entry.container && entry.key === key
+    );
+    if (entries.length !== values.length) {
+      throw new Error(`Expected ${entries.length} values for setting "${key}".`);
+    }
+    let source = document.source;
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      const entry = entries[index];
+      source = source.slice(0, entry.valueSpan.start) + formatValue(values[index], entry.quote) + source.slice(entry.valueSpan.end);
+    }
+    return parseIni(source, format);
+  },
+  setAllRaw(document, key, values) {
+    const entries = document.entries.filter(
+      (entry) => !entry.container && entry.key === key
+    );
+    if (entries.length !== values.length) {
+      throw new Error(`Expected ${entries.length} raw values for setting "${key}".`);
+    }
+    let source = document.source;
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      const entry = entries[index];
+      source = source.slice(0, entry.valueSpan.start) + values[index] + source.slice(entry.valueSpan.end);
+    }
+    return parseIni(source, format);
   },
   validate(document, schema) {
     void schema;
@@ -661,8 +852,15 @@ var jsonNodes = (source) => splitSourceLines(source).map((line) => ({
 }));
 var parseJson = (source) => {
   const scalars = /* @__PURE__ */ new Map();
-  const containers = /* @__PURE__ */ new Set();
+  const scalarOccurrences = /* @__PURE__ */ new Map();
+  const containers = /* @__PURE__ */ new Map();
   let cursor = 0;
+  const addScalar = (pointer, scalar) => {
+    scalars.set(pointer, scalar);
+    const occurrences = scalarOccurrences.get(pointer) ?? [];
+    occurrences.push(scalar);
+    scalarOccurrences.set(pointer, occurrences);
+  };
   const fail2 = (message) => {
     throw new JsonParseError(cursor, message);
   };
@@ -702,14 +900,15 @@ var parseJson = (source) => {
     const character = source[cursor];
     if (character === '"') {
       const string = parseString();
-      scalars.set(pointer, { value: string.value, span: string.span });
+      addScalar(pointer, { value: string.value, span: string.span });
       return;
     }
     if (character === "{") {
-      containers.add(pointer);
+      const open = cursor;
       cursor += 1;
       skipWhitespace();
       if (source[cursor] === "}") {
+        containers.set(pointer, { kind: "object", open, close: cursor });
         cursor += 1;
         return;
       }
@@ -722,6 +921,7 @@ var parseJson = (source) => {
         parseValue(`${pointer}/${pointerSegment(key)}`);
         skipWhitespace();
         if (source[cursor] === "}") {
+          containers.set(pointer, { kind: "object", open, close: cursor });
           cursor += 1;
           return;
         }
@@ -730,10 +930,11 @@ var parseJson = (source) => {
       fail2("Unterminated JSON object.");
     }
     if (character === "[") {
-      containers.add(pointer);
+      const open = cursor;
       cursor += 1;
       skipWhitespace();
       if (source[cursor] === "]") {
+        containers.set(pointer, { kind: "array", open, close: cursor });
         cursor += 1;
         return;
       }
@@ -743,6 +944,7 @@ var parseJson = (source) => {
         index += 1;
         skipWhitespace();
         if (source[cursor] === "]") {
+          containers.set(pointer, { kind: "array", open, close: cursor });
           cursor += 1;
           return;
         }
@@ -754,7 +956,7 @@ var parseJson = (source) => {
     const literal = remainder.match(/^(?:true|false|null)(?![\w])/);
     if (literal) {
       cursor += literal[0].length;
-      scalars.set(pointer, {
+      addScalar(pointer, {
         value: JSON.parse(literal[0]),
         span: { start, end: cursor }
       });
@@ -763,9 +965,11 @@ var parseJson = (source) => {
     const number = remainder.match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
     if (number) {
       cursor += number[0].length;
-      scalars.set(pointer, {
-        value: Number(number[0]),
-        span: { start, end: cursor }
+      const unsafeInteger = /^-?\d+$/.test(number[0]) && !Number.isSafeInteger(Number(number[0]));
+      addScalar(pointer, {
+        value: unsafeInteger ? number[0] : Number(number[0]),
+        span: { start, end: cursor },
+        ...unsafeInteger ? { unsafeInteger: true } : {}
       });
       return;
     }
@@ -781,6 +985,7 @@ var parseJson = (source) => {
       nodes: jsonNodes(source),
       issues: [],
       scalars,
+      scalarOccurrences,
       containers
     };
   } catch (error) {
@@ -799,25 +1004,103 @@ var parseJson = (source) => {
         }
       ],
       scalars: /* @__PURE__ */ new Map(),
-      containers: /* @__PURE__ */ new Set()
+      scalarOccurrences: /* @__PURE__ */ new Map(),
+      containers: /* @__PURE__ */ new Map()
     };
   }
 };
+var decodePointerSegment = (value) => value.replace(/~1/g, "/").replace(/~0/g, "~");
+var insertJsonProperty = (document, pointer, value) => {
+  const separator = pointer.lastIndexOf("/");
+  if (separator < 0) throw new Error(`JSON pointer "${pointer}" does not exist.`);
+  const parentPointer = pointer.slice(0, separator);
+  const property = decodePointerSegment(pointer.slice(separator + 1));
+  const parent = document.containers.get(parentPointer);
+  if (!parent || parent.kind !== "object") {
+    throw new Error(`JSON pointer "${pointer}" does not exist.`);
+  }
+  const content = document.source.slice(parent.open + 1, parent.close);
+  const contentEnd = parent.close - (content.match(/\s*$/)?.[0].length ?? 0);
+  const closingLine = document.source.slice(0, parent.close).split("\n").at(-1) ?? "";
+  const closingIndent = closingLine.match(/^\s*/)?.[0] ?? "";
+  const serialized = `${JSON.stringify(property)}: ${JSON.stringify(value)}`;
+  const newline = document.source.includes("\r\n") ? "\r\n" : "\n";
+  let insertion;
+  if (content.trim() === "") {
+    insertion = `${newline}${closingIndent}  ${serialized}${newline}${closingIndent}`;
+    return parseJson(
+      document.source.slice(0, parent.open + 1) + insertion + document.source.slice(parent.close)
+    );
+  }
+  const multiline = content.includes("\n");
+  if (!multiline) insertion = `, ${serialized}`;
+  else {
+    const existingLine = document.source.slice(0, contentEnd).split("\n").at(-1) ?? "";
+    const childIndent = existingLine.match(/^\s*/)?.[0] ?? `${closingIndent}  `;
+    insertion = `,${newline}${childIndent}${serialized}`;
+  }
+  return parseJson(
+    document.source.slice(0, contentEnd) + insertion + document.source.slice(contentEnd)
+  );
+};
 var jsonAdapter = {
   parse: parseJson,
+  entries(document) {
+    return [...document.scalars].map(([key, scalar]) => ({
+      key,
+      value: scalar.value
+    }));
+  },
   get(document, key) {
     return document.scalars.get(key)?.value;
+  },
+  getAll(document, key) {
+    return (document.scalarOccurrences.get(key) ?? []).map((scalar) => scalar.value);
+  },
+  getAllRaw(document, key) {
+    return (document.scalarOccurrences.get(key) ?? []).map(
+      (scalar) => document.source.slice(scalar.span.start, scalar.span.end)
+    );
   },
   set(document, key, value) {
     if (document.issues.length > 0) throw new Error("Invalid JSON cannot be edited in form mode.");
     const scalar = document.scalars.get(key);
     if (!scalar) {
       if (document.containers.has(key)) throw new Error(`JSON pointer "${key}" is not a scalar.`);
-      throw new Error(`JSON pointer "${key}" does not exist.`);
+      return insertJsonProperty(document, key, value);
     }
+    const serialized = scalar.unsafeInteger && typeof value === "string" && /^-?\d+$/.test(value) ? value : JSON.stringify(value);
     return parseJson(
-      document.source.slice(0, scalar.span.start) + JSON.stringify(value) + document.source.slice(scalar.span.end)
+      document.source.slice(0, scalar.span.start) + serialized + document.source.slice(scalar.span.end)
     );
+  },
+  setAll(document, key, values) {
+    const occurrences = document.scalarOccurrences.get(key) ?? [];
+    const expected = occurrences.length;
+    if (values.length !== expected) {
+      throw new Error(`Expected ${expected} values for JSON pointer "${key}".`);
+    }
+    let source = document.source;
+    for (let index = occurrences.length - 1; index >= 0; index -= 1) {
+      const scalar = occurrences[index];
+      const value = values[index];
+      const serialized = scalar.unsafeInteger && typeof value === "string" && /^-?\d+$/.test(value) ? value : JSON.stringify(value);
+      source = source.slice(0, scalar.span.start) + serialized + source.slice(scalar.span.end);
+    }
+    return parseJson(source);
+  },
+  setAllRaw(document, key, values) {
+    const occurrences = document.scalarOccurrences.get(key) ?? [];
+    const expected = occurrences.length;
+    if (values.length !== expected) {
+      throw new Error(`Expected ${expected} raw values for JSON pointer "${key}".`);
+    }
+    let source = document.source;
+    for (let index = occurrences.length - 1; index >= 0; index -= 1) {
+      const scalar = occurrences[index];
+      source = source.slice(0, scalar.span.start) + values[index] + source.slice(scalar.span.end);
+    }
+    return parseJson(source);
   },
   validate(document, schema) {
     void schema;
@@ -838,11 +1121,142 @@ var parseRaw = (source) => {
 };
 var rawAdapter = {
   parse: parseRaw,
+  entries() {
+    return [];
+  },
   get() {
     return void 0;
   },
+  getAll() {
+    return [];
+  },
+  getAllRaw() {
+    return [];
+  },
   set(_document, _key, _value) {
     throw new Error("Raw mode does not support typed field writes.");
+  },
+  setAll(document, _key, values) {
+    if (values.length > 0) throw new Error("Raw mode does not support typed field writes.");
+    return document;
+  },
+  setAllRaw(document, _key, values) {
+    if (values.length > 0) throw new Error("Raw mode does not support typed field writes.");
+    return document;
+  },
+  validate(document, schema) {
+    void schema;
+    return [...document.issues];
+  },
+  serialize(document) {
+    return document.source;
+  }
+};
+
+// ../../packages/config-editor/src/adapters/xml-properties.ts
+var decodeXml = (value) => value.replace(/&(?:#x[\da-f]+|#\d+|amp|quot|apos|lt|gt);/gi, (entity) => {
+  const token = entity.slice(1, -1);
+  if (token.toLowerCase().startsWith("#x")) {
+    return String.fromCodePoint(Number.parseInt(token.slice(2), 16));
+  }
+  if (token.startsWith("#")) {
+    return String.fromCodePoint(Number.parseInt(token.slice(1), 10));
+  }
+  return { amp: "&", quot: '"', apos: "'", lt: "<", gt: ">" }[token.toLowerCase()];
+});
+var encodeXml = (value, quote) => {
+  let encoded = (value === null ? "" : String(value)).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  encoded = quote === '"' ? encoded.replace(/"/g, "&quot;") : encoded.replace(/'/g, "&apos;");
+  return encoded;
+};
+var parseXmlProperties = (source) => {
+  const properties = [];
+  const propertyPattern = /<property\b[^>]*>/gi;
+  for (const match of source.matchAll(propertyPattern)) {
+    const tag = match[0];
+    const tagStart = match.index;
+    const attributes = /* @__PURE__ */ new Map();
+    const attributePattern = /\b(name|value)\s*=\s*(["'])(.*?)\2/gi;
+    for (const attribute of tag.matchAll(attributePattern)) {
+      const quote = attribute[2];
+      const rawValue = attribute[3];
+      const rawStart = tagStart + attribute.index + attribute[0].indexOf(quote) + 1;
+      attributes.set(attribute[1].toLowerCase(), {
+        value: decodeXml(rawValue),
+        span: { start: rawStart, end: rawStart + rawValue.length },
+        quote
+      });
+    }
+    const name = attributes.get("name");
+    const value = attributes.get("value");
+    if (name && value) {
+      properties.push({
+        key: name.value,
+        value: value.value,
+        valueSpan: value.span,
+        quote: value.quote
+      });
+    }
+  }
+  const nodes = splitSourceLines(source).map((line) => ({
+    ...line,
+    kind: line.raw.trim() === "" ? "blank" : "invalid"
+  }));
+  return { format: "xml-properties", source, nodes, issues: [], properties };
+};
+var effectiveProperty = (document, key) => {
+  for (let index = document.properties.length - 1; index >= 0; index -= 1) {
+    const property = document.properties[index];
+    if (property.key === key) return property;
+  }
+  return void 0;
+};
+var xmlPropertiesAdapter = {
+  parse: parseXmlProperties,
+  entries(document) {
+    const entries = /* @__PURE__ */ new Map();
+    for (const property of document.properties) entries.set(property.key, property.value);
+    return [...entries].map(([key, value]) => ({ key, value }));
+  },
+  get(document, key) {
+    return effectiveProperty(document, key)?.value;
+  },
+  getAll(document, key) {
+    return document.properties.filter((property) => property.key === key).map((property) => property.value);
+  },
+  getAllRaw(document, key) {
+    return document.properties.filter((property) => property.key === key).map((property) => document.source.slice(property.valueSpan.start, property.valueSpan.end));
+  },
+  set(document, key, value) {
+    const property = effectiveProperty(document, key);
+    if (!property) throw new Error(`XML property "${key}" does not exist.`);
+    return parseXmlProperties(
+      document.source.slice(0, property.valueSpan.start) + encodeXml(value, property.quote) + document.source.slice(property.valueSpan.end)
+    );
+  },
+  setAll(document, key, values) {
+    const properties = document.properties.filter((property) => property.key === key);
+    if (properties.length !== values.length) {
+      throw new Error(`Expected ${properties.length} values for XML property "${key}".`);
+    }
+    let source = document.source;
+    for (let index = properties.length - 1; index >= 0; index -= 1) {
+      const property = properties[index];
+      source = source.slice(0, property.valueSpan.start) + encodeXml(values[index], property.quote) + source.slice(property.valueSpan.end);
+    }
+    return parseXmlProperties(source);
+  },
+  setAllRaw(document, key, values) {
+    const properties = document.properties.filter((property) => property.key === key);
+    if (properties.length !== values.length) {
+      throw new Error(`Expected ${properties.length} raw values for XML property "${key}".`);
+    }
+    let source = document.source;
+    for (let index = properties.length - 1; index >= 0; index -= 1) {
+      const property = properties[index];
+      source = source.slice(0, property.valueSpan.start) + values[index] + source.slice(property.valueSpan.end);
+    }
+    return parseXmlProperties(source);
   },
   validate(document, schema) {
     void schema;
@@ -860,6 +1274,7 @@ var createAdapterRegistry = () => /* @__PURE__ */ new Map([
   ["unreal-ini", unrealIniAdapter],
   ["key-value", keyValueAdapter],
   ["json", jsonAdapter],
+  ["xml-properties", xmlPropertiesAdapter],
   ["raw", rawAdapter]
 ]);
 
@@ -954,6 +1369,62 @@ var validateField2 = (field, value) => {
 // ../../packages/config-editor/src/store.ts
 var MASKED_SECRET = "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022";
 var allFields = (schema) => schema.sections.flatMap((section) => section.fields);
+var sensitiveKey = (key) => {
+  const normalized = key.replace(/([a-z\d])([A-Z])/g, "$1.$2").toLowerCase();
+  const segments = normalized.split(/[^a-z\d]+/).filter(Boolean);
+  const sensitiveSegments = /* @__PURE__ */ new Set([
+    "password",
+    "passwd",
+    "pass",
+    "secret",
+    "token",
+    "apikey",
+    "privatekey",
+    "gslt",
+    "steampass"
+  ]);
+  return segments.some((segment) => sensitiveSegments.has(segment)) || /(?:password|passwd|steampass|api[-_.]?key|private[-_.]?key|gslt)/i.test(key);
+};
+var inferredType = (value) => {
+  if (typeof value === "boolean") return "boolean";
+  if (typeof value === "number") return Number.isInteger(value) ? "integer" : "number";
+  if (typeof value !== "string") return "string";
+  if (/^(?:true|false)$/i.test(value)) return "boolean";
+  return "string";
+};
+var humanizeKey = (key) => {
+  const leaf = key.split(/[./]/).at(-1) ?? key;
+  const label = leaf.replace(/[-_]+/g, " ").replace(/([a-z\d])([A-Z])/g, "$1 $2");
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+var schemaWithDetectedFields = (declaredSchema, entries) => {
+  const declaredKeys = new Set(allFields(declaredSchema).map((field) => field.key));
+  const detectedFields = [];
+  for (const entry of entries) {
+    if (entry.key === "" || declaredKeys.has(entry.key)) continue;
+    const sensitive = sensitiveKey(entry.key);
+    detectedFields.push({
+      key: entry.key,
+      label: humanizeKey(entry.key),
+      description: `Setting discovered in ${declaredSchema.label}.`,
+      documentation: declaredSchema.documentation ?? `Configuration file ${declaredSchema.path}`,
+      type: sensitive ? "secret" : inferredType(entry.value),
+      sensitive,
+      restartRequired: true
+    });
+  }
+  if (detectedFields.length === 0) return declaredSchema;
+  const detectedSection = {
+    id: "detected-settings",
+    label: "Detected settings",
+    description: "Settings discovered from the loaded configuration file.",
+    fields: detectedFields
+  };
+  return {
+    ...declaredSchema,
+    sections: [...declaredSchema.sections, detectedSection]
+  };
+};
 var valuesEqual = (left, right) => Object.is(left, right);
 var displayValue = (field, value) => {
   if ((field.sensitive || field.type === "secret") && value !== void 0 && value !== "") {
@@ -975,17 +1446,22 @@ var deepFreezeSnapshot = (snapshot) => {
   return Object.freeze(snapshot);
 };
 var ConfigEditorStore = class _ConfigEditorStore {
-  schema;
+  declaredSchema;
+  schemaValue;
   adapter;
   originalDocument;
   workingDocument;
   fields;
   constructor(schema, document, adapter) {
-    this.schema = schema;
+    this.declaredSchema = schema;
     this.adapter = adapter;
+    this.schemaValue = schemaWithDetectedFields(schema, adapter.entries(document));
     this.originalDocument = document;
     this.workingDocument = document;
     this.fields = this.readFields(document, document);
+  }
+  get schema() {
+    return this.schemaValue;
   }
   static fromLoadedFile(schema, document) {
     if (schema.format !== document.format) {
@@ -1078,8 +1554,13 @@ var ConfigEditorStore = class _ConfigEditorStore {
     let displayDocument = this.workingDocument;
     for (const field of allFields(this.schema)) {
       if (!(field.sensitive || field.type === "secret")) continue;
-      if (this.adapter.get(displayDocument, field.key) === void 0) continue;
-      displayDocument = this.adapter.set(displayDocument, field.key, MASKED_SECRET);
+      const values = this.adapter.getAll(displayDocument, field.key);
+      if (values.length === 0) continue;
+      displayDocument = this.adapter.setAll(
+        displayDocument,
+        field.key,
+        values.map(() => MASKED_SECRET)
+      );
     }
     return this.adapter.serialize(displayDocument);
   }
@@ -1098,25 +1579,44 @@ var ConfigEditorStore = class _ConfigEditorStore {
     let document = this.adapter.parse(source);
     for (const field of allFields(this.schema)) {
       if (!(field.sensitive || field.type === "secret")) continue;
-      if (this.adapter.get(document, field.key) !== MASKED_SECRET) continue;
-      const currentSecret = this.adapter.get(this.workingDocument, field.key);
-      if (currentSecret !== void 0) {
-        document = this.adapter.set(document, field.key, currentSecret);
+      const displayedValues = this.adapter.getAll(document, field.key);
+      if (!displayedValues.includes(MASKED_SECRET)) continue;
+      const currentSecrets = this.adapter.getAllRaw(this.workingDocument, field.key);
+      if (displayedValues.length !== currentSecrets.length) {
+        throw new Error(
+          `Secret occurrences for "${field.key}" cannot be added or removed in raw mode.`
+        );
       }
+      document = this.adapter.setAllRaw(
+        document,
+        field.key,
+        displayedValues.map(
+          (value, index) => value === MASKED_SECRET ? currentSecrets[index] : this.adapter.getAllRaw(document, field.key)[index]
+        )
+      );
     }
     this.workingDocument = document;
+    this.schemaValue = schemaWithDetectedFields(
+      this.declaredSchema,
+      this.adapter.entries(document)
+    );
     this.fields = this.readFields(this.originalDocument, this.workingDocument);
   }
   acceptSavedSource(source) {
     const document = this.adapter.parse(source);
     this.originalDocument = document;
     this.workingDocument = document;
+    this.schemaValue = schemaWithDetectedFields(
+      this.declaredSchema,
+      this.adapter.entries(document)
+    );
     this.fields = this.readFields(document, document);
   }
   snapshot() {
     const fields = {};
     const changes = [];
     const issues = [...this.workingDocument.issues];
+    const documentDirty = this.adapter.serialize(this.workingDocument) !== this.adapter.serialize(this.originalDocument);
     for (const [key, state] of this.fields) {
       const sensitive = Boolean(state.schema.sensitive || state.schema.type === "secret");
       const dirty = !valuesEqual(state.current, state.original);
@@ -1144,13 +1644,15 @@ var ConfigEditorStore = class _ConfigEditorStore {
         });
       }
     }
+    const unstructuredChanges = documentDirty && changes.length === 0;
     return deepFreezeSnapshot({
       filePath: this.schema.path,
       fields,
       changes,
       issues,
-      dirty: changes.length > 0,
-      restartRequired: changes.some((change) => change.restartRequired)
+      dirty: documentDirty,
+      unstructuredChanges,
+      restartRequired: unstructuredChanges || changes.some((change) => change.restartRequired)
     });
   }
 };
@@ -1310,34 +1812,56 @@ var sha256 = (source) => {
 var fingerprint = async (source) => sha256(source);
 
 // ../../packages/config-editor/src/gateway.ts
+var MISSING_FILE_FINGERPRINT = "missing";
 var isMissingFileError = (error) => {
   const message = error instanceof Error ? error.message : String(error);
   return /(?:\b404\b|not[ -]?found|missing)/i.test(message);
 };
-var withMissingFileFallback = (gateway2, suffix = ".scroll_template") => {
+var withMissingFileFallback = (gateway2, suffixes = [".scroll_template", ".default"]) => {
   const resolvedPaths = /* @__PURE__ */ new Map();
+  const fallbackSuffixes = typeof suffixes === "string" ? [suffixes] : suffixes;
   return {
     async load(path) {
-      const resolved = resolvedPaths.get(path);
-      if (resolved) return await gateway2.load(resolved);
       try {
         const content = await gateway2.load(path);
         resolvedPaths.set(path, path);
         return content;
       } catch (error) {
         if (!isMissingFileError(error)) throw error;
-        const fallback = `${path}${suffix}`;
-        const content = await gateway2.load(fallback);
-        resolvedPaths.set(path, fallback);
-        return content;
+        const resolved = resolvedPaths.get(path);
+        if (resolved && resolved !== path) {
+          try {
+            return await gateway2.load(resolved);
+          } catch (fallbackError) {
+            if (!isMissingFileError(fallbackError)) throw fallbackError;
+          }
+        }
+        for (const suffix of fallbackSuffixes) {
+          const fallback = `${path}${suffix}`;
+          if (fallback === resolved) continue;
+          try {
+            const content = await gateway2.load(fallback);
+            resolvedPaths.set(path, fallback);
+            return content;
+          } catch (fallbackError) {
+            if (!isMissingFileError(fallbackError)) throw fallbackError;
+          }
+        }
+        throw new Error(`Missing configuration file: ${path}`);
       }
     },
     async save(path, content, expectedFingerprint) {
-      return await gateway2.save(
-        resolvedPaths.get(path) ?? path,
-        content,
-        expectedFingerprint
-      );
+      const resolved = resolvedPaths.get(path) ?? path;
+      if (resolved !== path) {
+        const result = await gateway2.save(
+          path,
+          content,
+          MISSING_FILE_FINGERPRINT
+        );
+        if (result.status === "saved") resolvedPaths.set(path, path);
+        return result;
+      }
+      return await gateway2.save(resolved, content, expectedFingerprint);
     }
   };
 };
@@ -1509,8 +2033,10 @@ var copy = {
   filesHeading: "Configuration files",
   inspectorHeading: "Changes & validation",
   noChanges: "No pending changes",
+  rawChanged: "Raw configuration changed",
   unknownKeys: "Unknown keys: Preserved",
   restartRequired: "Restart required",
+  stopBeforeSave: "Stop the server before saving configuration files that it may rewrite.",
   noRestartRequired: "No restart required",
   save: "Save changes",
   saving: "Saving\u2026",
@@ -1740,7 +2266,7 @@ var printable = (value) => value === void 0 ? "Not set" : value === null ? "Prot
 var Inspector = ({ snapshot }) => /* @__PURE__ */ jsxs("aside", { class: "inspector", "aria-label": copy.inspectorHeading, children: [
   /* @__PURE__ */ jsxs("section", { children: [
     /* @__PURE__ */ jsx("h2", { children: copy.inspectorHeading }),
-    snapshot.changes.length === 0 ? /* @__PURE__ */ jsx("div", { class: "status-card", children: /* @__PURE__ */ jsx("p", { children: copy.noChanges }) }) : /* @__PURE__ */ jsx("ul", { class: "change-list", children: snapshot.changes.map((change) => /* @__PURE__ */ jsxs("li", { class: "change-item", children: [
+    snapshot.unstructuredChanges ? /* @__PURE__ */ jsx("div", { class: "status-card", children: /* @__PURE__ */ jsx("p", { children: copy.rawChanged }) }) : snapshot.changes.length === 0 ? /* @__PURE__ */ jsx("div", { class: "status-card", children: /* @__PURE__ */ jsx("p", { children: copy.noChanges }) }) : /* @__PURE__ */ jsx("ul", { class: "change-list", children: snapshot.changes.map((change) => /* @__PURE__ */ jsxs("li", { class: "change-item", children: [
       /* @__PURE__ */ jsx("strong", { children: change.label }),
       /* @__PURE__ */ jsx("span", { class: "change-value", children: change.sensitive ? copy.secretChanged : `${printable(change.before)} \u2192 ${printable(change.after)}` })
     ] })) })
@@ -1749,7 +2275,8 @@ var Inspector = ({ snapshot }) => /* @__PURE__ */ jsxs("aside", { class: "inspec
     /* @__PURE__ */ jsx("h2", { children: copy.validationHeading }),
     snapshot.issues.length === 0 ? /* @__PURE__ */ jsx("p", { children: copy.valid }) : /* @__PURE__ */ jsx("ul", { class: "issue-list", "aria-live": "polite", children: snapshot.issues.map((issue2) => /* @__PURE__ */ jsx("li", { class: "issue-item", children: issue2.message })) }),
     /* @__PURE__ */ jsx("p", { children: copy.unknownKeys }),
-    /* @__PURE__ */ jsx("p", { children: snapshot.restartRequired ? copy.restartRequired : copy.noRestartRequired })
+    /* @__PURE__ */ jsx("p", { children: snapshot.restartRequired ? copy.restartRequired : copy.noRestartRequired }),
+    snapshot.restartRequired ? /* @__PURE__ */ jsx("p", { children: copy.stopBeforeSave }) : false
   ] })
 ] });
 
@@ -1856,16 +2383,25 @@ var createConfigEditorComponent = ({
   let errorMessage = "";
   const selectFile = async (path) => {
     if (!manifest) return;
-    selectedPath = path;
+    const previousPath = selectedPath;
     status = copy.loading;
-    let store = stores.get(path);
-    if (!store) {
-      store = await loadEditor(gateway2, manifest, path);
-      stores.set(path, store);
-    }
-    mode = store.schema.sections.length === 0 ? "raw" : "form";
-    status = "";
     (0, import_ui3.rerender)();
+    try {
+      let store = stores.get(path);
+      if (!store) {
+        store = await loadEditor(gateway2, manifest, path);
+        stores.set(path, store);
+      }
+      selectedPath = path;
+      mode = store.schema.sections.length === 0 ? "raw" : "form";
+      status = "";
+    } catch (error) {
+      selectedPath = previousPath;
+      status = error instanceof Error ? error.message : String(error);
+      if (!stores.has(previousPath)) throw error;
+    } finally {
+      (0, import_ui3.rerender)();
+    }
   };
   const initialise = async () => {
     loading = true;
@@ -1945,6 +2481,9 @@ var loadFileFromDeployment = rawAsyncToPromise(
   import_plattform.loadFileFromDeployment
 );
 var saveFileToDeployment = rawAsyncToPromise(import_plattform.saveFileToDeployment);
+var saveFileToDeploymentIfMatch = rawAsyncToPromise(
+  import_plattform.saveFileToDeploymentIfMatch
+);
 
 // src/app.tsx
 var gateway = withMissingFileFallback({
@@ -1952,13 +2491,9 @@ var gateway = withMissingFileFallback({
     return await loadFileFromDeployment(path);
   },
   async save(path, content, expectedFingerprint) {
-    const remote = await loadFileFromDeployment(path);
-    const remoteFingerprint = await fingerprint(remote);
-    if (remoteFingerprint !== expectedFingerprint) {
-      return { status: "conflict", remote, fingerprint: remoteFingerprint };
-    }
-    await saveFileToDeployment(path, content);
-    return { status: "saved", fingerprint: await fingerprint(content) };
+    return JSON.parse(
+      await saveFileToDeploymentIfMatch(path, content, expectedFingerprint)
+    );
   }
 });
 var component = createConfigEditorComponent({

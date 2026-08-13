@@ -5,6 +5,7 @@ import type {
   FieldSchema,
   FileSchema,
   FieldType,
+  SectionSchema,
   ValidationIssue,
 } from "./model.js";
 import { coerceFieldValue, validateField } from "./validation.js";
@@ -45,11 +46,78 @@ export interface EditorSnapshot {
   readonly changes: readonly ChangeRecord[];
   readonly issues: readonly ValidationIssue[];
   readonly dirty: boolean;
+  readonly unstructuredChanges: boolean;
   readonly restartRequired: boolean;
 }
 
 const allFields = (schema: FileSchema): FieldSchema[] =>
   schema.sections.flatMap((section) => section.fields);
+
+const sensitiveKey = (key: string): boolean => {
+  const normalized = key.replace(/([a-z\d])([A-Z])/g, "$1.$2").toLowerCase();
+  const segments = normalized.split(/[^a-z\d]+/).filter(Boolean);
+  const sensitiveSegments = new Set([
+    "password",
+    "passwd",
+    "pass",
+    "secret",
+    "token",
+    "apikey",
+    "privatekey",
+    "gslt",
+    "steampass",
+  ]);
+  return segments.some((segment) => sensitiveSegments.has(segment)) ||
+    /(?:password|passwd|steampass|api[-_.]?key|private[-_.]?key|gslt)/i.test(key);
+};
+
+const inferredType = (value: ConfigValue): FieldType => {
+  if (typeof value === "boolean") return "boolean";
+  if (typeof value === "number") return Number.isInteger(value) ? "integer" : "number";
+  if (typeof value !== "string") return "string";
+  if (/^(?:true|false)$/i.test(value)) return "boolean";
+  return "string";
+};
+
+const humanizeKey = (key: string): string => {
+  const leaf = key.split(/[./]/).at(-1) ?? key;
+  const label = leaf.replace(/[-_]+/g, " ").replace(/([a-z\d])([A-Z])/g, "$1 $2");
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+
+const schemaWithDetectedFields = (
+  declaredSchema: FileSchema,
+  entries: readonly { key: string; value: ConfigValue }[],
+): FileSchema => {
+  const declaredKeys = new Set(allFields(declaredSchema).map((field) => field.key));
+  const detectedFields: FieldSchema[] = [];
+  for (const entry of entries) {
+    if (entry.key === "" || declaredKeys.has(entry.key)) continue;
+    const sensitive = sensitiveKey(entry.key);
+    detectedFields.push({
+      key: entry.key,
+      label: humanizeKey(entry.key),
+      description: `Setting discovered in ${declaredSchema.label}.`,
+      documentation:
+        declaredSchema.documentation ??
+        `Configuration file ${declaredSchema.path}`,
+      type: sensitive ? "secret" : inferredType(entry.value),
+      sensitive,
+      restartRequired: true,
+    });
+  }
+  if (detectedFields.length === 0) return declaredSchema;
+  const detectedSection: SectionSchema = {
+    id: "detected-settings",
+    label: "Detected settings",
+    description: "Settings discovered from the loaded configuration file.",
+    fields: detectedFields,
+  };
+  return {
+    ...declaredSchema,
+    sections: [...declaredSchema.sections, detectedSection],
+  };
+};
 
 const valuesEqual = (
   left: ConfigValue | undefined,
@@ -81,7 +149,8 @@ const deepFreezeSnapshot = (snapshot: EditorSnapshot): EditorSnapshot => {
 };
 
 export class ConfigEditorStore {
-  readonly schema: FileSchema;
+  private readonly declaredSchema: FileSchema;
+  private schemaValue: FileSchema;
   private readonly adapter: ConfigAdapter;
   private originalDocument: ParsedDocument;
   private workingDocument: ParsedDocument;
@@ -92,11 +161,16 @@ export class ConfigEditorStore {
     document: ParsedDocument,
     adapter: ConfigAdapter,
   ) {
-    this.schema = schema;
+    this.declaredSchema = schema;
     this.adapter = adapter;
+    this.schemaValue = schemaWithDetectedFields(schema, adapter.entries(document));
     this.originalDocument = document;
     this.workingDocument = document;
     this.fields = this.readFields(document, document);
+  }
+
+  get schema(): FileSchema {
+    return this.schemaValue;
   }
 
   static fromLoadedFile(
@@ -206,8 +280,13 @@ export class ConfigEditorStore {
     let displayDocument = this.workingDocument;
     for (const field of allFields(this.schema)) {
       if (!(field.sensitive || field.type === "secret")) continue;
-      if (this.adapter.get(displayDocument, field.key) === undefined) continue;
-      displayDocument = this.adapter.set(displayDocument, field.key, MASKED_SECRET);
+      const values = this.adapter.getAll(displayDocument, field.key);
+      if (values.length === 0) continue;
+      displayDocument = this.adapter.setAll(
+        displayDocument,
+        field.key,
+        values.map(() => MASKED_SECRET),
+      );
     }
     return this.adapter.serialize(displayDocument);
   }
@@ -229,13 +308,29 @@ export class ConfigEditorStore {
     let document = this.adapter.parse(source);
     for (const field of allFields(this.schema)) {
       if (!(field.sensitive || field.type === "secret")) continue;
-      if (this.adapter.get(document, field.key) !== MASKED_SECRET) continue;
-      const currentSecret = this.adapter.get(this.workingDocument, field.key);
-      if (currentSecret !== undefined) {
-        document = this.adapter.set(document, field.key, currentSecret);
+      const displayedValues = this.adapter.getAll(document, field.key);
+      if (!displayedValues.includes(MASKED_SECRET)) continue;
+      const currentSecrets = this.adapter.getAllRaw(this.workingDocument, field.key);
+      if (displayedValues.length !== currentSecrets.length) {
+        throw new Error(
+          `Secret occurrences for "${field.key}" cannot be added or removed in raw mode.`,
+        );
       }
+      document = this.adapter.setAllRaw(
+        document,
+        field.key,
+        displayedValues.map((value, index) =>
+          value === MASKED_SECRET
+            ? currentSecrets[index]!
+            : this.adapter.getAllRaw(document, field.key)[index]!,
+        ),
+      );
     }
     this.workingDocument = document;
+    this.schemaValue = schemaWithDetectedFields(
+      this.declaredSchema,
+      this.adapter.entries(document),
+    );
     this.fields = this.readFields(this.originalDocument, this.workingDocument);
   }
 
@@ -243,6 +338,10 @@ export class ConfigEditorStore {
     const document = this.adapter.parse(source);
     this.originalDocument = document;
     this.workingDocument = document;
+    this.schemaValue = schemaWithDetectedFields(
+      this.declaredSchema,
+      this.adapter.entries(document),
+    );
     this.fields = this.readFields(document, document);
   }
 
@@ -250,6 +349,9 @@ export class ConfigEditorStore {
     const fields: Record<string, FieldSnapshot> = {};
     const changes: ChangeRecord[] = [];
     const issues: ValidationIssue[] = [...this.workingDocument.issues];
+    const documentDirty =
+      this.adapter.serialize(this.workingDocument) !==
+      this.adapter.serialize(this.originalDocument);
 
     for (const [key, state] of this.fields) {
       const sensitive = Boolean(state.schema.sensitive || state.schema.type === "secret");
@@ -282,13 +384,16 @@ export class ConfigEditorStore {
       }
     }
 
+    const unstructuredChanges = documentDirty && changes.length === 0;
     return deepFreezeSnapshot({
       filePath: this.schema.path,
       fields,
       changes,
       issues,
-      dirty: changes.length > 0,
-      restartRequired: changes.some((change) => change.restartRequired),
+      dirty: documentDirty,
+      unstructuredChanges,
+      restartRequired:
+        unstructuredChanges || changes.some((change) => change.restartRequired),
     });
   }
 }

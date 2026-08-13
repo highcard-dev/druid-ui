@@ -12,7 +12,9 @@ export const Inspector = ({ snapshot }: InspectorProps) => (
   <aside class="inspector" aria-label={copy.inspectorHeading}>
     <section>
       <h2>{copy.inspectorHeading}</h2>
-      {snapshot.changes.length === 0 ? (
+      {snapshot.unstructuredChanges ? (
+        <div class="status-card"><p>{copy.rawChanged}</p></div>
+      ) : snapshot.changes.length === 0 ? (
         <div class="status-card"><p>{copy.noChanges}</p></div>
       ) : (
         <ul class="change-list">
@@ -38,6 +40,7 @@ export const Inspector = ({ snapshot }: InspectorProps) => (
       )}
       <p>{copy.unknownKeys}</p>
       <p>{snapshot.restartRequired ? copy.restartRequired : copy.noRestartRequired}</p>
+      {snapshot.restartRequired ? <p>{copy.stopBeforeSave}</p> : false}
     </section>
   </aside>
 );

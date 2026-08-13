@@ -16,6 +16,8 @@ export interface FileGateway {
   ): Promise<SaveResult>;
 }
 
+export const MISSING_FILE_FINGERPRINT = "missing";
+
 const isMissingFileError = (error: unknown): boolean => {
   const message = error instanceof Error ? error.message : String(error);
   return /(?:\b404\b|not[ -]?found|missing)/i.test(message);
@@ -23,33 +25,53 @@ const isMissingFileError = (error: unknown): boolean => {
 
 export const withMissingFileFallback = (
   gateway: FileGateway,
-  suffix = ".scroll_template",
+  suffixes: string | readonly string[] = [".scroll_template", ".default"],
 ): FileGateway => {
   const resolvedPaths = new Map<string, string>();
+  const fallbackSuffixes = typeof suffixes === "string" ? [suffixes] : suffixes;
 
   return {
     async load(path) {
-      const resolved = resolvedPaths.get(path);
-      if (resolved) return await gateway.load(resolved);
-
       try {
         const content = await gateway.load(path);
         resolvedPaths.set(path, path);
         return content;
       } catch (error) {
         if (!isMissingFileError(error)) throw error;
-        const fallback = `${path}${suffix}`;
-        const content = await gateway.load(fallback);
-        resolvedPaths.set(path, fallback);
-        return content;
+        const resolved = resolvedPaths.get(path);
+        if (resolved && resolved !== path) {
+          try {
+            return await gateway.load(resolved);
+          } catch (fallbackError) {
+            if (!isMissingFileError(fallbackError)) throw fallbackError;
+          }
+        }
+        for (const suffix of fallbackSuffixes) {
+          const fallback = `${path}${suffix}`;
+          if (fallback === resolved) continue;
+          try {
+            const content = await gateway.load(fallback);
+            resolvedPaths.set(path, fallback);
+            return content;
+          } catch (fallbackError) {
+            if (!isMissingFileError(fallbackError)) throw fallbackError;
+          }
+        }
+        throw new Error(`Missing configuration file: ${path}`);
       }
     },
     async save(path, content, expectedFingerprint) {
-      return await gateway.save(
-        resolvedPaths.get(path) ?? path,
-        content,
-        expectedFingerprint,
-      );
+      const resolved = resolvedPaths.get(path) ?? path;
+      if (resolved !== path) {
+        const result = await gateway.save(
+          path,
+          content,
+          MISSING_FILE_FINGERPRINT,
+        );
+        if (result.status === "saved") resolvedPaths.set(path, path);
+        return result;
+      }
+      return await gateway.save(resolved, content, expectedFingerprint);
     },
   };
 };

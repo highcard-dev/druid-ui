@@ -29,6 +29,34 @@ druidUiElement.extensionObject = {
       files.set(path, content);
       return "saved";
     }),
+    saveFileToDeploymentIfMatch: PromiseToResult(
+      async (path: string, content: string, expectedFingerprint: string) => {
+        const remote = files.get(path);
+        if (remote === undefined && expectedFingerprint === "missing") {
+          files.set(path, content);
+          const savedDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(content));
+          const fingerprint = Array.from(new Uint8Array(savedDigest), (byte) =>
+            byte.toString(16).padStart(2, "0")
+          ).join("");
+          return JSON.stringify({ status: "saved", fingerprint });
+        }
+        if (remote === undefined) throw new Error(`Missing fixture file: ${path}`);
+        const bytes = new TextEncoder().encode(remote);
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
+        const remoteFingerprint = Array.from(new Uint8Array(digest), (byte) =>
+          byte.toString(16).padStart(2, "0")
+        ).join("");
+        if (remoteFingerprint !== expectedFingerprint) {
+          return JSON.stringify({ status: "conflict", remote, fingerprint: remoteFingerprint });
+        }
+        files.set(path, content);
+        const savedDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(content));
+        const fingerprint = Array.from(new Uint8Array(savedDigest), (byte) =>
+          byte.toString(16).padStart(2, "0")
+        ).join("");
+        return JSON.stringify({ status: "saved", fingerprint });
+      },
+    ),
   },
 };
 

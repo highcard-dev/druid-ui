@@ -3,6 +3,7 @@ export { javaPropertiesAdapter } from "./adapters/java-properties.js";
 export { iniAdapter, keyValueAdapter, unrealIniAdapter } from "./adapters/ini.js";
 export { jsonAdapter } from "./adapters/json.js";
 export { rawAdapter } from "./adapters/raw.js";
+export { xmlPropertiesAdapter } from "./adapters/xml-properties.js";
 export { createAdapterRegistry } from "./adapters/registry.js";
 export { coerceFieldValue, validateField } from "./validation.js";
 export { ConfigEditorStore, MASKED_SECRET } from "./store.js";
@@ -43,6 +44,7 @@ export type { JavaPropertiesDocument } from "./adapters/java-properties.js";
 export type { IniDocument } from "./adapters/ini.js";
 export type { JsonDocument } from "./adapters/json.js";
 export type { RawDocument } from "./adapters/raw.js";
+export type { XmlPropertiesDocument } from "./adapters/xml-properties.js";
 export type { AdapterRegistry } from "./adapters/registry.js";
 export type {
   ChangeRecord,

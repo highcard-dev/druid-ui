@@ -247,8 +247,23 @@ const appendEntry = (
 
 export const javaPropertiesAdapter: ConfigAdapter<JavaPropertiesDocument> = {
   parse: parseJavaProperties,
+  entries(document) {
+    const entries = new Map<string, ConfigValue>();
+    for (const entry of document.entries) entries.set(entry.key, entry.value);
+    return [...entries].map(([key, value]) => ({ key, value }));
+  },
   get(document, key) {
     return effectiveEntry(document, key)?.value;
+  },
+  getAll(document, key) {
+    return document.entries
+      .filter((entry) => entry.key === key)
+      .map((entry) => entry.value);
+  },
+  getAllRaw(document, key) {
+    return document.entries
+      .filter((entry) => entry.key === key)
+      .map((entry) => document.source.slice(entry.valueSpan.start, entry.valueSpan.end));
   },
   set(document, key, value) {
     const entry = effectiveEntry(document, key);
@@ -257,6 +272,33 @@ export const javaPropertiesAdapter: ConfigAdapter<JavaPropertiesDocument> = {
       document.source.slice(0, entry.valueSpan.start) +
       escapeValue(value) +
       document.source.slice(entry.valueSpan.end);
+    return parseJavaProperties(source);
+  },
+  setAll(document, key, values) {
+    const entries = document.entries.filter((entry) => entry.key === key);
+    if (entries.length !== values.length) {
+      throw new Error(`Expected ${entries.length} values for Java property "${key}".`);
+    }
+    let source = document.source;
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      const entry = entries[index]!;
+      source =
+        source.slice(0, entry.valueSpan.start) +
+        escapeValue(values[index]!) +
+        source.slice(entry.valueSpan.end);
+    }
+    return parseJavaProperties(source);
+  },
+  setAllRaw(document, key, values) {
+    const entries = document.entries.filter((entry) => entry.key === key);
+    if (entries.length !== values.length) {
+      throw new Error(`Expected ${entries.length} raw values for Java property "${key}".`);
+    }
+    let source = document.source;
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      const entry = entries[index]!;
+      source = source.slice(0, entry.valueSpan.start) + values[index]! + source.slice(entry.valueSpan.end);
+    }
     return parseJavaProperties(source);
   },
   validate(document, schema: FileSchema): ValidationIssue[] {

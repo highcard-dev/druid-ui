@@ -12,6 +12,8 @@ interface IniEntry {
   value: string;
   valueSpan: SourceSpan;
   line: number;
+  quote?: '"' | "'";
+  container?: boolean;
 }
 
 interface IniSection {
@@ -28,13 +30,33 @@ export interface IniDocument extends ParsedDocument {
 }
 
 const inlineCommentAt = (value: string): number => {
+  let quote: '"' | "'" | undefined;
   for (let index = 0; index < value.length; index += 1) {
+    const character = value[index]!;
+    if (quote) {
+      if (quote === "'" && value.startsWith("'\\''", index)) {
+        index += 3;
+        continue;
+      }
+      if (character === quote && value[index - 1] !== "\\") quote = undefined;
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
     const precededBySpace = index > 0 && /\s/.test(value[index - 1]!);
     if (!precededBySpace) continue;
-    if (value[index] === ";" || value[index] === "#") return index;
-    if (value[index] === "/" && value[index + 1] === "/") return index;
+    if (character === ";" || character === "#") return index;
+    if (character === "/" && value[index + 1] === "/") return index;
   }
   return value.length;
+};
+
+const decodeQuotedValue = (value: string, quote?: '"' | "'"): string => {
+  if (quote === '"') return value.replace(/\\(["\\])/g, "$1");
+  if (quote === "'") return value.replace(/'\\''/g, "'");
+  return value;
 };
 
 const parseEntryLine = (
@@ -42,6 +64,7 @@ const parseEntryLine = (
   start: number,
   section: string | undefined,
   line: number,
+  format: IniDocument["format"],
 ): IniEntry | undefined => {
   let keyStart = 0;
   while (keyStart < raw.length && /[ \t]/.test(raw[keyStart]!)) keyStart += 1;
@@ -66,13 +89,106 @@ const parseEntryLine = (
   const comment = inlineCommentAt(raw.slice(valueStart));
   let valueEnd = valueStart + comment;
   while (valueEnd > valueStart && /[ \t]/.test(raw[valueEnd - 1]!)) valueEnd -= 1;
+  if (format === "key-value" && raw[valueEnd - 1] === ";") {
+    valueEnd -= 1;
+    while (valueEnd > valueStart && /[ \t]/.test(raw[valueEnd - 1]!)) valueEnd -= 1;
+  }
+  const quote = raw[valueStart];
+  let valueQuote: '"' | "'" | undefined;
+  if (
+    (quote === '"' || quote === "'") &&
+    valueEnd > valueStart &&
+    raw[valueEnd - 1] === quote
+  ) {
+    valueQuote = quote;
+    valueStart += 1;
+    valueEnd -= 1;
+  }
   const localKey = raw.slice(keyStart, keyEnd).trim();
   return {
     key: section ? `${section}.${localKey}` : localKey,
-    value: raw.slice(valueStart, valueEnd),
+    value: decodeQuotedValue(raw.slice(valueStart, valueEnd), valueQuote),
     valueSpan: { start: start + valueStart, end: start + valueEnd },
     line,
+    ...(valueQuote ? { quote: valueQuote } : {}),
   };
+};
+
+const tupleEntries = (entry: IniEntry): IniEntry[] => {
+  if (!entry.value.startsWith("(") || !entry.value.endsWith(")")) return [];
+  const inner = entry.value.slice(1, -1);
+  const segments: Array<{ start: number; end: number }> = [];
+  let segmentStart = 0;
+  let depth = 0;
+  let quote: '"' | "'" | undefined;
+  for (let index = 0; index <= inner.length; index += 1) {
+    const character = inner[index];
+    if (quote) {
+      if (character === quote && inner[index - 1] !== "\\") quote = undefined;
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+    if (character === "(" || character === "[" || character === "{") depth += 1;
+    else if (character === ")" || character === "]" || character === "}") depth -= 1;
+    if ((character === "," && depth === 0) || index === inner.length) {
+      segments.push({ start: segmentStart, end: index });
+      segmentStart = index + 1;
+    }
+  }
+
+  const result: IniEntry[] = [];
+  for (const segment of segments) {
+    const raw = inner.slice(segment.start, segment.end);
+    let equals = -1;
+    depth = 0;
+    quote = undefined;
+    for (let index = 0; index < raw.length; index += 1) {
+      const character = raw[index]!;
+      if (quote) {
+        if (character === quote && raw[index - 1] !== "\\") quote = undefined;
+        continue;
+      }
+      if (character === '"' || character === "'") quote = character;
+      else if (character === "(" || character === "[" || character === "{") depth += 1;
+      else if (character === ")" || character === "]" || character === "}") depth -= 1;
+      else if (character === "=" && depth === 0) {
+        equals = index;
+        break;
+      }
+    }
+    if (equals < 1) continue;
+    const key = raw.slice(0, equals).trim();
+    let localStart = equals + 1;
+    while (localStart < raw.length && /\s/.test(raw[localStart]!)) localStart += 1;
+    let localEnd = raw.length;
+    while (localEnd > localStart && /\s/.test(raw[localEnd - 1]!)) localEnd -= 1;
+    const valueQuote = raw[localStart];
+    let preservedQuote: '"' | "'" | undefined;
+    if (
+      (valueQuote === '"' || valueQuote === "'") &&
+      localEnd > localStart &&
+      raw[localEnd - 1] === valueQuote
+    ) {
+      preservedQuote = valueQuote;
+      localStart += 1;
+      localEnd -= 1;
+    }
+    const absoluteStart = entry.valueSpan.start + 1 + segment.start + localStart;
+    result.push({
+      key: `${entry.key}.${key}`,
+      value: decodeQuotedValue(raw.slice(localStart, localEnd), preservedQuote),
+      valueSpan: {
+        start: absoluteStart,
+        end: absoluteStart + localEnd - localStart,
+      },
+      line: entry.line,
+      ...(preservedQuote ? { quote: preservedQuote } : {}),
+    });
+  }
+  return result;
 };
 
 const parseIni = (
@@ -109,9 +225,16 @@ const parseIni = (
       continue;
     }
 
-    const entry = parseEntryLine(line.raw, line.start, section, index);
+    const entry = parseEntryLine(line.raw, line.start, section, index, format);
     if (entry) {
       entries.push(entry);
+      if (format === "unreal-ini") {
+        const children = tupleEntries(entry);
+        if (children.length > 0) {
+          entry.container = true;
+          entries.push(...children);
+        }
+      }
       nodes.push({
         ...line,
         kind: "entry",
@@ -142,10 +265,15 @@ const effectiveEntry = (document: IniDocument, key: string): IniEntry | undefine
   return undefined;
 };
 
-const formatValue = (value: ConfigValue): string =>
-  (value === null ? "" : String(value)).replace(/[\r\n]/g, (character) =>
-    character === "\r" ? "\\r" : "\\n",
+const formatValue = (value: ConfigValue, quote?: '"' | "'"): string => {
+  let formatted = (value === null ? "" : String(value)).replace(
+    /[\r\n]/g,
+    (character) => character === "\r" ? "\\r" : "\\n",
   );
+  if (quote === '"') formatted = formatted.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  else if (quote === "'") formatted = formatted.replace(/'/g, "'\\''");
+  return formatted;
+};
 
 const appendIniEntry = (
   document: IniDocument,
@@ -172,18 +300,66 @@ const createIniAdapter = (
   parse(source) {
     return parseIni(source, format);
   },
+  entries(document) {
+    const entries = new Map<string, ConfigValue>();
+    for (const entry of document.entries) {
+      if (!entry.container) entries.set(entry.key, entry.value);
+    }
+    return [...entries].map(([key, value]) => ({ key, value }));
+  },
   get(document, key) {
     return effectiveEntry(document, key)?.value;
+  },
+  getAll(document, key) {
+    return document.entries
+      .filter((entry) => !entry.container && entry.key === key)
+      .map((entry) => entry.value);
+  },
+  getAllRaw(document, key) {
+    return document.entries
+      .filter((entry) => !entry.container && entry.key === key)
+      .map((entry) => document.source.slice(entry.valueSpan.start, entry.valueSpan.end));
   },
   set(document, key, value) {
     const entry = effectiveEntry(document, key);
     if (!entry) return parseIni(appendIniEntry(document, key, value), format);
     return parseIni(
       document.source.slice(0, entry.valueSpan.start) +
-        formatValue(value) +
+        formatValue(value, entry.quote) +
         document.source.slice(entry.valueSpan.end),
       format,
     );
+  },
+  setAll(document, key, values) {
+    const entries = document.entries.filter(
+      (entry) => !entry.container && entry.key === key,
+    );
+    if (entries.length !== values.length) {
+      throw new Error(`Expected ${entries.length} values for setting "${key}".`);
+    }
+    let source = document.source;
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      const entry = entries[index]!;
+      source =
+        source.slice(0, entry.valueSpan.start) +
+        formatValue(values[index]!, entry.quote) +
+        source.slice(entry.valueSpan.end);
+    }
+    return parseIni(source, format);
+  },
+  setAllRaw(document, key, values) {
+    const entries = document.entries.filter(
+      (entry) => !entry.container && entry.key === key,
+    );
+    if (entries.length !== values.length) {
+      throw new Error(`Expected ${entries.length} raw values for setting "${key}".`);
+    }
+    let source = document.source;
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      const entry = entries[index]!;
+      source = source.slice(0, entry.valueSpan.start) + values[index]! + source.slice(entry.valueSpan.end);
+    }
+    return parseIni(source, format);
   },
   validate(document, schema: FileSchema): ValidationIssue[] {
     void schema;

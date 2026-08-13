@@ -16,11 +16,28 @@ const parseRaw = (source: string): RawDocument => {
 
 export const rawAdapter: ConfigAdapter<RawDocument> = {
   parse: parseRaw,
+  entries() {
+    return [];
+  },
   get() {
     return undefined;
   },
+  getAll() {
+    return [];
+  },
+  getAllRaw() {
+    return [];
+  },
   set(_document, _key, _value: ConfigValue) {
     throw new Error("Raw mode does not support typed field writes.");
+  },
+  setAll(document, _key, values) {
+    if (values.length > 0) throw new Error("Raw mode does not support typed field writes.");
+    return document;
+  },
+  setAllRaw(document, _key, values) {
+    if (values.length > 0) throw new Error("Raw mode does not support typed field writes.");
+    return document;
   },
   validate(document, schema: FileSchema): ValidationIssue[] {
     void schema;

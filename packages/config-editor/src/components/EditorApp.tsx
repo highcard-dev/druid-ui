@@ -129,16 +129,25 @@ export const createConfigEditorComponent = ({
 
   const selectFile = async (path: string): Promise<void> => {
     if (!manifest) return;
-    selectedPath = path;
+    const previousPath = selectedPath;
     status = copy.loading;
-    let store = stores.get(path);
-    if (!store) {
-      store = await loadEditor(gateway, manifest, path);
-      stores.set(path, store);
-    }
-    mode = store.schema.sections.length === 0 ? "raw" : "form";
-    status = "";
     rerender();
+    try {
+      let store = stores.get(path);
+      if (!store) {
+        store = await loadEditor(gateway, manifest, path);
+        stores.set(path, store);
+      }
+      selectedPath = path;
+      mode = store.schema.sections.length === 0 ? "raw" : "form";
+      status = "";
+    } catch (error) {
+      selectedPath = previousPath;
+      status = error instanceof Error ? error.message : String(error);
+      if (!stores.has(previousPath)) throw error;
+    } finally {
+      rerender();
+    }
   };
 
   const initialise = async (): Promise<void> => {

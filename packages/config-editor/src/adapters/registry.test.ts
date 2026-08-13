@@ -10,6 +10,7 @@ describe("createAdapterRegistry", () => {
       "unreal-ini",
       "key-value",
       "json",
+      "xml-properties",
       "raw",
     ]);
   });

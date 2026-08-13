@@ -37,10 +37,24 @@ export interface ParsedDocument {
   issues: readonly ValidationIssue[];
 }
 
+export interface ConfigEntry {
+  key: string;
+  value: ConfigValue;
+}
+
 export interface ConfigAdapter<TDocument extends ParsedDocument = ParsedDocument> {
   parse(source: string): TDocument;
+  entries(document: TDocument): readonly ConfigEntry[];
   get(document: TDocument, key: string): ConfigValue | undefined;
+  getAll(document: TDocument, key: string): readonly ConfigValue[];
+  getAllRaw(document: TDocument, key: string): readonly string[];
   set(document: TDocument, key: string, value: ConfigValue): TDocument;
+  setAll(
+    document: TDocument,
+    key: string,
+    values: readonly ConfigValue[],
+  ): TDocument;
+  setAllRaw(document: TDocument, key: string, values: readonly string[]): TDocument;
   validate(document: TDocument, schema: FileSchema): ValidationIssue[];
   serialize(document: TDocument): string;
 }

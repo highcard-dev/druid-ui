@@ -5,12 +5,20 @@ import type { ConfigAdapter, LineNode, ParsedDocument, SourceSpan } from "./type
 interface JsonScalar {
   value: ConfigValue;
   span: SourceSpan;
+  unsafeInteger?: boolean;
+}
+
+interface JsonContainer {
+  kind: "object" | "array";
+  open: number;
+  close: number;
 }
 
 export interface JsonDocument extends ParsedDocument {
   format: "json";
   scalars: ReadonlyMap<string, JsonScalar>;
-  containers: ReadonlySet<string>;
+  scalarOccurrences: ReadonlyMap<string, readonly JsonScalar[]>;
+  containers: ReadonlyMap<string, JsonContainer>;
 }
 
 class JsonParseError extends Error {
@@ -39,8 +47,15 @@ const jsonNodes = (source: string): LineNode[] =>
 
 const parseJson = (source: string): JsonDocument => {
   const scalars = new Map<string, JsonScalar>();
-  const containers = new Set<string>();
+  const scalarOccurrences = new Map<string, JsonScalar[]>();
+  const containers = new Map<string, JsonContainer>();
   let cursor = 0;
+  const addScalar = (pointer: string, scalar: JsonScalar): void => {
+    scalars.set(pointer, scalar);
+    const occurrences = scalarOccurrences.get(pointer) ?? [];
+    occurrences.push(scalar);
+    scalarOccurrences.set(pointer, occurrences);
+  };
 
   const fail = (message: string): never => {
     throw new JsonParseError(cursor, message);
@@ -81,14 +96,15 @@ const parseJson = (source: string): JsonDocument => {
     const character = source[cursor];
     if (character === '"') {
       const string = parseString();
-      scalars.set(pointer, { value: string.value, span: string.span });
+      addScalar(pointer, { value: string.value, span: string.span });
       return;
     }
     if (character === "{") {
-      containers.add(pointer);
+      const open = cursor;
       cursor += 1;
       skipWhitespace();
       if (source[cursor] === "}") {
+        containers.set(pointer, { kind: "object", open, close: cursor });
         cursor += 1;
         return;
       }
@@ -101,6 +117,7 @@ const parseJson = (source: string): JsonDocument => {
         parseValue(`${pointer}/${pointerSegment(key)}`);
         skipWhitespace();
         if (source[cursor] === "}") {
+          containers.set(pointer, { kind: "object", open, close: cursor });
           cursor += 1;
           return;
         }
@@ -109,10 +126,11 @@ const parseJson = (source: string): JsonDocument => {
       fail("Unterminated JSON object.");
     }
     if (character === "[") {
-      containers.add(pointer);
+      const open = cursor;
       cursor += 1;
       skipWhitespace();
       if (source[cursor] === "]") {
+        containers.set(pointer, { kind: "array", open, close: cursor });
         cursor += 1;
         return;
       }
@@ -122,6 +140,7 @@ const parseJson = (source: string): JsonDocument => {
         index += 1;
         skipWhitespace();
         if (source[cursor] === "]") {
+          containers.set(pointer, { kind: "array", open, close: cursor });
           cursor += 1;
           return;
         }
@@ -134,7 +153,7 @@ const parseJson = (source: string): JsonDocument => {
     const literal = remainder.match(/^(?:true|false|null)(?![\w])/);
     if (literal) {
       cursor += literal[0].length;
-      scalars.set(pointer, {
+      addScalar(pointer, {
         value: JSON.parse(literal[0]) as ConfigValue,
         span: { start, end: cursor },
       });
@@ -143,9 +162,12 @@ const parseJson = (source: string): JsonDocument => {
     const number = remainder.match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
     if (number) {
       cursor += number[0].length;
-      scalars.set(pointer, {
-        value: Number(number[0]),
+      const unsafeInteger = /^-?\d+$/.test(number[0]) &&
+        !Number.isSafeInteger(Number(number[0]));
+      addScalar(pointer, {
+        value: unsafeInteger ? number[0] : Number(number[0]),
         span: { start, end: cursor },
+        ...(unsafeInteger ? { unsafeInteger: true } : {}),
       });
       return;
     }
@@ -162,6 +184,7 @@ const parseJson = (source: string): JsonDocument => {
       nodes: jsonNodes(source),
       issues: [],
       scalars,
+      scalarOccurrences,
       containers,
     };
   } catch (error) {
@@ -180,28 +203,123 @@ const parseJson = (source: string): JsonDocument => {
         },
       ],
       scalars: new Map(),
-      containers: new Set(),
+      scalarOccurrences: new Map(),
+      containers: new Map(),
     };
   }
 };
 
+const decodePointerSegment = (value: string): string =>
+  value.replace(/~1/g, "/").replace(/~0/g, "~");
+
+const insertJsonProperty = (
+  document: JsonDocument,
+  pointer: string,
+  value: ConfigValue,
+): JsonDocument => {
+  const separator = pointer.lastIndexOf("/");
+  if (separator < 0) throw new Error(`JSON pointer "${pointer}" does not exist.`);
+  const parentPointer = pointer.slice(0, separator);
+  const property = decodePointerSegment(pointer.slice(separator + 1));
+  const parent = document.containers.get(parentPointer);
+  if (!parent || parent.kind !== "object") {
+    throw new Error(`JSON pointer "${pointer}" does not exist.`);
+  }
+
+  const content = document.source.slice(parent.open + 1, parent.close);
+  const contentEnd = parent.close - (content.match(/\s*$/)?.[0].length ?? 0);
+  const closingLine = document.source.slice(0, parent.close).split("\n").at(-1) ?? "";
+  const closingIndent = closingLine.match(/^\s*/)?.[0] ?? "";
+  const serialized = `${JSON.stringify(property)}: ${JSON.stringify(value)}`;
+  const newline = document.source.includes("\r\n") ? "\r\n" : "\n";
+  let insertion: string;
+  if (content.trim() === "") {
+    insertion = `${newline}${closingIndent}  ${serialized}${newline}${closingIndent}`;
+    return parseJson(
+      document.source.slice(0, parent.open + 1) +
+        insertion +
+        document.source.slice(parent.close),
+    );
+  }
+
+  const multiline = content.includes("\n");
+  if (!multiline) insertion = `, ${serialized}`;
+  else {
+    const existingLine = document.source.slice(0, contentEnd).split("\n").at(-1) ?? "";
+    const childIndent = existingLine.match(/^\s*/)?.[0] ?? `${closingIndent}  `;
+    insertion = `,${newline}${childIndent}${serialized}`;
+  }
+  return parseJson(
+    document.source.slice(0, contentEnd) +
+      insertion +
+      document.source.slice(contentEnd),
+  );
+};
+
 export const jsonAdapter: ConfigAdapter<JsonDocument> = {
   parse: parseJson,
+  entries(document) {
+    return [...document.scalars].map(([key, scalar]) => ({
+      key,
+      value: scalar.value,
+    }));
+  },
   get(document, key) {
     return document.scalars.get(key)?.value;
+  },
+  getAll(document, key) {
+    return (document.scalarOccurrences.get(key) ?? []).map((scalar) => scalar.value);
+  },
+  getAllRaw(document, key) {
+    return (document.scalarOccurrences.get(key) ?? []).map((scalar) =>
+      document.source.slice(scalar.span.start, scalar.span.end)
+    );
   },
   set(document, key, value) {
     if (document.issues.length > 0) throw new Error("Invalid JSON cannot be edited in form mode.");
     const scalar = document.scalars.get(key);
     if (!scalar) {
       if (document.containers.has(key)) throw new Error(`JSON pointer "${key}" is not a scalar.`);
-      throw new Error(`JSON pointer "${key}" does not exist.`);
+      return insertJsonProperty(document, key, value);
     }
+    const serialized = scalar.unsafeInteger && typeof value === "string" && /^-?\d+$/.test(value)
+      ? value
+      : JSON.stringify(value);
     return parseJson(
       document.source.slice(0, scalar.span.start) +
-        JSON.stringify(value) +
+        serialized +
         document.source.slice(scalar.span.end),
     );
+  },
+  setAll(document, key, values) {
+    const occurrences = document.scalarOccurrences.get(key) ?? [];
+    const expected = occurrences.length;
+    if (values.length !== expected) {
+      throw new Error(`Expected ${expected} values for JSON pointer "${key}".`);
+    }
+    let source = document.source;
+    for (let index = occurrences.length - 1; index >= 0; index -= 1) {
+      const scalar = occurrences[index]!;
+      const value = values[index]!;
+      const serialized = scalar.unsafeInteger && typeof value === "string" && /^-?\d+$/.test(value)
+        ? value
+        : JSON.stringify(value);
+      source = source.slice(0, scalar.span.start) + serialized + source.slice(scalar.span.end);
+    }
+    return parseJson(source);
+  },
+  setAllRaw(document, key, values) {
+    const occurrences = document.scalarOccurrences.get(key) ?? [];
+    const expected = occurrences.length;
+    if (values.length !== expected) {
+      throw new Error(`Expected ${expected} raw values for JSON pointer "${key}".`);
+    }
+    let source = document.source;
+    for (let index = occurrences.length - 1; index >= 0; index -= 1) {
+      const scalar = occurrences[index]!;
+      source = source.slice(0, scalar.span.start) + values[index]! + source.slice(scalar.span.end);
+    }
+    return parseJson(source);
   },
   validate(document, schema: FileSchema): ValidationIssue[] {
     void schema;

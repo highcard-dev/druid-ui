@@ -4,6 +4,7 @@ import {
   loadEditor,
   saveSelectedFile,
   withMissingFileFallback,
+  MISSING_FILE_FINGERPRINT,
   type FileGateway,
   type SaveResult,
 } from "./gateway.js";
@@ -25,7 +26,12 @@ const memoryGateway = (initial: Record<string, string>) => {
       content: string,
       expectedFingerprint: string,
     ): Promise<SaveResult> {
-      const remote = await this.load(path);
+      const remote = files.get(path);
+      if (remote === undefined && expectedFingerprint === MISSING_FILE_FINGERPRINT) {
+        files.set(path, content);
+        return { status: "saved", fingerprint: await fingerprint(content) };
+      }
+      if (remote === undefined) throw new Error(`Missing fixture file: ${path}`);
       const remoteFingerprint = await fingerprint(remote);
       if (remoteFingerprint !== expectedFingerprint) {
         return { status: "conflict", remote, fingerprint: remoteFingerprint };
@@ -102,6 +108,22 @@ describe("saveSelectedFile", () => {
 });
 
 describe("withMissingFileFallback", () => {
+  it("edits a packaged default before the active configuration exists", async () => {
+    const memory = memoryGateway({
+      "data/server.properties.default": "max-players=20\n",
+    });
+    const gateway = withMissingFileFallback(memory);
+    const store = await loadEditor(gateway, manifestFor("data/server.properties"));
+
+    store.setDisplayValue("max-players", "42");
+    await expect(saveSelectedFile(store, gateway)).resolves.toEqual(
+      expect.objectContaining({ status: "saved" }),
+    );
+
+    expect(memory.current("data/server.properties")).toBe("max-players=42\n");
+    expect(memory.current("data/server.properties.default")).toBe("max-players=20\n");
+  });
+
   it("edits a scroll template before the active configuration exists", async () => {
     const memory = memoryGateway({
       "data/server.properties.scroll_template": "max-players=20\n",
@@ -114,10 +136,8 @@ describe("withMissingFileFallback", () => {
       expect.objectContaining({ status: "saved" }),
     );
 
-    expect(memory.current("data/server.properties")).toBeUndefined();
-    expect(memory.current("data/server.properties.scroll_template")).toBe(
-      "max-players=42\n",
-    );
+    expect(memory.current("data/server.properties")).toBe("max-players=42\n");
+    expect(memory.current("data/server.properties.scroll_template")).toBe("max-players=20\n");
   });
 
   it("prefers an active configuration over its template", async () => {
@@ -133,6 +153,33 @@ describe("withMissingFileFallback", () => {
     expect(store.snapshot().fields["max-players"]?.displayValue).toBe("30");
   });
 
+  it("switches from a fallback to an active file when the runtime creates it", async () => {
+    const memory = memoryGateway({
+      "data/server.properties.default": "max-players=20\n",
+    });
+    const gateway = withMissingFileFallback(memory);
+
+    await expect(gateway.load("data/server.properties")).resolves.toBe("max-players=20\n");
+    memory.replace("data/server.properties", "max-players=30\n");
+    await expect(gateway.load("data/server.properties")).resolves.toBe("max-players=30\n");
+  });
+
+  it("fails closed when an active file appears before a fallback save", async () => {
+    const memory = memoryGateway({
+      "data/server.properties.default": "max-players=20\n",
+    });
+    const gateway = withMissingFileFallback(memory);
+    const store = await loadEditor(gateway, manifestFor("data/server.properties"));
+    store.setDisplayValue("max-players", "42");
+    memory.replace("data/server.properties", "max-players=30\n");
+
+    await expect(saveSelectedFile(store, gateway)).resolves.toEqual(
+      expect.objectContaining({ status: "conflict", remote: "max-players=30\n" }),
+    );
+    expect(memory.current("data/server.properties")).toBe("max-players=30\n");
+    expect(memory.current("data/server.properties.default")).toBe("max-players=20\n");
+  });
+
   it("does not hide non-missing-file load failures", async () => {
     const gateway: FileGateway = {
       async load() {
@@ -146,5 +193,13 @@ describe("withMissingFileFallback", () => {
     await expect(
       withMissingFileFallback(gateway).load("data/server.properties"),
     ).rejects.toThrow("permission denied");
+  });
+
+  it("reports the declared path after every fallback is missing", async () => {
+    const gateway = withMissingFileFallback(memoryGateway({}));
+
+    await expect(gateway.load("data/generated.cfg")).rejects.toThrow(
+      "Missing configuration file: data/generated.cfg",
+    );
   });
 });

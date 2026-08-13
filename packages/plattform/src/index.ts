@@ -4,6 +4,7 @@ import {
   request as requestRaw,
   loadFileFromDeployment as loadFileFromDeploymentRaw,
   saveFileToDeployment as saveFileToDeploymentRaw,
+  saveFileToDeploymentIfMatch as saveFileToDeploymentIfMatchRaw,
 } from "druid:ui/plattform";
 // it is very imporant that this is external, as druid-ui/component contains
 // functions that must be important and cannot just be copied in again
@@ -17,3 +18,7 @@ export const loadFileFromDeployment = rawAsyncToPromise(
 );
 
 export const saveFileToDeployment = rawAsyncToPromise(saveFileToDeploymentRaw);
+
+export const saveFileToDeploymentIfMatch = rawAsyncToPromise(
+  saveFileToDeploymentIfMatchRaw,
+);

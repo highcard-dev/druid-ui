@@ -12,6 +12,7 @@ export type ConfigFormat =
   | "unreal-ini"
   | "key-value"
   | "json"
+  | "xml-properties"
   | "raw";
 
 export type ConfigValue = string | number | boolean | null;
