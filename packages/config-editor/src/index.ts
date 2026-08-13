@@ -1,4 +1,9 @@
 export { fieldsForVersion, validateManifest } from "./manifest.js";
+export { javaPropertiesAdapter } from "./adapters/java-properties.js";
+export { iniAdapter, keyValueAdapter, unrealIniAdapter } from "./adapters/ini.js";
+export { jsonAdapter } from "./adapters/json.js";
+export { rawAdapter } from "./adapters/raw.js";
+export { createAdapterRegistry } from "./adapters/registry.js";
 export type {
   ConfigEditorManifest,
   ConfigFormat,
@@ -10,3 +15,15 @@ export type {
   ServerSchema,
   ValidationIssue,
 } from "./model.js";
+export type {
+  ConfigAdapter,
+  LineNode,
+  ParsedDocument,
+  SourceLine,
+  SourceSpan,
+} from "./adapters/types.js";
+export type { JavaPropertiesDocument } from "./adapters/java-properties.js";
+export type { IniDocument } from "./adapters/ini.js";
+export type { JsonDocument } from "./adapters/json.js";
+export type { RawDocument } from "./adapters/raw.js";
+export type { AdapterRegistry } from "./adapters/registry.js";
