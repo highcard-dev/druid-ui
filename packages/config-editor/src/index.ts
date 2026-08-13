@@ -4,6 +4,10 @@ export { iniAdapter, keyValueAdapter, unrealIniAdapter } from "./adapters/ini.js
 export { jsonAdapter } from "./adapters/json.js";
 export { rawAdapter } from "./adapters/raw.js";
 export { createAdapterRegistry } from "./adapters/registry.js";
+export { coerceFieldValue, validateField } from "./validation.js";
+export { ConfigEditorStore, MASKED_SECRET } from "./store.js";
+export { fingerprint } from "./fingerprint.js";
+export { loadEditor, saveSelectedFile } from "./gateway.js";
 export type {
   ConfigEditorManifest,
   ConfigFormat,
@@ -27,3 +31,9 @@ export type { IniDocument } from "./adapters/ini.js";
 export type { JsonDocument } from "./adapters/json.js";
 export type { RawDocument } from "./adapters/raw.js";
 export type { AdapterRegistry } from "./adapters/registry.js";
+export type {
+  ChangeRecord,
+  EditorSnapshot,
+  FieldSnapshot,
+} from "./store.js";
+export type { FileGateway, SaveResult } from "./gateway.js";

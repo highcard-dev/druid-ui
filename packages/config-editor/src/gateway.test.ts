@@ -1,0 +1,101 @@
+import { describe, expect, it } from "vitest";
+import { fingerprint } from "./fingerprint.js";
+import {
+  loadEditor,
+  saveSelectedFile,
+  type FileGateway,
+  type SaveResult,
+} from "./gateway.js";
+import { validateManifest } from "./manifest.js";
+import { validManifest } from "./test-fixtures.js";
+
+const manifestFor = (path: string) => validateManifest(validManifest(path));
+
+const memoryGateway = (initial: Record<string, string>) => {
+  const files = new Map(Object.entries(initial));
+  const gateway = {
+    async load(path: string) {
+      const value = files.get(path);
+      if (value === undefined) throw new Error(`Missing fixture file: ${path}`);
+      return value;
+    },
+    async save(
+      path: string,
+      content: string,
+      expectedFingerprint: string,
+    ): Promise<SaveResult> {
+      const remote = await this.load(path);
+      const remoteFingerprint = await fingerprint(remote);
+      if (remoteFingerprint !== expectedFingerprint) {
+        return { status: "conflict", remote, fingerprint: remoteFingerprint };
+      }
+      files.set(path, content);
+      return { status: "saved", fingerprint: await fingerprint(content) };
+    },
+    replace(path: string, content: string) {
+      files.set(path, content);
+    },
+    current(path: string) {
+      return files.get(path);
+    },
+  } satisfies FileGateway & {
+    replace(path: string, content: string): void;
+    current(path: string): string | undefined;
+  };
+  return gateway;
+};
+
+describe("saveSelectedFile", () => {
+  it("blocks overwrite when the remote fingerprint changed", async () => {
+    const gateway = memoryGateway({ "server.properties": "max-players=20\n" });
+    const store = await loadEditor(gateway, manifestFor("server.properties"));
+    store.setDisplayValue("max-players", "50");
+    gateway.replace("server.properties", "max-players=30\n");
+
+    await expect(saveSelectedFile(store, gateway)).resolves.toEqual(
+      expect.objectContaining({
+        status: "conflict",
+        remote: "max-players=30\n",
+      }),
+    );
+    expect(gateway.current("server.properties")).toBe("max-players=30\n");
+    expect(store.snapshot().dirty).toBe(true);
+  });
+
+  it("reparses and verifies content after a successful save", async () => {
+    const gateway = memoryGateway({ "server.properties": "max-players=20\n" });
+    const store = await loadEditor(gateway, manifestFor("server.properties"));
+    store.setDisplayValue("max-players", "50");
+    await expect(saveSelectedFile(store, gateway)).resolves.toEqual(
+      expect.objectContaining({ status: "saved" }),
+    );
+    expect(gateway.current("server.properties")).toBe("max-players=50\n");
+    expect(store.snapshot().dirty).toBe(false);
+  });
+
+  it("refuses to save while the visible form has validation errors", async () => {
+    const gateway = memoryGateway({ "server.properties": "max-players=20\n" });
+    const store = await loadEditor(gateway, manifestFor("server.properties"));
+    store.setDisplayValue("max-players", "0");
+    await expect(saveSelectedFile(store, gateway)).rejects.toThrow(
+      /validation errors/,
+    );
+    expect(gateway.current("server.properties")).toBe("max-players=20\n");
+  });
+
+  it("detects a gateway that acknowledges a save but returns different content", async () => {
+    const gateway = memoryGateway({ "server.properties": "max-players=20\n" });
+    const brokenGateway: FileGateway = {
+      load: gateway.load.bind(gateway),
+      async save(path, _content, _expectedFingerprint) {
+        gateway.replace(path, "max-players=999\n");
+        return { status: "saved", fingerprint: await fingerprint("max-players=50\n") };
+      },
+    };
+    const store = await loadEditor(brokenGateway, manifestFor("server.properties"));
+    store.setDisplayValue("max-players", "50");
+    await expect(saveSelectedFile(store, brokenGateway)).rejects.toThrow(
+      /verification failed/,
+    );
+  });
+});
