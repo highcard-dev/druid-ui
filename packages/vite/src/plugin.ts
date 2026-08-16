@@ -7,6 +7,7 @@ export function ViteHMRPlugin(
   pattern: string,
   buildType: "wasm" | "raw" = "wasm",
   ext?: WitExtension,
+  watchPatterns: string[] = [],
 ): PluginOption {
   let wasmVersion = Date.now();
   let publicDir = "public";
@@ -48,6 +49,11 @@ export function ViteHMRPlugin(
       }
     },
     async configureServer(server) {
+      const watchedFiles = await glob([pattern, ...watchPatterns]);
+      server.watcher.add(watchedFiles);
+      console.log(
+        `[${buildType}] Watching ${watchedFiles.length} source file(s) for rebuilds.`,
+      );
       server.middlewares.use(
         (req: IncomingMessage, res: ServerResponse, next) => {
           if (req.url?.endsWith(".wasm") || req.url?.endsWith(".js")) {

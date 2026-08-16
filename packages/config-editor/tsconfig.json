@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist/types",
+    "jsx": "react-jsx",
+    "jsxImportSource": "@druid-ui/component",
+    "types": ["@druid-ui/component/jsx"]
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/test-fixtures.ts"]
+}

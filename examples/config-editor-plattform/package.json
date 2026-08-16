@@ -1,0 +1,27 @@
+{
+  "name": "config-editor-plattform",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:raw:public && npm run build:wasm:public && vite build",
+    "build:raw": "druid-ui-build --wit=wit/druid-plattform.wit --world-name=druid-plattform src/app.tsx --raw dist",
+    "build:wasm": "druid-ui-build --wit=wit/druid-plattform.wit --world-name=druid-plattform src/app.tsx dist",
+    "build:raw:public": "druid-ui-build --wit=wit/druid-plattform.wit --world-name=druid-plattform src/app.tsx --raw public",
+    "build:wasm:public": "druid-ui-build --wit=wit/druid-plattform.wit --world-name=druid-plattform src/app.tsx public"
+  },
+  "dependencies": {
+    "@druid-ui/component": "*",
+    "@druid-ui/config-editor": "*",
+    "@druid-ui/host": "*",
+    "@druid-ui/plattform": "*",
+    "@druid-ui/vite": "*"
+  },
+  "devDependencies": {
+    "@druid-ui/build": "*",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.7",
+    "vite-plugin-wasm": "^3.5.0"
+  }
+}

@@ -21,7 +21,8 @@
     "dev:simple-extended-no-sandbox": "turbo dev --filter=simple-extended-no-sandbox",
     "dev:druid-plattform": "turbo dev --filter=druid-plattform",
     "dev:druid-plattform-no-sandbox": "turbo dev --filter=druid-plattform-no-sandbox",
-    "watch": "turbo watch build --filter='./packages/*'"
+    "watch": "turbo watch build --filter='./packages/*'",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
@@ -31,7 +32,7 @@
     "@testing-library/jest-dom": "^6.8.0",
     "@tsconfig/node20": "^20.1.6",
     "@tsconfig/strictest": "^2.0.5",
-    "@vitest/ui": "^3.2.4",
+    "@vitest/ui": "^4.1.10",
     "turbo": "^2.5.3",
     "typescript": "~5.8.3"
   }

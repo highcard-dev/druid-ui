@@ -1,9 +1,7 @@
 /// <reference types="../../types/druid-ui-extended.d.ts" />
 /// <reference types="@druid-ui/component/jsx" />
-/** @jsx d */
 import {
   createComponent,
-  d,
   type Event,
   log,
   rawAsyncToPromise,
