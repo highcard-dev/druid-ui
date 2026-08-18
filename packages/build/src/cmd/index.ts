@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { buildWasm, buildRaw } from "../";
-import { watch } from "node:fs";
+import { watch } from "chokidar";
 import { resolve } from "node:path";
 
 console.log("Druid UI Build Tool");
@@ -67,22 +67,28 @@ if (watchMode) {
   console.log("Watching for changes...");
   const srcDir = resolve(entryFile, "..");
   let building = false;
+  let buildQueued = false;
 
-  watch(srcDir, { recursive: true }, async (_eventType, filename) => {
-    if (
-      filename &&
-      (filename.endsWith(".tsx") ||
-        filename.endsWith(".ts") ||
-        filename.endsWith(".jsx") ||
-        filename.endsWith(".js"))
-    ) {
-      if (building) return;
+  const rebuild = async () => {
+    if (building) {
+      buildQueued = true;
+      return;
+    }
+    do {
+      buildQueued = false;
       building = true;
-      console.log(`\nFile changed: ${filename}`);
       await doBuild();
       building = false;
-    }
-  });
+    } while (buildQueued);
+  };
+
+  watch(srcDir, { ignoreInitial: true, usePolling: true, interval: 250 })
+    .on("error", (error) => console.error("Watch failed:", error))
+    .on("all", (_event, path) => {
+      if (!/\.[jt]sx?$/.test(path)) return;
+      console.log(`\nFile changed: ${path}`);
+      void rebuild();
+    });
 
   // Keep the process running
   await new Promise(() => {});
