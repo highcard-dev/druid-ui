@@ -138,10 +138,9 @@ npx gen-types        # generates types for your extension
 - [Simple Extended Example](./examples/simple-extended) - Component with custom extensions
 - [Simple No-Sandbox Example](./examples/simple-no-sandbox) - Development without WASM overhead
 - [Simple Extended No-Sandbox Example](./examples/simple-extended-no-sandbox) - Extended component in raw mode
-- [Configuration Editor Platform Example](./examples/config-editor-plattform) - Manifest-driven server configuration UI in raw development and sandboxed WASM modes
 
-## Server Configuration Editor
+## Configuration Editor Migration
 
-`@druid-ui/config-editor` turns a strict JSON manifest into an accessible admin UI for Java properties, INI/Unreal INI, key-value, JSON, and raw configuration files. It preserves comments, ordering, unknown keys, and line endings; masks sensitive values; validates typed fields; reports restart impact; and verifies conflict-safe saves through the Druid platform file extension.
-
-Use raw mode for the fast development loop, then build and test the same entry point as WASM before release. See `examples/config-editor-plattform` for the complete host and fixture setup.
+`@druid-ui/config-editor` is retired in Druid UI v3, along with the
+`saveFileToDeploymentIfMatch` platform API. Use the inline configuration editor
+staged with Druid Scrolls for server configuration editing.

@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   buildRaw: vi.fn(async () => undefined),
   glob: vi.fn(async () => [
     "src/app.tsx",
-    "../../packages/config-editor/src/copy.ts",
+    "../../packages/component/src/utils.ts",
   ]),
 }));
 
@@ -24,7 +24,7 @@ describe("ViteHMRPlugin", () => {
 
   it("registers component and dependency files with the dev-server watcher", async () => {
     const plugin = ViteHMRPlugin("src/app.tsx", "raw", undefined, [
-      "../../packages/config-editor/src/**/*.{ts,tsx}",
+      "../../packages/component/src/**/*.{ts,tsx}",
     ]) as {
       configureServer(server: unknown): Promise<void>;
     };
@@ -37,11 +37,11 @@ describe("ViteHMRPlugin", () => {
 
     expect(mocks.glob).toHaveBeenCalledWith([
       "src/app.tsx",
-      "../../packages/config-editor/src/**/*.{ts,tsx}",
+      "../../packages/component/src/**/*.{ts,tsx}",
     ]);
     expect(add).toHaveBeenCalledWith([
       "src/app.tsx",
-      "../../packages/config-editor/src/copy.ts",
+      "../../packages/component/src/utils.ts",
     ]);
     expect(mocks.buildRaw).toHaveBeenCalledWith("src/app.tsx", "public");
   });

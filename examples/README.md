@@ -53,15 +53,6 @@ This directory contains various examples demonstrating different features and us
 
 ### Platform Examples
 
-#### [config-editor-plattform](./config-editor-plattform/)
-
-**Generic game-server configuration editor**
-
-- Uses one manifest-driven UI across server families and versions
-- Demonstrates fast raw HMR and production WASM sandbox modes
-- Preserves unknown options and masks sensitive values
-- Best for: Scroll private admin UIs
-
 #### [druid-plattform](./druid-plattform/)
 
 **Full platform integration**
