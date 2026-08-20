@@ -138,3 +138,9 @@ npx gen-types        # generates types for your extension
 - [Simple Extended Example](./examples/simple-extended) - Component with custom extensions
 - [Simple No-Sandbox Example](./examples/simple-no-sandbox) - Development without WASM overhead
 - [Simple Extended No-Sandbox Example](./examples/simple-extended-no-sandbox) - Extended component in raw mode
+
+## Configuration Editor Migration
+
+`@druid-ui/config-editor` is retired in Druid UI v3, along with the
+`saveFileToDeploymentIfMatch` platform API. Use the inline configuration editor
+staged with Druid Scrolls for server configuration editing.
