@@ -10,10 +10,14 @@ export async function genTypes(
   witPath = "wit-out"
 ) {
   await getWitFolder(withFiles, witPath);
+  const resolvedWitPath = resolve(witPath);
   const t = await generateTypes(worldName, {
     wit: {
       tag: "path",
-      val: resolve(witPath),
+      val:
+        process.platform === "win32"
+          ? `//?/${resolvedWitPath}`
+          : resolvedWitPath,
     },
     world: worldName,
     instantiation: {
