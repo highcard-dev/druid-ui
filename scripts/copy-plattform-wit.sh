@@ -35,8 +35,7 @@ fi
 for destination in \
   "$ROOT/examples/druid-plattform/wit/druid-plattform.wit" \
   "$ROOT/examples/druid-plattform-no-sandbox/wit/druid-plattform.wit" \
-  "$ROOT/examples/starter-component-plattform/wit/druid-plattform.wit" \
-  "$ROOT/examples/config-editor-plattform/wit/druid-plattform.wit"
+  "$ROOT/examples/starter-component-plattform/wit/druid-plattform.wit"
 do
   copy_wit "$DEFAULT_SOURCE" "$destination"
 done
