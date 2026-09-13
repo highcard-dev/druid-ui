@@ -10,7 +10,7 @@
   "scripts": {
     "copy-plattform-wit": "sh scripts/copy-plattform-wit.sh",
     "postinstall": "npm run copy-plattform-wit",
-    "build": "turbo build --filter='./packages/*'",
+    "build": "turbo build --filter=\"./packages/*\"",
     "gen:types": "jco guest-types -o generated/types/guest/import wit --world-name druid-ui",
     "changeset": "changeset",
     "version": "changeset version",
@@ -21,7 +21,7 @@
     "dev:simple-extended-no-sandbox": "turbo dev --filter=simple-extended-no-sandbox",
     "dev:druid-plattform": "turbo dev --filter=druid-plattform",
     "dev:druid-plattform-no-sandbox": "turbo dev --filter=druid-plattform-no-sandbox",
-    "watch": "turbo watch build --filter='./packages/*'",
+    "watch": "turbo watch build --filter=\"./packages/*\"",
     "test": "vitest run"
   },
   "devDependencies": {
