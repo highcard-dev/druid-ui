@@ -1,9 +1,44 @@
 package druid:ui;
 
 interface plattform {
+    record mount {
+        path: string,
+        sub-path: string,
+        read-only: bool,
+    }
+
+    record expected-port {
+        name: string,
+        keep-alive-traffic: string,
+    }
+
+    record procedure {
+        procedure-type: string,
+        id: option<string>,
+        ignore-failure: bool,
+        image: string,
+        command: list<string>,
+        working-dir: string,
+        env: list<tuple<string, string>>,
+        expected-ports: list<expected-port>,
+        mounts: list<mount>,
+        target: string,
+        signal: string,
+        tty: bool,
+    }
+
+    record command-instruction {
+        procedures: list<procedure>,
+        needs: list<string>,
+        run: string,
+    }
+
     request: func(url: string, method: string, body: string, header: tuple<string, string>) -> string;
     load-file-from-deployment: func(path: string) -> string;
     save-file-to-deployment: func(path: string, content: string) -> string;
+    ensure-file-service: func(watch: bool) -> string;
+    add-and-run-command: func(name: string, command: command-instruction) -> string;
+    stop-command: func(name: string) -> string;
 }
 
 world druid-plattform {
