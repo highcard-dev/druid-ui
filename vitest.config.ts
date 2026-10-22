@@ -12,6 +12,9 @@ export default defineConfig({
   }],
   resolve: {
     alias: {
+      "@druid-ui/component": fileURLToPath(
+        new URL("./packages/component/src/index.ts", import.meta.url),
+      ),
       "@druid-ui/build": fileURLToPath(
         new URL("./packages/build/src/index.ts", import.meta.url),
       ),
