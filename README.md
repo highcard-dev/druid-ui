@@ -1,5 +1,9 @@
 # Druid UI — OpenUI + WASM SDK
 
+The breaking v4 release candidate is `4.0.0-rc.1`, available through the npm
+`next` channel after publication. Stable `latest` remains on v3. See the
+[release notes](docs/releases/v4.0.0-rc.1.md) for opt-in installation and migration requirements.
+
 Authored OpenUI Lang describes the view. React renders it. A WASM client handles
 named actions, updates state, and calls explicitly registered host tools. Rust is
 the preferred guest language; the starters and generated projects use it by default.

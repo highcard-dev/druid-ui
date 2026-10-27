@@ -15,7 +15,7 @@
     "postbuild": "npm rebuild --ignore-scripts @druid-ui/build create-druid-ui",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "npm run build && changeset publish",
+    "release": "npm run build && changeset publish --tag next",
     "dev:openui": "npm run dev --workspace=druid-openui-starter",
     "build:examples": "node scripts/build-examples.mjs",
     "verify:packages": "node scripts/verify-packages.mjs",
