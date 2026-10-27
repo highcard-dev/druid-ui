@@ -1,43 +1,86 @@
 name: Release
 
 on:
-    push:
-        tags:
-            - "v*"
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
 
 jobs:
-    release:
-        name: Release
-        runs-on: ubuntu-latest
-        permissions:
-            contents: read
-            id-token: write
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "24"
-                  registry-url: "https://registry.npmjs.org"
-                  package-manager-cache: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
 
-            - name: Install dependencies
-              run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-            - name: Set version from tag
-              run: |
-                  VERSION=${GITHUB_REF_NAME#v}
-                  echo "Publishing version: $VERSION"
-                  # Update all package versions to match the tag
-                  for pkg in packages/*/package.json; do
-                    jq --arg v "$VERSION" '.version = $v' "$pkg" > tmp.json && mv tmp.json "$pkg"
-                  done
+      - name: Check release candidate version
+        id: version
+        run: |
+          node --input-type=module -e '
+            import { readFileSync, appendFileSync } from "node:fs";
+            const expected = process.env.GITHUB_EVENT_NAME === "push"
+              ? process.env.GITHUB_REF_NAME.slice(1)
+              : JSON.parse(readFileSync("packages/client/package.json", "utf8")).version;
+            if (!/^\d+\.\d+\.\d+-rc\.\d+$/.test(expected))
+              throw new Error("This workflow publishes release candidates to next only");
+            for (const name of ["client", "host", "build", "create-druid-ui"]) {
+              const pkg = JSON.parse(readFileSync(`packages/${name}/package.json`, "utf8"));
+              if (pkg.version !== expected) throw new Error(`${pkg.name}: expected ${expected}, got ${pkg.version}`);
+            }
+            appendFileSync(process.env.GITHUB_OUTPUT, `version=${expected}\n`);
+          '
 
-            - name: Build all packages
-              run: npm run build
+      - name: Check client bootstrap requirement
+        id: client
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          node --input-type=module -e '
+            import { execFileSync } from "node:child_process";
+            import { appendFileSync } from "node:fs";
+            let bootstrap = false;
+            try {
+              execFileSync("npm", ["view", `@druid-ui/client@${process.env.RELEASE_VERSION}`, "version", "--json"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+            } catch (error) {
+              if (JSON.parse(String(error.stdout)).error?.code !== "E404") throw error;
+              bootstrap = true;
+            }
+            appendFileSync(process.env.GITHUB_OUTPUT, `required=${bootstrap}\n`);
+          '
 
-            - name: Publish to npm
-              run: npx changeset publish
+      - name: Validate bootstrap authentication before publishing
+        if: steps.client.outputs.required == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          test -n "$NODE_AUTH_TOKEN" || { echo "Client bootstrap requires an npm token authorized to create @druid-ui/client"; exit 1; }
+          npm whoami --registry=https://registry.npmjs.org
+
+      - name: Build all packages
+        if: github.event_name == 'push'
+        run: npm run build
+
+      - name: Bootstrap client package on next
+        if: github.event_name == 'push' && steps.client.outputs.required == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --workspace=@druid-ui/client --access public --tag next
+
+      - name: Publish to npm
+        if: github.event_name == 'push'
+        run: npx changeset publish --tag next --no-git-tag

@@ -1,0 +1,10 @@
+package example:custom;
+interface extension {
+    greet: func(name: string) -> string;
+}
+world custom-client {
+    import druid:openui/host;
+    import druid:openui/state;
+    import extension;
+    export druid:openui/client;
+}

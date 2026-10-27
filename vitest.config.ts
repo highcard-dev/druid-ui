@@ -1,22 +1,18 @@
-/// <reference types="vitest" />
 import { defineConfig } from "vite";
 import { fileURLToPath } from "node:url";
-
 export default defineConfig({
-  plugins: [{
-    name: "wit-platform-test-import",
-    // The WIT host supplies this module at runtime; tests provide its exports with vi.mock.
-    resolveId(id) {
-      if (id === "druid:ui/plattform") return id;
+  plugins: [
+    {
+      name: "wit-test-imports",
+      resolveId(id) {
+        if (["druid:openui/host", "druid:openui/state"].includes(id)) return id;
+      },
     },
-  }],
+  ],
   resolve: {
     alias: {
-      "@druid-ui/component": fileURLToPath(
-        new URL("./packages/component/src/index.ts", import.meta.url),
-      ),
-      "@druid-ui/build": fileURLToPath(
-        new URL("./packages/build/src/index.ts", import.meta.url),
+      "@druid-ui/host": fileURLToPath(
+        new URL("./packages/host/src/index.ts", import.meta.url),
       ),
     },
   },
@@ -24,5 +20,11 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./tests/setup.ts"],
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/templates/**",
+      ".verification/**",
+    ],
   },
 });

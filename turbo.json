@@ -1,12 +1,37 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["scripts/clean-package.mjs"],
   "remoteCache": {
     "enabled": false
   },
   "tasks": {
+    "create-druid-ui#build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/examples/*/src/**",
+        "$TURBO_ROOT$/examples/*/guest/Cargo.toml",
+        "$TURBO_ROOT$/examples/*/guest/Cargo.lock",
+        "$TURBO_ROOT$/examples/*/guest/build.rs",
+        "$TURBO_ROOT$/examples/*/guest/src/**",
+        "$TURBO_ROOT$/examples/*/wit/**",
+        "$TURBO_ROOT$/examples/*/package.json",
+        "$TURBO_ROOT$/examples/*/tsconfig.json",
+        "$TURBO_ROOT$/examples/*/vite.config.ts",
+        "$TURBO_ROOT$/examples/*/index.html",
+        "$TURBO_ROOT$/examples/*/README.md"
+      ],
+      "outputs": ["bin/**", "templates/**", "AGENTS.md"]
+    },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "bin/**"],
+      "outputs": [
+        "dist/**",
+        "bin/**",
+        "generated/**",
+        "templates/**",
+        "AGENTS.md"
+      ],
       "cache": true
     },
     "dev": {

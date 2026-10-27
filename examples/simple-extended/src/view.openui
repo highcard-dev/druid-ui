@@ -1,0 +1,5 @@
+$path = "message.json"
+$status = "Ready"
+$response = "No response yet."
+root = Stack([CardHeader("Async host tools", "WASM awaits HTTP through the host. No Promise is returned through a synchronous WIT import."), resource, Button("Fetch JSON", @FetchResource($path)), TextContent($status), CodeBlock("json", $response)])
+resource = FormControl("Resource", Input("path", "message.json or missing.json", "text", null, $path))

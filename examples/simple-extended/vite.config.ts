@@ -1,31 +1,5 @@
-import path from "path";
-import { fileURLToPath } from "url";
-import wasm from "vite-plugin-wasm";
 import { defineConfig } from "vite";
-import { ViteHMRPlugin } from "@druid-ui/vite";
-
+import { druidUI } from "@druid-ui/build/vite";
 export default defineConfig({
-  plugins: [
-    wasm(),
-    ViteHMRPlugin("src/component/**", "wasm", {
-      worldName: "druid-ui-extended",
-      files: ["src/wit/extension.wit"],
-    }),
-  ],
-  build: {
-    target: "esnext",
-  },
-  optimizeDeps: {
-    exclude: [
-      "@bytecodealliance/jco",
-      "@bytecodealliance/componentize-js",
-      "@druid-ui/host",
-      "druid:ui/extension",
-    ],
-  },
-  server: {
-    fs: {
-      allow: ["../.."],
-    },
-  },
+  plugins: [druidUI({ entry: "src/client/index.ts" })],
 });

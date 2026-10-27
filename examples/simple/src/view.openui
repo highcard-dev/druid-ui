@@ -1,0 +1,10 @@
+$count = 0
+$path = "/"
+$status = ""
+root = Stack([header, page, TextContent($status)])
+header = CardHeader("Hello from Druid UI", "OpenUI composes the view; WASM handles actions and state.")
+page = $path == "/test" ? testPage : $path == "/" ? counterPage : missingPage
+counterPage = Stack([TextContent("Clicks: " + $count), Button("Do click", @Increment()), milestone, Button("Go to test page", @Navigate("/test"), "secondary")])
+milestone = $count > 5 ? TextContent("More than five clicks!") : null
+testPage = Stack([TextContent("Test path reached"), Button("Back to counter", @Navigate("/"), "secondary")])
+missingPage = Stack([TextContent("Unknown route"), Button("Back to counter", @Navigate("/"), "secondary")])

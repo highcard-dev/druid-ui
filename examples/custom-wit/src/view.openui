@@ -1,0 +1,2 @@
+$greeting = "Starting custom WIT…"
+root = Stack([TextContent($greeting), Button("Greet", @Greet())])

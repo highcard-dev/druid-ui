@@ -1,45 +1,51 @@
 {
   "name": "@druid-ui/build",
-  "version": "2.0.0",
+  "version": "4.0.0-rc.1",
+  "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/highcard-dev/druid-ui.git"
-  },
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/types/index.d.ts",
-  "bin": {
-    "druid-ui-build": "./bin/index.js",
-    "druid-ui-gen-types": "./bin/gen-types.js"
+    "url": "https://github.com/highcard-dev/druid-ui.git"
   },
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "import": "./dist/vite.js"
     }
+  },
+  "bin": {
+    "druid-ui-build": "./bin/build.js",
+    "druid-ui-gen-types": "./bin/gen-types.js"
   },
   "files": [
     "dist",
-    "bin",
-    "wit",
-    "src"
+    "bin"
   ],
   "scripts": {
-    "build": "npm run build:lib && npm run build:cli && npm run build:cli-types && npm run build:types && npm rebuild --ignore-scripts @druid-ui/build",
-    "build:lib": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/index.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js --external:@druid-ui/component",
-    "build:cli": "esbuild src/cmd/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/index.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js --external:@druid-ui/component",
-    "build:cli-types": "esbuild src/cmd/gen-types.ts --bundle --platform=node --format=esm --target=node22 --outfile=bin/gen-types.js --external:@bytecodealliance/jco --external:esbuild --external:@bytecodealliance/componentize-js",
-    "build:types": "tsc --emitDeclarationOnly --outDir dist/types"
+    "prebuild": "node ../../scripts/clean-package.mjs",
+    "build": "esbuild src/index.ts src/vite.ts --bundle --platform=node --format=esm --target=node20 --packages=external --outdir=dist && esbuild src/cmd/build.ts src/cmd/gen-types.ts --bundle --platform=node --format=esm --target=node20 --packages=external --outdir=bin && tsc --emitDeclarationOnly"
   },
   "dependencies": {
-    "@bytecodealliance/componentize-js": "^0.19.3",
-    "@bytecodealliance/jco": "^1.17.5",
-    "@bytecodealliance/preview2-shim": "^0.17.7",
-    "esbuild": "^0.25.11"
+    "@druid-ui/client": "4.0.0-rc.1",
+    "componentize-qjs": "0.5.0",
+    "@bytecodealliance/jco-transpile": "0.20.0",
+    "esbuild": "^0.25.11",
+    "chokidar": "^4.0.3"
+  },
+  "peerDependencies": {
+    "vite": "^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "chokidar": "^4.0.3",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "vite": "^7.1.7"
   }
 }

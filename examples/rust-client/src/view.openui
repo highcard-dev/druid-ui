@@ -1,0 +1,7 @@
+$count = 0
+$name = "Rust"
+$first = "No greeting yet."
+$second = "No greeting yet."
+$status = "Pending requests: 0"
+root = Stack([CardHeader("Rust guest, same Druid host", "Rust implements the SDK WIT directly. React/OpenUI still owns rendering."), TextContent("Clicks: " + $count), Button("Increment in Rust", @Increment()), name, Buttons([Button("First greeting", @Greet($name, "$first")), Button("Second greeting", @Greet($name, "$second"), "secondary")]), TextContent($first), TextContent($second), TextContent($status)])
+name = FormControl("Name", Input("name", "Enter a name, or fail to test errors", "text", null, $name))

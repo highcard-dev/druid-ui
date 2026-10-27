@@ -3,14 +3,7 @@
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [
-    [
-      "@druid-ui/host",
-      "@druid-ui/component",
-      "@druid-ui/plattform",
-      "@druid-ui/build",
-      "@druid-ui/vite",
-      "create-druid-ui"
-    ]
+    ["@druid-ui/host", "@druid-ui/client", "@druid-ui/build", "create-druid-ui"]
   ],
   "linked": [],
   "access": "public",

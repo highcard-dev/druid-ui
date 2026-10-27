@@ -1,0 +1,34 @@
+{
+  "name": "@druid-ui/client",
+  "version": "4.0.0-rc.1",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/highcard-dev/druid-ui.git"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./wit": "./wit/client.wit"
+  },
+  "files": [
+    "dist",
+    "wit",
+    "generated"
+  ],
+  "scripts": {
+    "prebuild": "node ../../scripts/clean-package.mjs",
+    "build": "node scripts/gen-types.mjs && esbuild src/index.ts src/types.ts --bundle --format=esm --external:druid:openui/* --outdir=dist && tsc --emitDeclarationOnly"
+  },
+  "devDependencies": {
+    "@bytecodealliance/jco-transpile": "0.20.0",
+    "esbuild": "^0.25.11",
+    "typescript": "~5.8.3"
+  }
+}
