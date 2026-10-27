@@ -1,43 +1,45 @@
 name: Release
 
 on:
-    push:
-        tags:
-            - "v*"
+  push:
+    tags:
+      - "v*"
 
 jobs:
-    release:
-        name: Release
-        runs-on: ubuntu-latest
-        permissions:
-            contents: read
-            id-token: write
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "24"
-                  registry-url: "https://registry.npmjs.org"
-                  package-manager-cache: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
 
-            - name: Install dependencies
-              run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-            - name: Set version from tag
-              run: |
-                  VERSION=${GITHUB_REF_NAME#v}
-                  echo "Publishing version: $VERSION"
-                  # Update all package versions to match the tag
-                  for pkg in packages/*/package.json; do
-                    jq --arg v "$VERSION" '.version = $v' "$pkg" > tmp.json && mv tmp.json "$pkg"
-                  done
+      - name: Check release version
+        run: |
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const expected = process.env.GITHUB_REF_NAME.slice(1);
+            for (const name of ["client", "host", "build", "create-druid-ui"]) {
+              const pkg = JSON.parse(readFileSync(`packages/${name}/package.json`, "utf8"));
+              if (pkg.version !== expected) throw new Error(`${pkg.name}: expected ${expected}, got ${pkg.version}`);
+            }
+          '
 
-            - name: Build all packages
-              run: npm run build
+      - name: Build all packages
+        run: npm run build
 
-            - name: Publish to npm
-              run: npx changeset publish
+      - name: Publish to npm
+        run: npx changeset publish

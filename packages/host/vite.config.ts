@@ -1,19 +1,16 @@
 import { defineConfig } from "vite";
-
 export default defineConfig({
   base: "./",
   build: {
-    lib: {
-      entry: "src/index.ts",
-      formats: ["es"],
-      fileName: "ui",
-    },
+    lib: { entry: "src/index.ts", formats: ["es"], fileName: "index" },
     rollupOptions: {
-      external: ["snabbdom"],
+      external: [
+        "react",
+        "react/jsx-runtime",
+        "react-dom",
+        "@openuidev/react-lang",
+      ],
     },
-    target: "esnext",
   },
-  worker: {
-    format: "es",
-  },
+  worker: { format: "es" },
 });

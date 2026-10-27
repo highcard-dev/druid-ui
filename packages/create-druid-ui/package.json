@@ -1,23 +1,22 @@
 {
   "name": "create-druid-ui",
-  "version": "2.0.0",
+  "version": "4.0.0",
+  "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/highcard-dev/druid-ui.git"
+    "url": "https://github.com/highcard-dev/druid-ui.git"
   },
-  "type": "module",
   "bin": {
     "create-druid-ui": "./bin/create.js"
   },
   "files": [
     "bin",
-    "src"
+    "templates",
+    "AGENTS.md"
   ],
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --packages=external --outfile=bin/create.js"
-  },
-  "dependencies": {
-    "giget": "^2.0.0"
+    "prebuild": "node ../../scripts/clean-package.mjs",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node20 --packages=external --outfile=bin/create.js && node scripts/build-templates.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.25.11",

@@ -1,0 +1,5 @@
+$content = ""
+$status = "Loading configuration…"
+$http = "No request yet."
+root = Stack([CardHeader("Host-owned platform tools", "A page-local file store and allowlisted HTTP. No legacy platform package or deployment access."), editor, Buttons([Button("Read file", @ReadFile(), "secondary"), Button("Write file", @WriteFile($content)), Button("Fetch status", @FetchStatus(), "secondary")]), TextContent($status), CodeBlock("json", $http)])
+editor = ConfigEditor($content)

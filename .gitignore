@@ -40,3 +40,11 @@ examples/*/public/*.wasm
 types
 wit-out
 wit-dist
+
+packages/*/generated
+examples/*/generated
+examples/*/public/client
+examples/*/guest/target
+.verification
+packages/create-druid-ui/templates
+packages/create-druid-ui/AGENTS.md

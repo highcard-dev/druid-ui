@@ -1,8 +1,4 @@
-// Re-export everything for easy access
-export * from "./ui";
-export * from "./types";
-export * from "./transpile";
-export * from "./utils";
-
-// Global Window augmentation (side-effect import for declaration output)
-import "./window";
+export { WasmRoot, type WasmRootProps } from "./wasm-root";
+export { OpenUIHost, type OpenUIHostProps } from "./openui-host";
+export type { ResourceFetcher, AdditionalImports } from "./wasm";
+export type { HostTool, ToolProvider } from "./tools";

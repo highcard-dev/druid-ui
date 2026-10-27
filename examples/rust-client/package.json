@@ -1,0 +1,30 @@
+{
+  "name": "druid-rust-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:guest": "druid-ui-build guest/Cargo.toml public/client --rust --name=index",
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "test": "npm run build:guest && node scripts/verify.mjs",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "@druid-ui/host": "4.0.0",
+    "@druid-ui/client": "4.0.0",
+    "@openuidev/react-lang": "1.0.2",
+    "@openuidev/react-ui": "0.18.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@bytecodealliance/jco-transpile": "0.20.0",
+    "@druid-ui/build": "4.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.7"
+  }
+}

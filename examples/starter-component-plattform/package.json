@@ -1,17 +1,16 @@
 {
-  "name": "starter-component-plattform",
-  "private": true,
+  "name": "druid-client-tools-starter",
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
-    "dev": "druid-ui-build --wit=wit/druid-plattform.wit --world-name=druid-plattform src/app.tsx --watch --raw dist",
-    "build": "druid-ui-build --wit=wit/druid-plattform.wit --world-name=druid-plattform src/app.tsx dist",
-    "build:raw": "druid-ui-build --wit=wit/druid-plattform.wit --world-name=druid-plattform src/app.tsx --raw dist"
+    "dev": "druid-ui-build guest/Cargo.toml dist --rust --name=index --document=src/view.openui --watch",
+    "build": "druid-ui-build guest/Cargo.toml dist --rust --name=index --document=src/view.openui"
+  },
+  "dependencies": {
+    "@druid-ui/client": "4.0.0"
   },
   "devDependencies": {
-    "@druid-ui/build": "*",
-    "@druid-ui/component": "*",
-    "@druid-ui/plattform": "*",
-    "typescript": "~5.9.3"
+    "@druid-ui/build": "4.0.0"
   }
 }

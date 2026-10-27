@@ -1,39 +1,11 @@
-# Starter Template
+# OpenUI + Rust WASM starter
 
-Minimal starting point for new Druid UI projects.
-
-## Features
-
-- ✅ Automatic mode switching (dev/prod)
-- ✅ Development: fast no-sandbox mode
-- ✅ Production: secure WASM sandbox
-- ✅ Hot Module Replacement
-- ✅ Clean project structure
-
-## Run
-
-```bash
-npm run dev
-```
-
-## Build
-
-```bash
-npm run build
-```
-
-## Structure
-
-```
-src/
-  component/
-    app.tsx          # Your main component
-  main.ts            # Entry point
-index.html
-```
-
-## Getting Started
-
-1. Edit `src/component/app.tsx` to build your UI
-2. See changes instantly with HMR
-3. Build for production with `npm run build`
+Requires Node 24+, stable Rust/Cargo, `rustup target add wasm32-unknown-unknown`,
+and a JSPI-capable browser. Run `npm install` and `npm run dev`. The Vite plugin
+builds and watches `guest/src/lib.rs`, Cargo inputs, and canonical SDK WIT.
+Edit server settings and click Preview: WASM awaits a host tool and updates the
+reactive preview text. A server name of `fail` demonstrates tool rejection.
+Save uses OpenUI's mutation tool; Reset restores the form and preview text.
+Everything is in memory. Production output is built with `npm run build`.
+The React host remains TypeScript. Rust uses `host::call(...).await` and JSON
+state imports; keep `guest/Cargo.lock` for reproducible builds.

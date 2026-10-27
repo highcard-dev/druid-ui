@@ -1,0 +1,3 @@
+$content = "Hello from a guest-only component!\n"
+$output = "The embedding host supplies file_read, file_write and http_get."
+root = Stack([TextContent("Guest-only host tools"), CodeBlock("text", $content), Buttons([Button("Read file", @ReadFile(), "secondary"), Button("Write file", @WriteFile($content)), Button("Fetch status", @FetchStatus(), "secondary")]), TextContent($output)])

@@ -1,0 +1,25 @@
+:root {
+  font-family: Inter, system-ui, sans-serif;
+  color: #172b25;
+  background: #f2f5ef;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+.demo { max-width: 1120px; margin: 0 auto; padding: 64px 24px; }
+.demo-header { max-width: 720px; margin-bottom: 32px; }
+.demo-badge { color: #326e52; font-size: 12px; font-weight: 700; letter-spacing: .16em; }
+h1 { font-size: clamp(32px, 5vw, 52px); letter-spacing: -.045em; margin: 16px 0; }
+h2 { font-size: 18px; margin: 0 0 12px; }
+p { color: #607168; line-height: 1.6; }
+.demo-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.demo-panel { min-width: 0; padding: 28px; background: #fff; border: 1px solid #dfe7dc; border-radius: 18px; }
+.inspector p { font-size: 14px; }
+pre { overflow: auto; padding: 18px; border-radius: 10px; background: #f4f7f2; font-size: 12px; line-height: 1.7; }
+summary { cursor: pointer; font-size: 14px; font-weight: 600; padding-top: 12px; }
+@media (max-width: 760px) {
+  .demo { padding: 32px 16px; }
+  .demo-grid { grid-template-columns: 1fr; }
+  .demo-panel { padding: 20px; }
+}

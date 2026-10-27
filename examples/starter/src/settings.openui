@@ -1,0 +1,17 @@
+root = Stack([header, form, previewStatus, saved, failed])
+header = CardHeader("Server settings", "An authored OpenUI Lang form. Nothing is sent to a server.")
+$serverName = "My Minecraft server"
+$players = "20"
+$difficulty = "normal"
+$previewText = "No WASM preview yet."
+previewStatus = TextContent($previewText)
+form = Form("settings", Buttons([previewButton, saveButton, resetButton]), [nameField, playersField, difficultyField])
+nameField = FormControl("Server name", Input("serverName", "Name your server", "text", {required: true}, $serverName))
+playersField = FormControl("Player limit", Input("players", "20", "number", null, $players))
+difficultyField = FormControl("Difficulty", Select("difficulty", [SelectItem("peaceful", "Peaceful"), SelectItem("normal", "Normal"), SelectItem("hard", "Hard")], null, null, $difficulty))
+saveResult = Mutation("save_settings", {serverName: $serverName, players: $players, difficulty: $difficulty})
+saveButton = Button("Save settings", @Run(saveResult), "primary")
+previewButton = Button("Preview settings", @PreviewSettings($serverName, $players, $difficulty), "secondary")
+resetButton = Button("Reset form", @Reset($serverName, $players, $difficulty, $previewText), "secondary")
+saved = saveResult.status == "success" ? Callout("success", "Saved locally", "The React host received the form values. No backend or WASM was called.") : null
+failed = saveResult.status == "error" ? Callout("error", "Could not save", saveResult.error) : null
