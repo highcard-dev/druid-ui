@@ -90,6 +90,18 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --workspace=@druid-ui/client --access public --tag next
 
+      - name: Wait for client registry metadata
+        if: (github.event_name == 'push' || inputs.release_tag != '') && steps.client.outputs.required == 'true'
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          for attempt in {1..60}; do
+            npm view "@druid-ui/client@${RELEASE_VERSION}" version --prefer-online && exit 0
+            sleep 10
+          done
+          echo "Client publication is not visible yet; retry this release after npm processing completes"
+          exit 1
+
       - name: Publish to npm
         if: github.event_name == 'push' || inputs.release_tag != ''
         env:
