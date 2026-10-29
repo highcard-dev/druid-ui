@@ -83,6 +83,34 @@ render hooks, and manual rerender are not guest capabilities.
 
 ## Building and extending
 
+### Rust guests without Node/npm
+
+Rust-only builds need Cargo, the WASM target and the native
+[wasm-tools CLI](https://github.com/bytecodealliance/wasm-tools). They do not need
+Node, npm or installed Druid npm packages:
+
+```sh
+rustup target add wasm32-unknown-unknown
+cargo install --locked wasm-tools --version 1.262.0
+# From this SDK checkout, for example:
+./packages/client/build-rust.sh examples/starter-component/guest/Cargo.toml dist \
+  --name=index --document=examples/starter-component/src/view.openui
+```
+
+For a standalone project, copy `packages/client/build-rust.sh` as `build.sh` and
+its sibling `wit/` directory into the project. Keep that contract snapshot pinned with your
+guest source and Cargo.lock. Generated default and guest-only projects already include these files.
+Run `./build.sh guest/Cargo.toml dist --name=index --document=src/view.openui`.
+The script supplies `DRUID_WIT_PATH`, compiles a locked release cdylib, wraps the
+core module as a component, and verifies the Druid client export before replacing
+outputs. Custom WIT can be selected explicitly with `DRUID_WIT_PATH`; the guest
+still selects its own world in `wit_bindgen::generate!`.
+A standard Rust container is sufficient; no combined Node/Rust image is needed.
+Append `--watch` to rebuild when Rust, Cargo, WIT or the document changes, keeping
+the last output on a build failure. The builder does not run a browser host or publish.
+
+### Optional Node/Vite integration
+
 Use `druid-ui-build guest/Cargo.toml dist --rust --name=index`, or
 `druidUI({ entry: "guest/Cargo.toml", language: "rust", name: "index" })`
 from `@druid-ui/build/vite`. Stable Rust/Cargo and the

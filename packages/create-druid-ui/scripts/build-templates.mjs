@@ -33,5 +33,10 @@ for (const name of ["starter", "starter-client", "custom-wit"]) {
     for (const pkg of Object.keys(manifest[section] ?? {}))
       if (pkg.startsWith("@druid-ui/")) manifest[section][pkg] = version;
   await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+  if (name !== "custom-wit") {
+    const client = fileURLToPath(new URL("../../client/", import.meta.url));
+    await copyFile(join(client, "build-rust.sh"), join(directory, "templates", name, "build.sh"));
+    await cp(join(client, "wit"), join(directory, "templates", name, "wit"), { recursive: true });
+  }
 }
 await copyFile(join(directory, "src/AGENTS.md"), join(directory, "AGENTS.md"));
