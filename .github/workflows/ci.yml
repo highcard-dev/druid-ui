@@ -9,6 +9,18 @@ on:
       - main
 
 jobs:
+  native-rust-build:
+    runs-on: ubuntu-latest
+    container: rust:1.99-slim-bookworm
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup target add wasm32-unknown-unknown
+      - run: cargo install --locked wasm-tools --version 1.262.0
+      - name: Verify Rust-only build and watch without Node/npm
+        run: |
+          ! command -v node
+          ! command -v npm
+          sh scripts/test-rust-build.sh
   build-and-test:
     runs-on: ubuntu-latest
 

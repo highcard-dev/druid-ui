@@ -20,6 +20,7 @@
   "files": [
     "dist",
     "wit",
+    "build-rust.sh",
     "generated"
   ],
   "scripts": {
