@@ -1,0 +1,19 @@
+package druid:openui;
+
+/// Browser HTTP, subject to customer confirmation and CORS. Credentials are omitted.
+interface http {
+    record request-options {
+        url: string,
+        method: string,
+        headers: list<tuple<string, string>>,
+        body: option<list<u8>>,
+    }
+    record response {
+        status: u16,
+        headers: list<tuple<string, string>>,
+        body: list<u8>,
+    }
+    /// Every request asks for approval, including retries. Non-2xx responses fail.
+    /// GET/HEAD ignore body. Cancelled when the guest is disposed. No JSON transport.
+    request: async func(options: request-options) -> result<response, string>;
+}

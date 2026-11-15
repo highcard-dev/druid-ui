@@ -83,6 +83,113 @@ render hooks, and manual rerender are not guest capabilities.
 
 ## Building and extending
 
+### Browser graphics and media
+
+The host includes standalone typed WIT imports for Canvas 2D, WebGL2, WebGPU,
+Web Audio, video/WebCodecs and animation timing. They need no Druid platform or
+JSON tools. Select the SDK's `browser-client` world, or import individual
+interfaces in a custom world. Each API has its own WIT file under
+`packages/client/wit/`. Register the shared `browserComponents` from
+`@druid-ui/host` in your OpenUI library: `[...browserComponents, ...yourComponents]`.
+This supplies Canvas, Video, Keyboard and Pointer schemas, rendering and authoring guidance
+without redefining them in every app. The React surfaces remain available directly.
+The host manages their instance-local resources and cleanup.
+
+For keyboard input, register `BrowserKeyboard` in your library and wrap the
+interactive content with an instance-local `id` and explicit `codes` (e.g.
+`["Space", "ArrowLeft"]`). The guest exports `keyboard.handle-event` from
+`keyboard.wit`; `browser-client` includes this export. Events are typed key-down,
+key-up and focus-loss records with physical code, logical key, modifiers, repeat
+and timestamp. They call the guest directly, without JSON or frame polling.
+Only the focused region receives keys. Native controls/editable fields are left
+alone, and modified browser shortcuts are not cancelled. Regions are inert in
+isolated previews or guests without the keyboard export.
+
+For mouse/pen/touch input, compose `Pointer("scene", ["move", "down", "up", "wheel"], [Canvas("scene", 640, 400)], "Scene controls")`.
+Guests export `pointer.handle-event` from `pointer.wit` (included in `browser-client`).
+The host also exports `BrowserPointer` for React composition. Coordinates/dimensions
+are region-relative CSS pixels: map `x * backingWidth / width` into a canvas.
+Button bitmasks, pressure, device, modifiers, movement and normalized wheel deltas
+are typed WIT fields, not JSON actions. Moves coalesce once per pointer per frame;
+down/up/click/wheel are immediate. Dragging captures the pointer beyond the region.
+Cancel/blur always release held state. Native controls and unregistered events are
+untouched; modified wheel gestures retain browser defaults. Set the optional
+`preventContextMenu` functional prop only when right-click belongs to the UI.
+Active regions disable touch panning; previews and guests without this export are
+inert. Pointer lock/global listeners are intentionally not provided.
+
+Use `Viewport(surface, children)` with `Overlay("top" | "bottom" | "center", children, interactive?)`
+for accessible controls inside a drawing surface. For example,
+`Viewport(Canvas("world", 960, 640), [Overlay("top", [TextContent("HP 100")], false)])`
+keeps a click-through HUD within the canvas bounds. Center panels are bounded and
+scrollable; ordinary buttons and inputs stay native, not painted into the GPU.
+Register your own content/control components alongside `browserComponents`.
+
+Custom typed imports may use `additionalImports={(signal) => imports}`. The
+factory runs once per guest and receives its lifetime signal; use it to release
+resources and pending operations on unmount, replacement or failed loading.
+Ordinary import maps are still supported. Reserved SDK imports cannot be replaced.
+
+The browser world's `druid:openui/http.request(options)` supports methods, headers
+and optional binary request bodies, returning status, CORS-visible headers and a
+`list<u8>` response directly into WASM without JSON/base64 or `callTool`.
+Import `http` in a custom world or include `browser-client`. In Rust, for example:
+
+```rust
+let response = http::request(http::RequestOptions {
+    url: "https://assets.example/characters.tar".into(),
+    method: "GET".into(), headers: vec![], body: None,
+}).await?;
+let bytes = response.body;
+```
+
+Both typed HTTP and JSON host tools can use the exported `requestHttp` implementation.
+It uses browser HTTP/CORS, omits credentials, rejects non-success statuses and cancels
+with the guest. GET/HEAD ignore bodies. Every request requires confirmation,
+including retries; denial sends no request and approval is never remembered.
+Supply `confirmHttpRequest={(url) => showYourConfirmationModal(url)}` to
+`OpenUIHost`/`WasmRoot` (or the loader option) to use an asynchronous application
+modal. Reject that promise on denial; resolving approves the request. Druid's
+public and private hosts supply their existing confirmation modal. Standalone
+hosts default to native browser confirmation. Package loading remains separate:
+fetching the host's WASM/OpenUI pair does not trigger this guest-request prompt.
+Serve assets with
+appropriate CORS headers; a single uncompressed GLB/tar can avoid runtime ZIP
+decompression. WebGL matrix uniforms also accept mat4 arrays for GPU skinning.
+
+Rendering uses batches and binary lists, with persistent GPU resources. Audio
+DSP uses a dedicated WASM AudioWorklet. This is a focused interface, not a full
+Web API mirror or a zero-copy guarantee. See the [browser API example](examples/browser-apis/README.md)
+for supported operations, Rust code, browser checks and performance limits.
+
+### Rust guests without Node/npm
+
+Rust-only builds need Cargo, the WASM target and the native
+[wasm-tools CLI](https://github.com/bytecodealliance/wasm-tools). They do not need
+Node, npm or installed Druid npm packages:
+
+```sh
+rustup target add wasm32-unknown-unknown
+cargo install --locked wasm-tools --version 1.262.0
+# From this SDK checkout, for example:
+./packages/client/build-rust.sh examples/starter-component/guest/Cargo.toml dist \
+  --name=index --document=examples/starter-component/src/view.openui
+```
+
+For a standalone project, copy `packages/client/build-rust.sh` as `build.sh` and
+its sibling `wit/` directory into the project. Keep that contract snapshot pinned with your
+guest source and Cargo.lock. Generated default and guest-only projects already include these files.
+Run `./build.sh guest/Cargo.toml dist --name=index --document=src/view.openui`.
+The script supplies `DRUID_WIT_PATH`, compiles a locked release cdylib, wraps the
+core module as a component, and verifies the Druid client export before replacing
+outputs. Custom WIT can be selected explicitly with `DRUID_WIT_PATH`; the guest
+still selects its own world in `wit_bindgen::generate!`.
+A standard Rust container is sufficient; no combined Node/Rust image is needed.
+Append `--watch` to rebuild when Rust, Cargo, WIT or the document changes, keeping
+the last output on a build failure. The builder does not run a browser host or publish.
+
+### Optional Node/Vite integration
+
 Use `druid-ui-build guest/Cargo.toml dist --rust --name=index`, or
 `druidUI({ entry: "guest/Cargo.toml", language: "rust", name: "index" })`
 from `@druid-ui/build/vite`. Stable Rust/Cargo and the
@@ -106,7 +213,7 @@ fallback. OpenUI documents without WASM do not need JSPI.
 
 Additional WIT is supplied with repeated `--wit=file` and `--world-name=name`.
 Custom worlds must import host/state and export `druid:openui/client`; direct
-typed imports are bound through `additionalImports`. Reserved host/state imports
+typed imports are bound through `additionalImports`. Reserved host/state and built-in browser imports
 cannot be overridden. See [custom-wit](examples/custom-wit).
 
 `fetchResource` customizes document/WASM downloads (for example, authenticated

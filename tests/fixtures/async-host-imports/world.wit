@@ -1,0 +1,8 @@
+package druid:test;
+
+world async-host-imports {
+    include druid:openui/openui-client;
+    import druid:openui/webgpu;
+    export start-two: func() -> tuple<u32, u32>;
+    export results: func() -> tuple<u32, u32>;
+}

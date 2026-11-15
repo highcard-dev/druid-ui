@@ -1,6 +1,6 @@
 {
   "name": "@druid-ui/client",
-  "version": "4.0.0-rc.1",
+  "version": "4.0.0-rc.2",
   "type": "module",
   "repository": {
     "type": "git",
@@ -20,6 +20,7 @@
   "files": [
     "dist",
     "wit",
+    "build-rust.sh",
     "generated"
   ],
   "scripts": {

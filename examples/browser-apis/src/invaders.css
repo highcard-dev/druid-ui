@@ -1,0 +1,223 @@
+.arcade {
+  max-width: 1060px;
+  padding: 0 36px 36px;
+  margin: auto;
+}
+.arcade-top,
+.arcade-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font:
+    10px ui-monospace,
+    monospace;
+  color: #7f9a94;
+  letter-spacing: 0.08em;
+}
+.arcade-top {
+  min-height: 82px;
+  border-bottom: 1px solid #80edcf22;
+}
+.arcade-top a {
+  color: #d6e6dc;
+  font-size: 13px;
+}
+.arcade-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 36px 0 28px;
+}
+.arcade .eyebrow {
+  font-size: 9px;
+  color: #80edcf;
+  margin: 0 0 13px;
+}
+.arcade h1 {
+  font-size: clamp(34px, 5vw, 56px);
+  margin: 0;
+  letter-spacing: -0.055em;
+}
+.arcade h1 span {
+  color: #80edcf;
+}
+.arcade-intro > p {
+  font-size: 12px;
+  color: #879d96;
+  line-height: 1.7;
+  margin: 0 0 3px 20px;
+}
+.arcade-hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  border: 1px solid #80edcf22;
+  border-bottom: 0;
+  background: #101d20;
+  border-radius: 12px 12px 0 0;
+  padding: 18px 24px;
+}
+.arcade-hud > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-family: ui-monospace, monospace;
+}
+.arcade-hud span {
+  color: #85a398;
+  font-size: 8px;
+  letter-spacing: 0.13em;
+}
+.arcade-hud strong {
+  color: #dff6eb;
+  font-size: 23px;
+  font-weight: 500;
+}
+.arcade-hud .arcade-mission {
+  margin-left: auto;
+  text-align: right;
+  justify-content: center;
+}
+.arcade-mission span {
+  color: #80edcf;
+  font-size: 9px;
+}
+.arcade-mission small {
+  color: #729087;
+  font-size: 9px;
+}
+.arcade-screen {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #80edcf33;
+  border-radius: 0 0 12px 12px;
+  background: #08101b;
+  box-shadow: 0 18px 80px #0003;
+}
+.arcade-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    #00000012 0,
+    #00000012 1px,
+    transparent 1px,
+    transparent 4px
+  );
+}
+.arcade-screen canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+.arcade .controls {
+  margin: 18px 0;
+  flex-wrap: wrap;
+}
+.arcade .controls button {
+  font-size: 11px;
+  padding: 10px 18px;
+}
+.arcade-instructions {
+  font:
+    11px/1.9 ui-monospace,
+    monospace;
+  color: #85a398;
+}
+.arcade-instructions p {
+  margin: 0;
+}
+.arcade kbd {
+  color: #cbe5d9;
+  font: inherit;
+}
+.arcade-pad {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+.arcade-pad button {
+  touch-action: none;
+  user-select: none;
+  border-radius: 9px;
+  min-height: 48px;
+  font:
+    12px ui-monospace,
+    monospace;
+  background: #122329;
+}
+.arcade-pad button:last-child {
+  margin-left: auto;
+  min-width: 120px;
+  color: #80edcf;
+  border-color: #80edcf55;
+}
+.arcade-pad button:active {
+  background: #25453d;
+}
+.arcade-footer {
+  margin-top: 30px;
+  font-size: 8px;
+  flex-wrap: wrap;
+}
+[aria-label="Space Invaders keyboard controls"]:focus-visible {
+  outline: 2px solid #80edcf;
+  outline-offset: -2px;
+}
+@media (max-width: 600px) {
+  .arcade {
+    padding: 0 14px 25px;
+  }
+  .arcade-top {
+    min-height: 65px;
+  }
+  .arcade-top > span {
+    display: none;
+  }
+  .arcade-intro {
+    padding: 28px 0 22px;
+  }
+  .arcade-intro > p {
+    display: none;
+  }
+  .arcade .eyebrow {
+    font-size: 7px;
+  }
+  .arcade-hud {
+    gap: 18px;
+    padding: 14px;
+  }
+  .arcade-hud strong {
+    font-size: 17px;
+  }
+  .arcade-hud .arcade-mission {
+    width: 100%;
+    margin: 0;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  .arcade .controls {
+    gap: 7px;
+  }
+  .arcade .controls button {
+    padding: 10px 12px;
+  }
+  .arcade-pad {
+    gap: 7px;
+  }
+  .arcade-pad button {
+    flex: 1;
+    padding: 9px;
+    font-size: 10px;
+  }
+  .arcade-pad button:last-child {
+    min-width: 65px;
+  }
+  .arcade-instructions {
+    font-size: 10px;
+  }
+}

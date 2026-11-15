@@ -11,11 +11,14 @@ import { z } from "zod";
 import { afterEach, expect, it, vi } from "vitest";
 import { WasmRoot } from "./wasm-root";
 import { loadWasmClient } from "./wasm";
+import { BrowserKeyboard } from "./browser/keyboard";
+import { BrowserPointer } from "./browser/pointer";
 
 vi.mock("./wasm", () => ({ loadWasmClient: vi.fn() }));
 afterEach(() => {
   cleanup();
   vi.resetAllMocks();
+  vi.unstubAllGlobals();
 });
 
 const library = openuiLibrary.extend({
@@ -31,6 +34,112 @@ const library = openuiLibrary.extend({
 });
 const source =
   '$status = "Waiting"\nroot = Stack([TextContent($status), Button("Update", @UpdateStatus())])';
+
+it("uses the application modal for typed requests during guest initialization", async () => {
+  const confirm = vi.fn().mockResolvedValue(undefined);
+  const native = vi.fn();
+  vi.stubGlobal("confirm", native);
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue(new Response(new Uint8Array([0, 255])));
+  vi.stubGlobal("fetch", fetcher);
+  vi.mocked(loadWasmClient).mockImplementation(
+    async (_url, _signal, state, options) => {
+      const response = await options!.browserInterop!.imports[
+        "druid:openui/http"
+      ].request({
+        url: "https://assets.test/archive.tar",
+        method: "GET",
+        headers: [],
+      });
+      expect(response.body).toEqual(new Uint8Array([0, 255]));
+      state.setValue(
+        "$status",
+        JSON.stringify("Downloaded through typed HTTP"),
+      );
+      return { dispatch: vi.fn() };
+    },
+  );
+  render(
+    <WasmRoot
+      wasmUrl="/http.wasm"
+      response={source}
+      library={library}
+      confirmHttpRequest={confirm}
+    >
+      <Renderer.Content />
+    </WasmRoot>,
+  );
+  await screen.findByText("Downloaded through typed HTTP");
+  expect(confirm).toHaveBeenCalledWith("https://assets.test/archive.tar");
+  expect(native).not.toHaveBeenCalled();
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
+
+it("connects keyboard regions to the current guest and removes them on unmount", async () => {
+  const dispatchKey = vi.fn();
+  vi.mocked(loadWasmClient).mockResolvedValue({
+    dispatch: vi.fn(),
+    dispatchKey,
+  });
+  const { unmount } = render(
+    <WasmRoot wasmUrl="/keys.wasm" response={source} library={library}>
+      <BrowserKeyboard id="keys" codes={["Space"]}>
+        Keyboard scene
+      </BrowserKeyboard>
+      <Renderer.Content />
+    </WasmRoot>,
+  );
+  const region = await screen.findByRole("group");
+  region.focus();
+  fireEvent.keyDown(region, { key: " ", code: "Space" });
+  expect(dispatchKey).toHaveBeenCalledWith(
+    expect.objectContaining({ region: "keys", kind: "down", code: "Space" }),
+  );
+  unmount();
+  expect(vi.mocked(loadWasmClient).mock.calls[0]![1].aborted).toBe(true);
+  dispatchKey.mockClear();
+  fireEvent(window, new Event("blur"));
+  fireEvent.keyDown(region, { code: "Space" });
+  expect(dispatchKey).not.toHaveBeenCalled();
+});
+
+it("connects pointer regions to the current guest and leaves non-pointer guests inert", async () => {
+  vi.stubGlobal("PointerEvent", class extends MouseEvent {});
+  const dispatchPointer = vi.fn();
+  vi.mocked(loadWasmClient).mockResolvedValue({
+    dispatch: vi.fn(),
+    dispatchPointer,
+  });
+  const { rerender, unmount } = render(
+    <WasmRoot wasmUrl="/pointer.wasm" response={source} library={library}>
+      <BrowserPointer id="art" events={["click"]}>
+        Art
+      </BrowserPointer>
+    </WasmRoot>,
+  );
+  const region = await screen.findByRole("group");
+  fireEvent.click(region, { clientX: 40, clientY: 60 });
+  expect(dispatchPointer).toHaveBeenCalledWith(
+    expect.objectContaining({ region: "art", kind: "click", x: 40, y: 60 }),
+  );
+  vi.mocked(loadWasmClient).mockResolvedValue({ dispatch: vi.fn() });
+  rerender(
+    <WasmRoot wasmUrl="/plain.wasm" response={source} library={library}>
+      <BrowserPointer id="art" events={["click"]}>
+        Art
+      </BrowserPointer>
+    </WasmRoot>,
+  );
+  const inert = await screen.findByRole("group");
+  expect(inert).not.toHaveAttribute("tabindex");
+  dispatchPointer.mockClear();
+  fireEvent.click(inert);
+  expect(dispatchPointer).not.toHaveBeenCalled();
+  unmount();
+  fireEvent.click(inert);
+  expect(dispatchPointer).not.toHaveBeenCalled();
+});
 
 it("owns loading, action dispatch and reactive state without an external client ref", async () => {
   const dispatch = vi.fn();

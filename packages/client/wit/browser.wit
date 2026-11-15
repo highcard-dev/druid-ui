@@ -1,0 +1,16 @@
+package druid:openui;
+
+/// Standalone browser capabilities, available in private and public hosts alike.
+/// Custom worlds may import individual interfaces instead of this entire world.
+world browser-client {
+    include openui-client;
+    import animation;
+    import http;
+    import canvas;
+    import webgl;
+    import webgpu;
+    import audio;
+    import video;
+    export keyboard;
+    export pointer;
+}

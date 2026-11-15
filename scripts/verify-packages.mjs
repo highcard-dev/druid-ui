@@ -102,7 +102,7 @@ for (const template of ["starter", "starter-client", "custom-wit"]) {
   assert.ok((await readdir(join(directory, "dist"))).length > 0);
   assert.ok(
     (await readFile(join(directory, "AGENTS.md"), "utf8")).includes(
-      "@druid-ui/client",
+      "DRUID_WIT_PATH",
     ),
   );
   assert.ok(

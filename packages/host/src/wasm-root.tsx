@@ -24,6 +24,11 @@ import {
   type ToolSession,
   type ToolProvider,
 } from "./tools";
+import { createBrowserInterop } from "./browser";
+import type { ConfirmHttpRequest } from "./browser/http";
+import { BrowserSurfacesContext, type Surfaces } from "./browser/surfaces";
+import { KeyboardContext } from "./browser/keyboard";
+import { PointerContext } from "./browser/pointer";
 
 export type WasmRootProps<L extends Library> = Omit<
   RendererProps<L>,
@@ -33,6 +38,7 @@ export type WasmRootProps<L extends Library> = Omit<
   reloadKey?: string | number;
   fetchResource?: ResourceFetcher;
   additionalImports?: AdditionalImports;
+  confirmHttpRequest?: ConfirmHttpRequest;
   toolProvider?: ToolProvider;
   onRuntimeError?: (error: unknown) => void;
   children: ReactNode;
@@ -51,6 +57,7 @@ function RootSession<L extends Library>({
   wasmUrl,
   fetchResource,
   additionalImports,
+  confirmHttpRequest,
   toolProvider,
   onRuntimeError,
   onAction,
@@ -63,12 +70,14 @@ function RootSession<L extends Library>({
     toolProvider,
     fetchResource,
     additionalImports,
+    confirmHttpRequest,
     onRuntimeError,
   });
   latest.current = {
     toolProvider,
     fetchResource,
     additionalImports,
+    confirmHttpRequest,
     onRuntimeError,
   };
   const tools = useMemo(
@@ -127,6 +136,7 @@ function WasmProvider({
     toolProvider: ToolProvider | undefined;
     fetchResource: ResourceFetcher | undefined;
     additionalImports: AdditionalImports | undefined;
+    confirmHttpRequest: ConfirmHttpRequest | undefined;
     onRuntimeError: ((error: unknown) => void) | undefined;
   }>;
   children: ReactNode;
@@ -135,8 +145,14 @@ function WasmProvider({
   const setFieldValue = useSetFieldValue();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string>();
+  const [surfaces, setSurfaces] = useState<Surfaces | null>(null);
   useEffect(() => {
     const controller = new AbortController();
+    const browser = createBrowserInterop(
+      controller.signal,
+      latest.current.confirmHttpRequest,
+    );
+    setSurfaces(browser.surfaces);
     const session = createToolSession(
       controller.signal,
       () => latest.current.toolProvider ?? {},
@@ -163,6 +179,7 @@ function WasmProvider({
           {
             fetchResource: latest.current.fetchResource,
             additionalImports: latest.current.additionalImports,
+            browserInterop: browser,
             session,
             onError: (error) =>
               (latest.current.onRuntimeError ?? console.error)(error),
@@ -187,5 +204,15 @@ function WasmProvider({
   }, [wasmUrl, getFieldValue, setFieldValue, clientRef, sessionRef, latest]);
   if (error) return <p role="alert">Could not load UI: {error}</p>;
   if (!ready) return <p role="status">Loading OpenUI and WASM…</p>;
-  return children;
+  return (
+    <BrowserSurfacesContext.Provider value={surfaces}>
+      <KeyboardContext.Provider value={clientRef.current?.dispatchKey ?? null}>
+        <PointerContext.Provider
+          value={clientRef.current?.dispatchPointer ?? null}
+        >
+          {children}
+        </PointerContext.Provider>
+      </KeyboardContext.Provider>
+    </BrowserSurfacesContext.Provider>
+  );
 }

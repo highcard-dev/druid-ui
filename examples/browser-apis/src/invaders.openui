@@ -1,0 +1,12 @@
+$mode = "invaders"
+$invadersScore = "000000"
+$invadersBest = "000000"
+$invadersWave = "01"
+$invadersLives = "3"
+$invadersRemaining = "40"
+$invadersStatus = "AWAITING PILOT"
+$invadersPause = "Pause"
+$invadersSound = "Sound off"
+$invadersError = ""
+root = Keyboard("invaders", ["ArrowLeft", "ArrowRight", "KeyA", "KeyD", "Space", "KeyP", "KeyR", "KeyM"], [arcade], "Space Invaders keyboard controls")
+arcade = Arcade(@StartInvaders(), @PlayInvaders(), [ArcadeHUD($invadersScore, $invadersBest, $invadersWave, $invadersLives, $invadersRemaining, $invadersStatus), ArcadeScreen([Canvas("invaders", 960, 640)]), Controls([Button("Restart mission", @RestartInvaders()), Button($invadersPause, @PauseInvaders()), Button($invadersSound, @SoundInvaders())]), ArcadeInstructions(), ArcadePad([HoldButton("← Move left", @InputInvaders("ArrowLeft", true), @InputInvaders("ArrowLeft", false)), HoldButton("Move right →", @InputInvaders("ArrowRight", true), @InputInvaders("ArrowRight", false)), HoldButton("Fire", @InputInvaders("Space", true), @InputInvaders("Space", false))]), Text($invadersError)])

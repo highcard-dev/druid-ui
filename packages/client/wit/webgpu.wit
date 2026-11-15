@@ -1,0 +1,111 @@
+package druid:openui;
+
+/// Native WGSL, persistent resources, explicit passes and one submission per frame.
+interface webgpu {
+    enum power-preference { low-power, high-performance }
+    enum device-feature { depth-clip-control, depth32float-stencil8, texture-compression-bc, texture-compression-etc2, texture-compression-astc, timestamp-query, indirect-first-instance, shader-f16, rg11b10ufloat-renderable, bgra8unorm-storage, float32-filterable, float32-blendable }
+    record device-request { power: option<power-preference>, features: list<device-feature> }
+    enum texture-format { rgba8unorm, rgba8unorm-srgb, bgra8unorm, bgra8unorm-srgb, rgba16float, r32float, rg32float, rgba32float, depth16unorm, depth24plus, depth32float, astc-4x4-unorm, astc-4x4-unorm-srgb, bc7-rgba-unorm, bc7-rgba-unorm-srgb, r8unorm }
+    record device-info { preferred-format: texture-format, min-uniform-buffer-offset-alignment: u32, min-storage-buffer-offset-alignment: u32, max-uniform-buffer-binding-size: u32, max-storage-buffer-binding-size: u32, max-buffer-size: u32, max-texture-dimension-2d: u32, max-bind-groups: u32, max-vertex-buffers: u32, max-compute-workgroups-per-dimension: u32, features: list<device-feature> }
+    record device-state { lost: option<string>, validation-error: option<string> }
+    enum texture-dimension { d1, d2, d3 }
+    enum view-dimension { d1, d2, d2-array, cube, cube-array, d3 }
+    enum texture-aspect { all, depth-only }
+    record extent { width: u32, height: u32, depth-or-array-layers: u32 }
+    record origin { x: u32, y: u32, z: u32 }
+    record texture-descriptor { size: extent, dimension: texture-dimension, format: texture-format, mip-level-count: u32, sample-count: u32, usage: u32 }
+    record view-descriptor { dimension: view-dimension, aspect: texture-aspect, base-mip-level: u32, mip-level-count: option<u32>, base-array-layer: u32, array-layer-count: option<u32> }
+    record texture-copy { texture: u32, mip-level: u32, origin: origin }
+    enum address-mode { clamp-to-edge, repeat, mirror-repeat }
+    enum filter-mode { nearest, linear }
+    enum compare-function { never, less, equal, less-equal, greater, not-equal, greater-equal, always }
+    record sampler-descriptor { address-u: address-mode, address-v: address-mode, address-w: address-mode, mag-filter: filter-mode, min-filter: filter-mode, mipmap-filter: filter-mode, lod-min-clamp: f32, lod-max-clamp: f32, compare: option<compare-function>, max-anisotropy: u16 }
+    enum buffer-binding-type { uniform, storage, read-only-storage }
+    enum sampler-binding-type { filtering, non-filtering, comparison }
+    enum texture-sample-type { float, unfilterable-float, depth, sint, uint }
+    enum storage-access { write-only, read-only, read-write }
+    record buffer-layout { kind: buffer-binding-type, dynamic: bool, min-binding-size: u32 }
+    record texture-layout { sample-type: texture-sample-type, dimension: view-dimension, multisampled: bool }
+    record storage-texture-layout { access: storage-access, format: texture-format, dimension: view-dimension }
+    variant binding-layout { buffer(buffer-layout), sampler(sampler-binding-type), texture(texture-layout), storage-texture(storage-texture-layout) }
+    record layout-entry { binding: u32, visibility: u32, layout: binding-layout }
+    record buffer-binding { buffer: u32, offset: u32, size: option<u32> }
+    variant binding-resource { buffer(buffer-binding), texture-view(u32), sampler(u32) }
+    record binding { binding: u32, %resource: binding-resource }
+    record shader-stage { shader: u32, entry: string }
+    enum vertex-format { float32, float32x2, float32x3, float32x4, uint32, uint32x2, uint32x3, uint32x4, sint32, sint32x2, sint32x3, sint32x4, uint16x2, uint16x4, sint16x2, sint16x4, unorm8x2, unorm8x4, snorm8x2, snorm8x4, float16x2, float16x4 }
+    enum vertex-step { vertex, instance }
+    record vertex-attribute { format: vertex-format, offset: u32, location: u32 }
+    record vertex-buffer-layout { stride: u32, step: vertex-step, attributes: list<vertex-attribute> }
+    enum primitive-topology { point-list, line-list, line-strip, triangle-list, triangle-strip }
+    enum front-face { ccw, cw }
+    enum cull-mode { none, front, back }
+    enum index-format { uint16, uint32 }
+    record primitive-state { topology: primitive-topology, front: front-face, cull: cull-mode, strip-index-format: option<index-format> }
+    record depth-state { format: texture-format, write: bool, compare: compare-function, bias: s32, bias-slope-scale: f32, bias-clamp: f32 }
+    enum blend-factor { zero, one, src, one-minus-src, src-alpha, one-minus-src-alpha, dst, one-minus-dst, dst-alpha, one-minus-dst-alpha, src-alpha-saturated, constant, one-minus-constant }
+    enum blend-operation { add, subtract, reverse-subtract, min, max }
+    record blend-component { src: blend-factor, dst: blend-factor, operation: blend-operation }
+    record blend-state { color: blend-component, alpha: blend-component }
+    record color-target { format: texture-format, blend: option<blend-state>, write-mask: u32 }
+    record render-pipeline-descriptor { vertex: shader-stage, fragment: option<shader-stage>, layouts: list<u32>, vertex-buffers: list<vertex-buffer-layout>, primitive: primitive-state, depth: option<depth-state>, colors: list<color-target>, sample-count: u32, alpha-to-coverage: bool }
+    record compute-pipeline-descriptor { stage: shader-stage, layouts: list<u32> }
+    enum alpha-mode { opaque, premultiplied }
+    record surface-configuration { format: texture-format, alpha: alpha-mode, width: u32, height: u32 }
+    enum load-op { load, clear }
+    enum store-op { store, discard }
+    record color { r: f32, g: f32, b: f32, a: f32 }
+    variant attachment-target { surface(u32), view(u32) }
+    record color-attachment { target: attachment-target, resolve: option<u32>, load: load-op, store: store-op, clear: color }
+    record depth-attachment { view: u32, load: load-op, store: store-op, clear: f32, read-only: bool }
+    record timestamp-writes { queries: u32, beginning: option<u32>, end: option<u32> }
+    record render-pass-descriptor { colors: list<color-attachment>, depth: option<depth-attachment>, timestamps: option<timestamp-writes> }
+    record compute-pass-descriptor { timestamps: option<timestamp-writes> }
+    /// Dynamic offsets follow increasing dynamic binding number.
+    record group-command { index: u32, group: u32, dynamic-offsets: list<u32> }
+    record vertex-command { slot: u32, buffer: u32, offset: u32, size: option<u32> }
+    record index-command { buffer: u32, format: index-format, offset: u32, size: option<u32> }
+    record viewport { x: f32, y: f32, width: f32, height: f32, min-depth: f32, max-depth: f32 }
+    record scissor { x: u32, y: u32, width: u32, height: u32 }
+    record draw-command { vertices: u32, instances: u32, first-vertex: u32, first-instance: u32 }
+    record indexed-command { indices: u32, instances: u32, first-index: u32, base-vertex: s32, first-instance: u32 }
+    record indirect-command { buffer: u32, offset: u32 }
+    variant render-command { pipeline(u32), group(group-command), vertex-buffer(vertex-command), index-buffer(index-command), viewport(viewport), scissor(scissor), blend-constant(color), draw(draw-command), draw-indexed(indexed-command), draw-indirect(indirect-command), draw-indexed-indirect(indirect-command) }
+    record dispatch-command { x: u32, y: u32, z: u32 }
+    variant compute-command { pipeline(u32), group(group-command), dispatch(dispatch-command), dispatch-indirect(indirect-command) }
+    available: func() -> bool;
+    /// Optional features are enabled only when advertised; get-device-info reports enabled ones.
+    request-device: async func(options: option<device-request>) -> result<u32, string>;
+    get-device-info: func(device: u32) -> result<device-info, string>;
+    get-device-state: func(device: u32) -> result<device-state, string>;
+    /// Native GPUBufferUsage; upload/size ranges must be4-byte aligned.
+    create-buffer: func(device: u32, size: u32, usage: u32) -> result<u32, string>;
+    write-buffer: func(buffer: u32, offset: u32, data: list<u8>) -> result<_, string>;
+    create-texture: func(device: u32, descriptor: texture-descriptor) -> result<u32, string>;
+    create-texture-view: func(texture: u32, descriptor: view-descriptor) -> result<u32, string>;
+    /// Compressed uploads use block-aligned origin and physical mip extent
+    /// (rounded up to 4x4), 16 bytes/block. rows-per-image counts block rows.
+    /// queue.writeTexture does not require 256-byte row alignment.
+    write-texture: func(destination: texture-copy, size: extent, data: list<u8>, bytes-per-row: u32, rows-per-image: u32) -> result<_, string>;
+    create-sampler: func(device: u32, descriptor: sampler-descriptor) -> result<u32, string>;
+    create-shader: async func(device: u32, wgsl: string) -> result<u32, string>;
+    create-bind-group-layout: func(device: u32, entries: list<layout-entry>) -> result<u32, string>;
+    create-bind-group: func(layout: u32, entries: list<binding>) -> result<u32, string>;
+    create-render-pipeline: async func(device: u32, descriptor: render-pipeline-descriptor) -> result<u32, string>;
+    create-compute-pipeline: async func(device: u32, descriptor: compute-pipeline-descriptor) -> result<u32, string>;
+    configure-surface: func(device: u32, surface: u32, configuration: surface-configuration) -> result<_, string>;
+    begin-frame: func(device: u32) -> result<u32, string>;
+    create-timestamp-query-set: func(device: u32, count: u32) -> result<u32, string>;
+    /// Records and closes a pass on the shared frame encoder; never submits.
+    encode-render-pass: func(frame: u32, descriptor: render-pass-descriptor, commands: list<render-command>) -> result<_, string>;
+    encode-compute-pass: func(frame: u32, descriptor: compute-pass-descriptor, commands: list<compute-command>) -> result<_, string>;
+    resolve-timestamps: func(frame: u32, queries: u32, first: u32, count: u32, destination: u32, offset: u32) -> result<_, string>;
+    copy-buffer: func(frame: u32, source: u32, source-offset: u32, destination: u32, destination-offset: u32, size: u32) -> result<_, string>;
+    copy-texture: func(frame: u32, source: texture-copy, destination: texture-copy, size: extent) -> result<_, string>;
+    /// Consumes frame, exactly one queue.submit. Destroy(frame) discards instead.
+    submit-frame: func(frame: u32) -> result<_, string>;
+    /// Explicit diagnostic readback/synchronization only, never normal rendering.
+    read-buffer: async func(buffer: u32, offset: u32, size: u32) -> result<list<u8>, string>;
+    completed: async func(device: u32) -> result<_, string>;
+    destroy: func(object: u32) -> result<_, string>;
+}

@@ -1,0 +1,33 @@
+package druid:openui;
+
+/// WebGL2, with persistent GPU objects and typed bulk uploads.
+interface webgl {
+    record attribute { buffer: u32, location: u32, components: u32, stride: u32, offset: u32 }
+    record uniform { name: string, values: list<f32> }
+    record texture-binding { texture: u32, name: string, unit: u32 }
+    record render-target { target: u32, texture: u32 }
+    open: func(surface: u32) -> result<u32, string>;
+    /// Opt-in depth buffering for 3D scenes; draw(clear) clears depth as well.
+    depth-test: func(context: u32, enabled: bool) -> result<_, string>;
+    /// Control depth writes independently of depth testing; restore true after transparent world passes.
+    depth-mask: func(context: u32, enabled: bool) -> result<_, string>;
+    /// Standard straight-alpha compositing, SRC_ALPHA / ONE_MINUS_SRC_ALPHA.
+    blend: func(context: u32, enabled: bool) -> result<_, string>;
+    create-program: func(context: u32, vertex: string, fragment: string) -> result<u32, string>;
+    create-buffer: func(context: u32, data: list<f32>, dynamic: bool) -> result<u32, string>;
+    write-buffer: func(buffer: u32, byte-offset: u32, data: list<f32>) -> result<_, string>;
+    /// Upload tightly packed RGBA8 pixels once; texture handles persist until destroyed.
+    create-texture: func(context: u32, width: u32, height: u32, pixels: list<u8>, mipmaps: bool) -> result<u32, string>;
+    /// RGBA8 color plus DEPTH_COMPONENT16 depth. Target and returned color texture are separate persistent resources; destroy both when finished. Destroying the target does not destroy its sampled color texture.
+    create-render-target: func(context: u32, width: u32, height: u32) -> result<render-target, string>;
+    /// None restores the canvas. Subsequent draws use the bound target's dimensions; read-pixels reads that target. Targets and textures must belong to this context.
+    bind-render-target: func(context: u32, target: option<u32>) -> result<_, string>;
+    /// WebGL primitive enum (e.g. TRIANGLES=4). Uniforms support scalar/vec2/3/4, mat4 and mat4 arrays.
+    draw: func(context: u32, program: u32, attributes: list<attribute>, uniforms: list<uniform>, mode: u32, first: u32, count: u32, clear: option<list<f32>>) -> result<_, string>;
+    /// As draw, with explicit sampler uniforms and texture units.
+    draw-textured: func(context: u32, program: u32, attributes: list<attribute>, uniforms: list<uniform>, mode: u32, first: u32, count: u32, textures: list<texture-binding>, clear: option<list<f32>>) -> result<_, string>;
+    /// Draw repeated geometry using persistent per-instance buffers. Instance attributes advance once per instance; ordinary attributes advance per vertex. Divisors are reset after drawing.
+    draw-instanced: func(context: u32, program: u32, attributes: list<attribute>, instance-attributes: list<attribute>, uniforms: list<uniform>, mode: u32, first: u32, count: u32, instances: u32, textures: list<texture-binding>, clear: option<list<f32>>) -> result<_, string>;
+    read-pixels: func(context: u32, x: s32, y: s32, width: u32, height: u32) -> result<list<u8>, string>;
+    destroy: func(object: u32) -> result<_, string>;
+}
