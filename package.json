@@ -21,7 +21,7 @@
     "verify:packages": "node scripts/verify-packages.mjs",
     "watch": "turbo watch build --filter='./packages/*'",
     "test": "vitest run",
-    "test:rust": "npm run test --workspace=druid-rust-example && node scripts/verify-rust-starters.mjs"
+    "test:rust": "npm run test --workspace=druid-rust-example && node scripts/verify-rust-starters.mjs && node scripts/verify-async-host-imports.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",

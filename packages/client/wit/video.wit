@@ -1,0 +1,19 @@
+package druid:openui;
+
+/// Browser video playback and WebCodecs decoding into a canvas surface.
+interface video {
+    record info { width: u32, height: u32, time: f64, duration: f64, paused: bool, ended: bool }
+    open: func(id: string, url: string, muted: bool, looping: bool) -> result<u32, string>;
+    play: async func(player: u32) -> result<_, string>;
+    pause: func(player: u32) -> result<_, string>;
+    seek: func(player: u32, seconds: f64) -> result<_, string>;
+    status: func(player: u32) -> result<info, string>;
+    draw-frame: func(player: u32, surface: u32) -> result<_, string>;
+    /// Decoder output is drawn directly and VideoFrames are immediately closed.
+    create-decoder: async func(surface: u32, codec: string, width: u32, height: u32, description: list<u8>) -> result<u32, string>;
+    /// Timestamp/duration in microseconds. Check queue-size for backpressure.
+    decode: func(decoder: u32, key: bool, timestamp: f64, duration: option<f64>, data: list<u8>) -> result<_, string>;
+    queue-size: func(decoder: u32) -> result<u32, string>;
+    flush: async func(decoder: u32) -> result<_, string>;
+    close: func(object: u32) -> result<_, string>;
+}

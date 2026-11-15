@@ -1,0 +1,12 @@
+$mode = "gallery"
+$fps = "—"
+$frameTime = "—"
+$playLabel = "Pause motion"
+$soundLabel = "Enable sound"
+$soundStatus = "Visual preview · sound is off"
+$gpuStatus = "Starting WebGPU…"
+$videoStatus = "Starting video…"
+$glStatus = "Starting WebGL…"
+$report = ""
+root = Keyboard("gallery", ["Space", "KeyM"], [gallery], "Gallery keyboard controls")
+gallery = Gallery(@StartGallery(), [Hero(), Controls([Button($playLabel, @ToggleMotion()), Button($soundLabel, @ToggleSound())]), Metrics($fps, $frameTime), Scenes([SceneCard("01", "CANVAS 2D", "Order in the orbit.", "Move to steer, hold to warm the stars, and scroll to resize. Typed pointer events drive Rust directly.", [Pointer("orbit", ["move", "down", "up", "enter", "leave", "wheel"], [Canvas("canvas", 640, 400)], "Orbit pointer controls")], "Packed geometry · computed in Rust", "mint"), SceneCard("02", "WEBGL 2", "A world of its own.", "Light, reflection, and a little impossible color. All in a fragment shader.", [Canvas("gl", 640, 400)], $glStatus, "violet"), SceneCard("03", "WEBGPU", "A galaxy, computed.", "16,384 stars take shape on the GPU. Compute and render, without reading particles back to the CPU.", [Canvas("gpu", 640, 400)], $gpuStatus, "mint"), SceneCard("04", "WEB AUDIO", "Something you can feel.", "A soft four-note chord, synthesized in Rust. The curve shows the very same PCM function you hear.", [Canvas("wave", 640, 400)], $soundStatus, "amber"), SceneCard("05", "VIDEO + WEBCODECS", "One source. Two ways.", "The same locally generated aurora: native video on the left, frames decoded through WIT on the right.", [VideoPair([Video("gallery-video"), Canvas("decoded", 480, 270)])], $videoStatus, "blue"), SceneCard("06", "ANIMATION", "Time, not timers.", "A browser-paced clock. Rust awaits each animation frame; the page stays responsive.", [Canvas("clock", 640, 400)], "requestAnimationFrame · monotonic browser time", "mint")]), GalleryFooter($report)])

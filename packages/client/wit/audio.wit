@@ -1,0 +1,34 @@
+package druid:openui;
+
+/// Browser Web Audio. PCM stays binary, decoded buffers stay in the host.
+interface audio {
+    record point3 { x: f32, y: f32, z: f32 }
+    record listener { position: point3, forward: point3, up: point3 }
+    record spatial-source { position: point3, ref-distance: f32, max-distance: f32, rolloff: f32 }
+    record voice-update { voice: u32, position: point3, gain: f32 }
+    open: func(sample-rate: option<f32>) -> result<u32, string>;
+    /// Invoke from a user gesture to satisfy browser autoplay policy.
+    resume: async func(context: u32) -> result<_, string>;
+    suspend: async func(context: u32) -> result<_, string>;
+    time: func(context: u32) -> result<f64, string>;
+    create-buffer: func(context: u32, channels: u32, frames: u32, sample-rate: f32) -> result<u32, string>;
+    write-channel: func(buffer: u32, channel: u32, samples: list<f32>, offset: u32) -> result<_, string>;
+    decode: async func(context: u32, encoded: list<u8>) -> result<u32, string>;
+    /// Schedule on the audio clock, not a UI timer. Returns a stoppable voice.
+    play: func(context: u32, buffer: u32, when: f64, gain: f32, looping: bool) -> result<u32, string>;
+    /// World-space listener. Supply the same coordinate units as spatial sources.
+    set-listener: func(context: u32, listener: listener) -> result<_, string>;
+    /// Equal-power spatial playback with inverse-distance attenuation. Gain and
+    /// panner nodes are reused; at most 64 scheduled/playing buffer voices per context.
+    play-at: func(context: u32, buffer: u32, when: f64, gain: f32, looping: bool, source: spatial-source) -> result<u32, string>;
+    /// Batched moving-source updates; every voice must be spatial and belong to
+    /// this context. The entire batch is validated before changing any source.
+    update-voices: func(context: u32, updates: list<voice-update>) -> result<_, string>;
+    stop: func(voice: u32) -> result<_, string>;
+    /// Load a standalone DSP WASM module in an AudioWorklet. Exports memory and
+    /// process(frames, channels, sample_rate); planar f32 output starts at byte 0.
+    /// Module must preallocate enough memory; no WASI, imports, allocation or growth in process.
+    /// Resume the context first. Resolves only after the worklet initializes.
+    start-processor: async func(context: u32, wasm: list<u8>, channels: u32) -> result<u32, string>;
+    close: func(object: u32) -> result<_, string>;
+}

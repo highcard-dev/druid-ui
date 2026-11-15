@@ -1,0 +1,36 @@
+package druid:openui;
+
+/// Region-scoped mouse, pen and touch input. No document-wide listener or JSON tools.
+interface pointer {
+    enum event-kind { down, up, move, enter, leave, click, double-click, wheel, cancel, blur }
+    enum device-kind { mouse, pen, touch, unknown }
+    record pointer-event {
+        region: string,
+        kind: event-kind,
+        pointer-id: u32,
+        device: device-kind,
+        /// Region-relative CSS pixels; may be outside the region during a captured drag.
+        x: f32,
+        y: f32,
+        width: f32,
+        height: f32,
+        /// Movement accumulated since the previous delivered move, in CSS pixels.
+        movement-x: f32,
+        movement-y: f32,
+        /// Wheel deltas normalized to CSS pixels (line=16px, page=region dimensions).
+        wheel-x: f32,
+        wheel-y: f32,
+        /// Changed button (-1 when none); buttons bitmask: left=1, right=2, middle=4.
+        button: s16,
+        buttons: u16,
+        pressure: f32,
+        shift: bool,
+        control: bool,
+        alt: bool,
+        meta: bool,
+        timestamp: f64,
+    }
+    /// Moves coalesce per pointer/frame. Down/up/click/wheel are immediate.
+    /// Cancel/blur release held state, even if not listed in the region's events.
+    handle-event: async func(event: pointer-event);
+}

@@ -9,6 +9,7 @@ export default defineConfig({
         "react/jsx-runtime",
         "react-dom",
         "@openuidev/react-lang",
+        "zod",
       ],
     },
   },

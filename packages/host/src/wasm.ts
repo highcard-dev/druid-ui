@@ -1,22 +1,34 @@
 import type {
   ClientExports,
+  KeyboardExports,
+  KeyEvent,
+  PointerExports,
+  PointerEvent,
   StateImports,
   HostImports,
 } from "@druid-ui/client/types";
 import { createToolSession, type ToolSession } from "./tools";
+import { createBrowserInterop, type BrowserInterop } from "./browser";
+import type { ConfirmHttpRequest } from "./browser/http";
 
 export interface WasmClient {
   dispatch(action: string, params: unknown): void;
+  dispatchKey?: (event: KeyEvent) => void;
+  dispatchPointer?: (event: PointerEvent) => void;
 }
 
 export type WasmState = StateImports;
 export type ResourceFetcher = typeof globalThis.fetch;
-export type AdditionalImports = Record<string, Record<string, unknown>>;
+type ImportMap = Record<string, Record<string, unknown>>;
+export type AdditionalImports =
+  ImportMap | ((signal: AbortSignal) => ImportMap);
 export interface WasmLoadOptions {
+  confirmHttpRequest?: ConfirmHttpRequest;
   fetchResource?: ResourceFetcher;
   additionalImports?: AdditionalImports;
   session?: ToolSession;
   onError?: (error: unknown) => void;
+  browserInterop?: BrowserInterop;
 }
 
 type TranspiledFiles = Array<[string, Uint8Array]>;
@@ -70,8 +82,13 @@ export async function loadWasmClient(
   state: WasmState,
   options: WasmLoadOptions = {},
 ): Promise<WasmClient> {
+  signal.throwIfAborted();
+  const additionalImports =
+    typeof options.additionalImports === "function"
+      ? options.additionalImports(signal)
+      : options.additionalImports;
   for (const name of ["druid:openui/host", "druid:openui/state"]) {
-    if (Object.hasOwn(options.additionalImports ?? {}, name))
+    if (Object.hasOwn(additionalImports ?? {}, name))
       throw new Error(`Reserved WIT import: ${name}`);
   }
   const engine = WebAssembly as typeof WebAssembly & {
@@ -104,11 +121,22 @@ export async function loadWasmClient(
         imports: {
           "druid:openui/host": HostImports;
           "druid:openui/state": WasmState;
-        } & AdditionalImports,
-      ): Promise<{ client: ClientExports }>;
+        } & ImportMap,
+      ): Promise<{
+        client: ClientExports;
+        keyboard?: KeyboardExports;
+        pointer?: PointerExports;
+      }>;
     };
     const session = options.session ?? createToolSession(signal, () => ({}));
-    const { client } = await instantiate(
+    const browser =
+      options.browserInterop ??
+      createBrowserInterop(signal, options.confirmHttpRequest);
+    for (const name of Object.keys(browser.imports)) {
+      if (Object.hasOwn(additionalImports ?? {}, name))
+        throw new Error(`Reserved WIT import: ${name}`);
+    }
+    const { client, keyboard, pointer } = await instantiate(
       async (filename) => {
         signal.throwIfAborted();
         const file = files.find(([name]) => name === filename);
@@ -116,7 +144,8 @@ export async function loadWasmClient(
         return WebAssembly.compile(new Uint8Array(file[1]));
       },
       {
-        ...options.additionalImports,
+        ...browser.imports,
+        ...additionalImports,
         "druid:openui/host": {
           log: (message) => {
             if (!signal.aborted) console.info("[OpenUI WASM]", message);
@@ -135,14 +164,25 @@ export async function loadWasmClient(
     signal.throwIfAborted();
     await client.init();
     signal.throwIfAborted();
+    const report = (error: unknown) => {
+      if (!signal.aborted) (options.onError ?? console.error)(error);
+    };
     return {
+      ...(pointer && {
+        dispatchPointer(event: PointerEvent) {
+          if (!signal.aborted) void pointer.handleEvent(event).catch(report);
+        },
+      }),
+      ...(keyboard && {
+        dispatchKey(event: KeyEvent) {
+          if (!signal.aborted) void keyboard.handleEvent(event).catch(report);
+        },
+      }),
       dispatch(action, params) {
         signal.throwIfAborted();
         void client
           .handleAction(action, JSON.stringify(params) ?? "null")
-          .catch((error) => {
-            if (!signal.aborted) (options.onError ?? console.error)(error);
-          });
+          .catch(report);
       },
     };
   } finally {
